@@ -15,6 +15,13 @@ from .documents import DocumentIngestor, create_demo_document_sources
 from .executor import create_default_executor_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
 from .growth import KnowledgeValidator, ValidationResult, create_demo_knowledge_seeds
+from .growth_clusters import (
+    GrapeAssignment,
+    GrapeCluster,
+    GrapeClusterer,
+    create_demo_grape_knowledge_seeds,
+    memory_records_from_grape_clusters,
+)
 from .growth_review import (
     ConflictCheckResult,
     DuplicateCheckResult,
@@ -198,6 +205,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.growth_review_demo:
         print(format_growth_review_demo())
         return 0
+    if args.grape_demo:
+        print(format_grape_demo())
+        return 0
 
     profile = get_builtin_workspace_profile(args.workspace)
     registry = filter_modules_for_workspace(create_default_registry(), profile)
@@ -357,6 +367,39 @@ def format_growth_review_demo() -> str:
     return "\n".join(lines)
 
 
+def format_grape_demo() -> str:
+    """Run deterministic GrapeCluster demo creation."""
+    seeds = create_demo_grape_knowledge_seeds()
+    decisions = tuple(KnowledgeReviewPipeline().review(seeds))
+    clusters, assignments = GrapeClusterer().cluster(seeds, decisions)
+    records = memory_records_from_grape_clusters(clusters)
+    domain_counts = Counter(cluster.domain for cluster in clusters)
+    status_counts = Counter(cluster.status for cluster in clusters)
+    lines = [
+        "Growth Lab demo: GrapeCluster structures",
+        "Execution: deterministic clustering only; no LLM, embeddings, web, APIs, or training.",
+        "",
+        f"Seeds: {len(seeds)}",
+        f"Clusters: {len(clusters)}",
+        f"Nodes: {sum(len(cluster.nodes) for cluster in clusters)}",
+        f"Assignments: {len(assignments)}",
+        f"Memory records: {len(records)}",
+        "",
+        "Cluster counts by domain:",
+    ]
+    lines.extend(f"- {domain}: {count}" for domain, count in sorted(domain_counts.items()))
+    lines.append("Cluster counts by status:")
+    lines.extend(f"- {status}: {count}" for status, count in sorted(status_counts.items()))
+    lines.extend(["", "Clusters:"])
+    for cluster in clusters:
+        lines.append(format_grape_cluster_line(cluster))
+        for node in cluster.nodes:
+            lines.append(f"  - node {node.id}: {node.name} (confidence={node.confidence:.2f})")
+    lines.extend(["", "Assignments:"])
+    lines.extend(format_grape_assignment_line(assignment) for assignment in assignments)
+    return "\n".join(lines)
+
+
 def format_validation_result_line(result: ValidationResult) -> str:
     """Format one compact validation result line."""
     warnings = f"; warnings: {', '.join(result.warnings)}" if result.warnings else ""
@@ -395,6 +438,28 @@ def format_seed_review_decision_line(decision: SeedReviewDecision) -> str:
         f"- {decision.seed_id}: {decision.decision}, "
         f"recommended_status={decision.recommended_status}, "
         f"duplicate_of={duplicate_of}, conflicts_with={conflicts}{reason}"
+    )
+
+
+def format_grape_cluster_line(cluster: GrapeCluster) -> str:
+    """Format one compact grape cluster line."""
+    keywords = ", ".join(cluster.keywords[:5]) if cluster.keywords else "none"
+    return (
+        f"- {cluster.id}: {cluster.name}, domain={cluster.domain}, "
+        f"status={cluster.status}, confidence={cluster.confidence:.2f}, "
+        f"nodes={len(cluster.nodes)}, seeds={len(cluster.seed_ids)}, keywords={keywords}"
+    )
+
+
+def format_grape_assignment_line(assignment: GrapeAssignment) -> str:
+    """Format one compact grape assignment line."""
+    cluster_id = assignment.cluster_id or "none"
+    node_id = assignment.node_id or "none"
+    reasons = ", ".join(assignment.reasons) if assignment.reasons else "none"
+    return (
+        f"- {assignment.seed_id}: assigned={assignment.assigned}, "
+        f"cluster={cluster_id}, node={node_id}, score={assignment.score:.2f}; "
+        f"reasons: {reasons}"
     )
 
 
@@ -465,6 +530,11 @@ def build_parser() -> ArgumentParser:
         "--growth-review-demo",
         action="store_true",
         help="Run deterministic Growth Lab validation, deduplication, and conflict review.",
+    )
+    parser.add_argument(
+        "--grape-demo",
+        action="store_true",
+        help="Run deterministic Growth Lab GrapeNode and GrapeCluster demo creation.",
     )
     parser.add_argument(
         "--adaptive",
