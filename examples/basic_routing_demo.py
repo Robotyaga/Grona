@@ -1,7 +1,7 @@
 """Demonstrate Grona's lightweight routing prototype."""
 
+import grona
 from grona.cli import format_decision
-from grona import Router, create_default_registry
 
 
 TASKS = [
@@ -18,7 +18,7 @@ TASKS = [
 
 
 def main() -> None:
-    router = Router(create_default_registry(), top_k=3)
+    router = grona.Router(grona.create_default_registry(), top_k=3)
 
     for task in TASKS:
         decision = router.route(task)
