@@ -76,8 +76,17 @@ def build_parser() -> ArgumentParser:
         "--feedback-file",
         help="Optional JSONL file path for saving route feedback.",
     )
-    parser.add_argument("--rating", type=int, choices=range(1, 6), help="Optional route rating, 1-5.")
-    parser.add_argument("--success", choices=("true", "false"), help="Optional route outcome flag.")
+    parser.add_argument(
+        "--rating",
+        type=int,
+        choices=range(1, 6),
+        help="Optional route rating, 1-5.",
+    )
+    parser.add_argument(
+        "--success",
+        choices=("true", "false"),
+        help="Optional route outcome flag.",
+    )
     parser.add_argument("--notes", help="Optional route outcome notes.")
     return parser
 

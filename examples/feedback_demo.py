@@ -1,6 +1,12 @@
 """Demonstrate Grona route feedback records and history summaries."""
 
-from grona import FeedbackRecord, InMemoryFeedbackStore, Router, create_default_registry, summarize_feedback
+from grona import (
+    FeedbackRecord,
+    InMemoryFeedbackStore,
+    Router,
+    create_default_registry,
+    summarize_feedback,
+)
 
 
 TASKS = [

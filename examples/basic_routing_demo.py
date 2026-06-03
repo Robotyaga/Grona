@@ -1,7 +1,7 @@
 """Demonstrate Grona's lightweight routing prototype."""
 
-from grona import Router, create_default_registry
 from grona.cli import format_decision
+from grona import Router, create_default_registry
 
 
 TASKS = [
@@ -10,7 +10,10 @@ TASKS = [
     "Review firewall logs for suspicious port scans and malware indicators.",
     "Create thumbnails from a video clip and extract audio metadata.",
     "Find the PDF manual in my document archive and summarize the maintenance notes.",
-    "Analyze this repository report and plan whether the issue is code, documentation, or search related.",
+    (
+        "Analyze this repository report and plan whether the issue is code, "
+        "documentation, or search related."
+    ),
 ]
 
 

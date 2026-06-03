@@ -3,7 +3,9 @@ from grona.cli import format_decision, main
 
 
 def test_cli_formatter_prints_selected_skipped_reasons_and_scores() -> None:
-    decision = Router(create_default_registry(), top_k=2).route("Analyze engine overheating symptoms")
+    decision = Router(create_default_registry(), top_k=2).route(
+        "Analyze engine overheating symptoms"
+    )
     output = format_decision(decision)
 
     assert "Selected modules:" in output

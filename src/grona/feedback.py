@@ -44,7 +44,7 @@ class FeedbackRecord:
         notes: str | None = None,
         metadata: Metadata | None = None,
         timestamp: str | None = None,
-    ) -> "FeedbackRecord":
+    ) -> FeedbackRecord:
         """Create a feedback record from a routing decision."""
         return cls(
             task=decision.task,
@@ -75,7 +75,7 @@ class FeedbackRecord:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "FeedbackRecord":
+    def from_dict(cls, data: dict[str, Any]) -> FeedbackRecord:
         """Deserialize a feedback record from JSON-compatible data."""
         return cls(
             task=str(data["task"]),
