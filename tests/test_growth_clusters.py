@@ -24,10 +24,17 @@ def make_seed(
     confidence: float = 0.85,
     reliability: float = 0.9,
 ) -> KnowledgeSeed:
-    source = KnowledgeSource(f"source:{seed_id}", "user_note", f"Source {seed_id}", reliability)
+    source = KnowledgeSource(
+        f"source:{seed_id}",
+        "user_note",
+        f"Source {seed_id}",
+        reliability,
+    )
+    if content is None:
+        content = f"Useful {domain} note covering {', '.join(keywords)} with clear evidence."
     return KnowledgeSeed(
         id=seed_id,
-        content=content or f"Useful {domain} note covering {', '.join(keywords)} with clear evidence.",
+        content=content,
         source=source,
         domains=(domain,),
         keywords=keywords,
@@ -87,7 +94,11 @@ def test_grape_assignment_creation() -> None:
 def test_clusterer_groups_seeds_by_domain_and_keyword_overlap() -> None:
     seeds = (
         make_seed("seed:auto-coolant", "automotive", ("coolant", "radiator", "engine")),
-        make_seed("seed:auto-thermostat", "automotive", ("coolant", "thermostat", "engine")),
+        make_seed(
+            "seed:auto-thermostat",
+            "automotive",
+            ("coolant", "thermostat", "engine"),
+        ),
         make_seed("seed:security", "cybersecurity", ("security", "validation", "secrets")),
     )
     decisions = KnowledgeReviewPipeline().review(seeds)
