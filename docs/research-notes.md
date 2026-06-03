@@ -2,9 +2,24 @@
 
 Grona explores sparse modular AI systems inspired by grape-cluster-like expert activation. These notes are conceptual and intentionally honest about what the project does not solve yet.
 
+For the longer direction, see [Project vision](project-vision.md). For implementation boundaries, see [Architecture](architecture.md), [Development notes](development.md), and [Roadmap](roadmap.md).
+
 ## Working Hypothesis
 
 A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+
+## Why This Differs From Monolithic Execution
+
+A monolithic system often hides which capability, memory, prompt, or tool surface shaped the result. Grona explores visible routing instead:
+
+- which modules were considered
+- which modules were skipped
+- which scores and reasons mattered
+- which context was attached
+- which safety policy decisions were made
+- which feedback might alter future routing
+
+The current prototype is deterministic so these questions can be inspected before adding model uncertainty.
 
 ## Workspace Profiles
 
@@ -33,6 +48,12 @@ Raw document text -> DocumentSource -> DocumentChunk -> MemoryRecord -> InMemory
 
 The current implementation is deliberately not RAG. It has no embeddings, semantic search, vector database, PDF parsing, OCR, filesystem crawler, file watcher, or external API.
 
+## Knowledge Before Weights
+
+Grona assumes that some knowledge should remain external, structured, source-aware, and validated before it ever becomes training data or expert behavior.
+
+This motivates future `KnowledgeSeed` and `KnowledgeValidator` work: collect knowledge with provenance, test whether it is useful, and only then decide whether it should influence routing, memory, prompts, benchmarks, or training exports.
+
 ## Execution and Tool Boundaries
 
 The execution interface separates routing metadata from runnable behavior. Execution adapters add a backend-oriented layer. Tool adapters model future tool use without performing it.
@@ -52,16 +73,14 @@ The safety layer asks policy questions before future tools exist:
 
 `ToolAction` is a planned action, not execution. `PolicyDecision` is the reasoned result of policy evaluation. `ExecutionPlan` groups planned actions and decisions for an `ExecutionRequest`. `SafeExecutionAdapter` wraps an adapter and turns policy outcomes into `ExpertResult` values. `SafeToolRunner` applies the same policy idea to mock tool adapters.
 
-## Why Deterministic Profiles Matter
+## Future Growth Questions
 
-Workspace profiles make project-specific routing assumptions visible before adding heavier configuration systems. They let Grona validate questions such as:
-
-- Which modules are active for this use case?
-- Which domains are allowed to influence routing?
-- Are safety defaults visible?
-- Is adaptive routing enabled by profile or by explicit CLI flag?
-- Does general reasoning remain available as a fallback?
-- Can a profile be serialized and restored deterministically?
+- Can workspace profiles reliably constrain routing behavior?
+- Can feedback improve routing without turning into opaque learning?
+- Can external knowledge seeds improve modules without being baked into weights too early?
+- Can donor model outputs be validated before becoming durable knowledge?
+- Can benchmark traces expose regressions in routing, context, and safety behavior?
+- Can a GrowthEngine propose useful changes while staying auditable?
 
 ## Current Limits
 
