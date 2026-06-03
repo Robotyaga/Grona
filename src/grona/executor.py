@@ -87,7 +87,13 @@ class CodeExpertExecutor:
             "Use linting/static analysis signals as a deterministic quality check.",
             *context_details(context_items, "code"),
         )
-        return expert_result(self.module_name, task, "Prepared a code review and debugging outline.", details, context_items)
+        return expert_result(
+            self.module_name,
+            task,
+            "Prepared a code review and debugging outline.",
+            details,
+            context_items,
+        )
 
 
 class AutomotiveDiagnosticsExpertExecutor:
@@ -144,7 +150,13 @@ class MediaWorkflowExpertExecutor:
             "Preserve source metadata and define the output format before processing.",
             *context_details(context_items, "media"),
         )
-        return expert_result(self.module_name, task, "Prepared a media workflow outline.", details, context_items)
+        return expert_result(
+            self.module_name,
+            task,
+            "Prepared a media workflow outline.",
+            details,
+            context_items,
+        )
 
 
 class DocumentSearchExpertExecutor:
@@ -159,7 +171,13 @@ class DocumentSearchExpertExecutor:
             "Separate search terms, retrieved evidence, and summary scope.",
             *context_details(context_items, "document"),
         )
-        return expert_result(self.module_name, task, "Prepared a document retrieval outline.", details, context_items)
+        return expert_result(
+            self.module_name,
+            task,
+            "Prepared a document retrieval outline.",
+            details,
+            context_items,
+        )
 
 
 class GeneralReasoningExpertExecutor:
@@ -174,7 +192,13 @@ class GeneralReasoningExpertExecutor:
             "Keep uncertainty visible instead of hiding it behind a single answer.",
             *context_details(context_items, "general"),
         )
-        return expert_result(self.module_name, task, "Prepared a general reasoning outline.", details, context_items)
+        return expert_result(
+            self.module_name,
+            task,
+            "Prepared a general reasoning outline.",
+            details,
+            context_items,
+        )
 
 
 def expert_result(
