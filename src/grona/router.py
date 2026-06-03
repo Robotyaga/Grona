@@ -1,74 +1,13 @@
-"""Lightweight keyword-based routing primitives for Grona."""
+"""Lightweight keyword-based routing for Grona."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Iterable
 from re import findall
-from typing import Callable, Iterable, Mapping
 
-TaskContext = Mapping[str, str]
-ModuleHandler = Callable[[str, TaskContext], str]
-
-
-@dataclass(frozen=True)
-class ExpertModule:
-    """A specialized module that can be selected for a task."""
-
-    name: str
-    domain: str
-    capabilities: tuple[str, ...]
-    keywords: tuple[str, ...]
-    handler: ModuleHandler
-    description: str = ""
-    cost: int = 1
-
-    def run(self, task: str, context: TaskContext | None = None) -> str:
-        """Invoke the module with the task and optional route context."""
-        return self.handler(task, context or {})
-
-
-@dataclass(frozen=True)
-class ModuleMatch:
-    """A module score with human-readable routing reasons."""
-
-    module: ExpertModule
-    score: float
-    reasons: tuple[str, ...] = field(default_factory=tuple)
-
-
-@dataclass(frozen=True)
-class RoutingDecision:
-    """The selected and skipped modules for a single task."""
-
-    task: str
-    selected_modules: tuple[ModuleMatch, ...]
-    skipped_modules: tuple[ModuleMatch, ...]
-
-    @property
-    def selected_names(self) -> tuple[str, ...]:
-        """Return selected module names in route order."""
-        return tuple(match.module.name for match in self.selected_modules)
-
-
-class ModuleRegistry:
-    """A simple in-memory catalog of available expert modules."""
-
-    def __init__(self, modules: Iterable[ExpertModule] = ()) -> None:
-        self._modules: dict[str, ExpertModule] = {}
-        for module in modules:
-            self.register(module)
-
-    def register(self, module: ExpertModule) -> None:
-        """Add or replace a module by name."""
-        self._modules[module.name] = module
-
-    def remove(self, name: str) -> None:
-        """Remove a module from the registry."""
-        del self._modules[name]
-
-    def all(self) -> tuple[ExpertModule, ...]:
-        """Return all registered modules in insertion order."""
-        return tuple(self._modules.values())
+from .decision import ModuleMatch, RoutingDecision
+from .module import ExpertModule, TaskContext
+from .registry import ModuleRegistry
 
 
 class Router:
@@ -86,8 +25,8 @@ class Router:
     def route(self, task: str) -> RoutingDecision:
         """Score every module and return selected and skipped module matches."""
         task_terms = tokenize(task)
-        matches = [self._score_module(module, task_terms) for module in self.registry.all()]
-        matches.sort(key=lambda match: (match.score, -match.module.cost, match.module.name), reverse=True)
+        matches = [self._score_module(module, task_terms) for module in self.registry]
+        matches.sort(key=lambda match: (-match.score, match.module.cost, match.module.name))
 
         selected = tuple(match for match in matches if match.score >= self.minimum_score)[: self.top_k]
         selected_names = {match.module.name for match in selected}
@@ -105,8 +44,7 @@ class Router:
         reasons: list[str] = []
         score = 0.0
 
-        domain_terms = tokenize(module.domain)
-        domain_hits = sorted(task_terms & domain_terms)
+        domain_hits = sorted(task_terms & tokenize(module.domain))
         if domain_hits:
             score += 2.0 * len(domain_hits)
             reasons.append("domain match: " + ", ".join(domain_hits))

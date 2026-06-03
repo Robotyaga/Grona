@@ -38,22 +38,69 @@ The shared idea is sparsity. The broader Grona idea is heterogeneous modular act
 
 ## First Prototype
 
-The first prototype is intentionally small and dependency-free. It includes:
+The first prototype is intentionally small and dependency-free at runtime. It includes:
 
 - `ExpertModule`: metadata and a callable mock module.
 - `ModuleRegistry`: a simple registry for available modules.
 - `Router`: keyword/domain matching over task text.
 - `RoutingDecision`: selected modules, skipped modules, scores, and reasons.
-- A demo showing that different tasks activate different modules.
+- A default demo registry for code, car diagnostics, cybersecurity, media/video, document search, and general reasoning.
+- A CLI and tests so the project is easier to run and extend.
 
 This is not a production router, not a trained model, and not a complete agent framework. It is a readable starting point for exploring sparse modular AI behavior.
+
+## Install From the Repository
+
+```bash
+pip install -e .
+```
+
+For development tools:
+
+```bash
+pip install -e .[dev]
+```
+
+## Run the Demo
+
+```bash
+python examples/basic_routing_demo.py
+```
+
+Or use the console script installed by the package:
+
+```bash
+grona-demo "Analyze engine overheating symptoms"
+```
+
+You can also run the package as a module:
+
+```bash
+python -m grona "Review firewall logs for suspicious port scans"
+```
+
+The demo prints selected modules, skipped modules, reasons, scores, and mock outputs from activated modules.
+
+## Run Tests
+
+```bash
+pytest
+```
+
+Optional linting:
+
+```bash
+ruff check .
+```
 
 ## Repository Layout
 
 ```text
 .
+├── .github/workflows/tests.yml
 ├── docs/
 │   ├── architecture.md
+│   ├── development.md
 │   ├── research-notes.md
 │   └── roadmap.md
 ├── examples/
@@ -61,26 +108,34 @@ This is not a production router, not a trained model, and not a complete agent f
 ├── src/
 │   └── grona/
 │       ├── __init__.py
+│       ├── __main__.py
+│       ├── cli.py
+│       ├── decision.py
+│       ├── defaults.py
+│       ├── module.py
+│       ├── registry.py
 │       └── router.py
-├── .gitignore
+├── tests/
+├── pyproject.toml
 └── README.md
 ```
 
-## Run the Demo
+## Development Philosophy
 
-From the repository root:
-
-```bash
-python examples/basic_routing_demo.py
-```
-
-The example runs several tasks through the router: code assistance, car diagnostics, cybersecurity, media/video workflow, and document search. For each task it prints selected modules, reasons, scores, skipped modules, and mock outputs from the activated modules.
+- Keep routing decisions visible.
+- Keep modules small, replaceable, and metadata-driven.
+- Prefer local-first building blocks where possible.
+- Add heavier infrastructure only after the simple prototype proves what it needs.
+- Treat tests as a guardrail for explainable behavior, not as a claim that routing is solved.
 
 ## Current Limitations
 
-- Routing is simple keyword/domain matching.
-- Experts are mock modules, not real tools or models.
-- There is no database, vector store, web server, or UI yet.
-- Feedback is described in the architecture but not implemented yet.
+- The router is keyword-based.
+- There is no real LLM integration yet.
+- There is no learning or adaptive routing yet.
+- There is no memory graph yet.
+- There is no vector database or retrieval engine yet.
+- There is no production orchestration yet.
+- Expert modules are mock/demo modules, not real AI tools.
 
-These limits are intentional. The project starts as a clear research prototype before adding heavier infrastructure.
+These limits are intentional. Grona is currently a research/prototype foundation for sparse modular AI architecture.
