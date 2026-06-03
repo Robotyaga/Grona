@@ -15,6 +15,15 @@ from .documents import DocumentIngestor, create_demo_document_sources
 from .executor import create_default_executor_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
 from .growth import KnowledgeValidator, ValidationResult, create_demo_knowledge_seeds
+from .growth_review import (
+    ConflictCheckResult,
+    DuplicateCheckResult,
+    KnowledgeConflictDetector,
+    KnowledgeDeduplicator,
+    KnowledgeReviewPipeline,
+    SeedReviewDecision,
+    create_demo_review_knowledge_seeds,
+)
 from .memory import MemoryModule, create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator, format_result_backend
 from .router import Router
@@ -186,6 +195,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.growth_demo:
         print(format_growth_demo())
         return 0
+    if args.growth_review_demo:
+        print(format_growth_review_demo())
+        return 0
 
     profile = get_builtin_workspace_profile(args.workspace)
     registry = filter_modules_for_workspace(create_default_registry(), profile)
@@ -300,12 +312,89 @@ def format_growth_demo() -> str:
     return "\n".join(lines)
 
 
+def format_growth_review_demo() -> str:
+    """Run deterministic KnowledgeSeed validation, deduplication, and conflict review."""
+    seeds = create_demo_review_knowledge_seeds()
+    validator = KnowledgeValidator()
+    deduplicator = KnowledgeDeduplicator()
+    conflict_detector = KnowledgeConflictDetector()
+    review_pipeline = KnowledgeReviewPipeline(
+        validator=validator,
+        deduplicator=deduplicator,
+        conflict_detector=conflict_detector,
+    )
+    validations = tuple(validator.validate(seed) for seed in seeds)
+    duplicates = tuple(deduplicator.find_duplicates(seeds))
+    conflicts = tuple(conflict_detector.find_conflicts(seeds))
+    decisions = tuple(review_pipeline.review(seeds))
+    decision_counts = Counter(decision.decision for decision in decisions)
+
+    lines = [
+        "Growth Lab demo: KnowledgeSeed review pipeline",
+        "Execution: deterministic review only; no LLM, embeddings, web, APIs, or training.",
+        "",
+        f"Seeds: {len(seeds)}",
+        "Decision counts:",
+    ]
+    for decision_name in (
+        "promote_candidate",
+        "merge_duplicate",
+        "quarantine_conflict",
+        "quarantine_weak",
+        "reject_broken",
+        "needs_review",
+    ):
+        lines.append(f"- {decision_name}: {decision_counts.get(decision_name, 0)}")
+
+    lines.extend(["", "Validation results:"])
+    lines.extend(format_validation_result_line(result) for result in validations)
+    lines.extend(["", "Duplicate checks:"])
+    lines.extend(format_duplicate_result_line(result) for result in duplicates)
+    lines.extend(["", "Conflict checks:"])
+    lines.extend(format_conflict_result_line(result) for result in conflicts)
+    lines.extend(["", "Review decisions:"])
+    lines.extend(format_seed_review_decision_line(decision) for decision in decisions)
+    return "\n".join(lines)
+
+
 def format_validation_result_line(result: ValidationResult) -> str:
     """Format one compact validation result line."""
     warnings = f"; warnings: {', '.join(result.warnings)}" if result.warnings else ""
     return (
         f"- {result.seed_id}: {result.status} "
         f"(accepted={result.accepted}, score={result.score:.2f}){warnings}"
+    )
+
+
+def format_duplicate_result_line(result: DuplicateCheckResult) -> str:
+    """Format one compact duplicate check result line."""
+    duplicate_of = result.duplicate_of or "none"
+    reason = f"; reasons: {', '.join(result.reasons)}" if result.reasons else ""
+    return (
+        f"- {result.seed_id}: duplicate={result.is_duplicate}, "
+        f"duplicate_of={duplicate_of}, score={result.score:.2f}{reason}"
+    )
+
+
+def format_conflict_result_line(result: ConflictCheckResult) -> str:
+    """Format one compact potential conflict result line."""
+    conflicts = ", ".join(result.conflicts_with) if result.conflicts_with else "none"
+    reason = f"; reasons: {', '.join(result.reasons)}" if result.reasons else ""
+    return (
+        f"- {result.seed_id}: conflict={result.conflict_detected}, "
+        f"severity={result.severity}, conflicts_with={conflicts}{reason}"
+    )
+
+
+def format_seed_review_decision_line(decision: SeedReviewDecision) -> str:
+    """Format one compact seed review decision line."""
+    duplicate_of = decision.duplicate_of or "none"
+    conflicts = ", ".join(decision.conflicts_with) if decision.conflicts_with else "none"
+    reason = f"; reasons: {', '.join(decision.reasons)}" if decision.reasons else ""
+    return (
+        f"- {decision.seed_id}: {decision.decision}, "
+        f"recommended_status={decision.recommended_status}, "
+        f"duplicate_of={duplicate_of}, conflicts_with={conflicts}{reason}"
     )
 
 
@@ -371,6 +460,11 @@ def build_parser() -> ArgumentParser:
         "--growth-demo",
         action="store_true",
         help="Run the deterministic Growth Lab KnowledgeSeed validation demo.",
+    )
+    parser.add_argument(
+        "--growth-review-demo",
+        action="store_true",
+        help="Run deterministic Growth Lab validation, deduplication, and conflict review.",
     )
     parser.add_argument(
         "--adaptive",

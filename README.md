@@ -18,7 +18,7 @@ Grona explores a different shape:
 - route each task to a focused subset
 - keep context scoped to the selected route
 - preserve a visible trace of scores, reasons, context, safety decisions, and feedback
-- validate raw knowledge before it becomes memory, training data, or expert behavior
+- validate, deduplicate, and review raw knowledge before it becomes memory, training data, or expert behavior
 - grow toward specialized local experts without pretending the prototype is production AI
 
 ## Current Prototype Status
@@ -33,6 +33,8 @@ What it does today:
 - builds route-scoped context from deterministic memory modules
 - ingests in-memory demo documents into memory records
 - validates raw `KnowledgeSeed` values before future promotion
+- detects deterministic duplicate and potential conflict candidates between seeds
+- recommends whether seeds should be promoted, merged, quarantined, rejected, or reviewed
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors and execution adapters
 - evaluates planned tool actions with a safety policy
@@ -56,7 +58,10 @@ flowchart TD
     R[Tool Result] --> Q
     F --> Q
     Q --> S[KnowledgeValidator]
-    S --> T[Validated / Weak / Quarantined / Rejected]
+    S --> U[KnowledgeDeduplicator]
+    U --> V[KnowledgeConflictDetector]
+    V --> W[KnowledgeReviewPipeline]
+    W --> T[Promote / Merge / Quarantine / Reject / Review]
     G --> I
     I --> K[Orchestrator]
     K --> L[Expert Executors]
@@ -76,6 +81,7 @@ flowchart TD
 - Memory modules and context building
 - Deterministic document ingestion stubs
 - KnowledgeSeed, KnowledgeSource, and deterministic KnowledgeValidator
+- KnowledgeSeed normalization, deduplication, potential conflict detection, and review decisions
 - Orchestration and structured result handoff
 - Deterministic expert execution
 - Execution adapter contracts
@@ -122,6 +128,12 @@ Run the deterministic Growth Lab seed validation demo:
 python -m grona --growth-demo
 ```
 
+Run the deterministic Growth Lab seed review demo:
+
+```bash
+python -m grona --growth-review-demo
+```
+
 Build context from demo memory or deterministic in-memory documents:
 
 ```bash
@@ -155,6 +167,7 @@ python examples/tool_adapter_demo.py
 python examples/document_ingestion_demo.py
 python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
+python examples/knowledge_review_demo.py
 ```
 
 ## Documentation
@@ -180,11 +193,13 @@ Current Growth Lab foundation:
 - `KnowledgeSource`: source type, name, reliability, metadata
 - `KnowledgeSeed`: raw knowledge candidate with domains, keywords, confidence, and status
 - `KnowledgeValidator`: deterministic scoring, warnings, and validation status
+- `KnowledgeDeduplicator`: deterministic exact and near duplicate checks
+- `KnowledgeConflictDetector`: conservative potential conflict markers
+- `KnowledgeReviewPipeline`: review decisions before future promotion or clustering
 - conversions from document chunks and mock tool results into raw seeds
 
 Planned concepts include:
 
-- `KnowledgeValidator`: richer validation, deduplication, and conflict checks
 - `GrapeCluster`: groups of related specialized modules
 - `GrowthEngine`: controlled expansion from validated knowledge and feedback
 - `BenchmarkSuite`: repeatable tests for routing and expert behavior
@@ -202,7 +217,8 @@ See [Growth Lab](docs/growth-lab.md), [Project vision](docs/project-vision.md), 
 - No real sandboxing or process isolation.
 - No external APIs, OpenAI API, Ollama integration, web server, vector database, or SQL database.
 - Document ingestion is deterministic in-memory text only.
-- KnowledgeSeed validation is deterministic scoring, not web fact-checking or truth verification.
+- KnowledgeSeed validation and review are deterministic heuristics, not web fact-checking or truth verification.
+- Conflict detection marks potential conflicts only; it does not resolve factual truth.
 - No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler.
 - Workspace profiles are built-in/in-memory only; no persisted workspace directory or external config loader exists yet.
 - Safety policy is planning/policy evaluation only, not a security boundary.

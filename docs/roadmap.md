@@ -25,6 +25,7 @@ The repository already has the first deterministic foundation:
 - safety policy planning
 - mock tool adapters and safe mock runner
 - workspace profiles and workspace-aware CLI
+- Growth Lab seed validation and deterministic review primitives
 - public README polish and project documentation
 - examples, tests, and CI
 
@@ -55,7 +56,26 @@ Current foundation:
 - CLI `--growth-demo`
 - example and tests
 
-This layer does not fact-check, train models, persist seeds, deduplicate, resolve conflicts, or grow clusters automatically.
+This layer does not fact-check, train models, persist seeds, or grow clusters automatically.
+
+## Growth Lab: KnowledgeSeed Review Foundation
+
+Goal: stop raw seeds from being blindly promoted or clustered.
+
+Current foundation:
+
+- `NormalizedKnowledge`
+- `DuplicateCheckResult`
+- `ConflictCheckResult`
+- `SeedReviewDecision`
+- `KnowledgeDeduplicator`
+- `KnowledgeConflictDetector`
+- `KnowledgeReviewPipeline`
+- CLI `--growth-review-demo`
+- `examples/knowledge_review_demo.py`
+- deterministic tests
+
+This layer detects exact duplicates, simple near duplicates, and conservative potential conflicts. It does not perform semantic embedding search, LLM contradiction detection, web fact-checking, external evidence lookup, or automatic truth resolution.
 
 ## KnowledgeSeed Next Steps
 
@@ -65,11 +85,10 @@ Next possible work:
 
 - deterministic seed stores
 - seed versioning
-- duplicate detection
-- conflict markers
 - source provenance summaries
 - workspace relevance scoring
-- promotion rules from validated seed to memory candidate
+- promotion rules from reviewed seed to memory candidate
+- persisted review traces
 
 ## KnowledgeValidator
 
@@ -78,18 +97,19 @@ Goal: test whether imported or generated knowledge should influence a workspace.
 Possible next checks:
 
 - source visibility
-- consistency with existing seeds
+- temporal freshness flags
 - usefulness for routing or context
 - safety concerns
 - benchmark impact
 - human review status
-- temporal freshness flags
 
 ## GrapeCluster
 
 Goal: group related expert modules, memory sources, tool profiles, safety defaults, and routing behavior into a coherent cluster.
 
 This would extend workspace profiles into richer modular arrangements while keeping the current deterministic profile layer as the simple foundation.
+
+Reviewed seeds can later become candidates for cluster nutrients, but the current review pipeline only recommends next steps.
 
 ## GrowthEngine
 
@@ -106,6 +126,7 @@ Potential benchmark types:
 - routing selection tests
 - workspace profile comparison tests
 - seed validation tests
+- seed deduplication and potential conflict tests
 - context assembly relevance tests
 - safety policy edge cases
 - mock tool planning tests
@@ -115,7 +136,7 @@ Potential benchmark types:
 
 Goal: optionally use model outputs as proposal sources.
 
-A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated before they become durable knowledge or training data.
+A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated and reviewed before they become durable knowledge or training data.
 
 ## TrainingDataExporter
 
@@ -125,7 +146,7 @@ This should preserve provenance and validation metadata instead of flattening ev
 
 ## Future Local LLM Integration
 
-Goal: add optional local LLM-backed modules only after routing, safety, context, validation, and evaluation contracts are strong enough.
+Goal: add optional local LLM-backed modules only after routing, safety, context, validation, review, and evaluation contracts are strong enough.
 
 Near-term boundaries:
 
@@ -141,7 +162,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 
 - active workspace profile
 - selected modules and scores
-- knowledge seed validation status
+- knowledge seed validation and review status
 - context sources
 - expert results
 - mock tool results

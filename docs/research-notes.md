@@ -6,7 +6,7 @@ For the longer direction, see [Project vision](project-vision.md). For implement
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, raw knowledge validation, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, raw knowledge validation, seed review, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -16,7 +16,7 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which modules were skipped
 - which scores and reasons mattered
 - which context was attached
-- which raw knowledge seeds were validated, weakened, quarantined, or rejected
+- which raw knowledge seeds were validated, weakened, quarantined, rejected, merged, or flagged
 - which safety policy decisions were made
 - which feedback might alter future routing
 
@@ -53,11 +53,11 @@ The current implementation is deliberately not RAG. It has no embeddings, semant
 
 Grona assumes that some knowledge should remain external, structured, source-aware, and validated before it ever becomes training data or expert behavior.
 
-`KnowledgeSeed` and `KnowledgeValidator` now provide the first deterministic version of this idea: collect knowledge with provenance, score it, warn about weak signals, and only then decide whether it might influence routing, memory, prompts, benchmarks, or training exports later.
+`KnowledgeSeed`, `KnowledgeValidator`, and `KnowledgeReviewPipeline` now provide the first deterministic version of this idea: collect knowledge with provenance, score it, warn about weak signals, detect repeated claims, mark potential conflicts, and only then decide whether it might influence routing, memory, prompts, benchmarks, or training exports later.
 
 This does not prove factual truth. It makes uncertainty explicit.
 
-## Knowledge Validation Questions
+## Knowledge Validation and Review Questions
 
 The current validator is intentionally small. It asks:
 
@@ -68,7 +68,14 @@ The current validator is intentionally small. It asks:
 - Are domains or keywords missing?
 - Does the content look suspiciously generic?
 
-Future validation can add deduplication, conflict markers, temporal freshness checks, workspace relevance, and benchmark impact.
+The current review layer asks:
+
+- Is this seed an exact normalized duplicate?
+- Is this seed a simple near duplicate within the same domain?
+- Does this seed potentially conflict with another seed using conservative polarity markers?
+- Should this seed be a promote candidate, merge candidate, weak quarantine, conflict quarantine, rejection, or manual review candidate?
+
+Future validation can add persisted seed stores, temporal freshness checks, workspace relevance, benchmark impact, and human review workflow.
 
 ## Execution and Tool Boundaries
 
@@ -94,8 +101,8 @@ The safety layer asks policy questions before future tools exist:
 - Can workspace profiles reliably constrain routing behavior?
 - Can feedback improve routing without turning into opaque learning?
 - Can external knowledge seeds improve modules without being baked into weights too early?
-- Can donor model outputs be validated before becoming durable knowledge?
-- Can benchmark traces expose regressions in routing, context, seed validation, and safety behavior?
+- Can donor model outputs be validated and reviewed before becoming durable knowledge?
+- Can benchmark traces expose regressions in routing, context, seed validation, seed review, and safety behavior?
 - Can a GrowthEngine propose useful changes while staying auditable?
 
 ## Current Limits
@@ -109,6 +116,7 @@ The safety layer asks policy questions before future tools exist:
 - No real RAG yet.
 - No PDF parsing, OCR, embeddings, vector search, or filesystem crawling yet.
 - No web fact-checking or temporal freshness checks yet.
+- No LLM-based contradiction detection or automatic truth resolution yet.
 - No shell execution, subprocess usage, network calls, or sandboxing yet.
 - No process isolation or filesystem isolation.
 - No OpenAI API, donor model adapter, or Ollama integration.
@@ -123,4 +131,4 @@ Before adding real document workflows, Grona needs explicit designs for file sel
 
 Before adding real execution, Grona needs explicit designs for subprocess control, sandboxing, file access boundaries, network access boundaries, secrets handling, audit logs, user confirmation flows, and rollback or recovery expectations.
 
-Before adding model-backed growth, Grona needs explicit designs for donor model reliability, validation, provenance, benchmark impact, training data export, and human review.
+Before adding model-backed growth, Grona needs explicit designs for donor model reliability, validation, review decisions, provenance, benchmark impact, training data export, and human review.
