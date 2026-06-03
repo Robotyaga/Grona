@@ -252,6 +252,9 @@ class KnowledgeDeduplicator:
                 reasons.append("same source and same normalized content")
             return 1.0, tuple(reasons), {"matched_seed_id": candidate.id}
 
+        if has_opposite_polarity(current.normalized_content, other.normalized_content):
+            return 0.0, (), {}
+
         shared_domains = overlap_ratio(current.domains, other.domains)
         keyword_overlap = overlap_ratio(current.normalized_keywords, other.normalized_keywords)
         if shared_domains and keyword_overlap >= self.keyword_overlap_threshold:
@@ -262,7 +265,8 @@ class KnowledgeDeduplicator:
             )
 
         text_overlap = token_overlap_ratio(current.normalized_content, other.normalized_content)
-        if short_statement(current.normalized_content, other.normalized_content) and text_overlap >= 0.85:
+        is_short = short_statement(current.normalized_content, other.normalized_content)
+        if is_short and text_overlap >= 0.85:
             return (
                 round(text_overlap, 3),
                 ("highly similar short statements",),
@@ -367,8 +371,10 @@ class KnowledgeReviewPipeline:
     def review(self, seeds: Sequence[KnowledgeSeed]) -> list[SeedReviewDecision]:
         """Review seeds and recommend next steps without promoting anything."""
         validations = {seed.id: self.validator.validate(seed) for seed in seeds}
-        duplicates = {result.seed_id: result for result in self.deduplicator.find_duplicates(seeds)}
-        conflicts = {result.seed_id: result for result in self.conflict_detector.find_conflicts(seeds)}
+        duplicate_results = self.deduplicator.find_duplicates(seeds)
+        conflict_results = self.conflict_detector.find_conflicts(seeds)
+        duplicates = {result.seed_id: result for result in duplicate_results}
+        conflicts = {result.seed_id: result for result in conflict_results}
         decisions: list[SeedReviewDecision] = []
         for seed in seeds:
             decisions.append(
@@ -409,7 +415,10 @@ class KnowledgeReviewPipeline:
                 metadata=metadata,
             )
         if conflict.conflict_detected:
-            decision = "quarantine_conflict" if conflict.severity in {"medium", "high"} else "needs_review"
+            if conflict.severity in {"medium", "high"}:
+                decision = "quarantine_conflict"
+            else:
+                decision = "needs_review"
             return SeedReviewDecision(
                 seed.id,
                 decision,
@@ -486,6 +495,13 @@ def statement_polarity(content: str) -> int:
     return 0
 
 
+def has_opposite_polarity(left: str, right: str) -> bool:
+    """Return whether two normalized statements have opposite detected polarity."""
+    left_polarity = statement_polarity(left)
+    right_polarity = statement_polarity(right)
+    return bool(left_polarity and right_polarity and left_polarity != right_polarity)
+
+
 def conflict_severity(
     seed: KnowledgeSeed,
     other: KnowledgeSeed,
@@ -553,7 +569,7 @@ def create_demo_review_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
             ),
             source=sources["source:documents"],
             domains=("automotive",),
-            keywords=("engine", "overheating", "coolant", "radiator"),
+            keywords=("engine", "coolant", "policy"),
             confidence=0.78,
         ),
         KnowledgeSeed(
