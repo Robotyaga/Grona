@@ -19,6 +19,7 @@ Grona explores a different shape:
 - keep context scoped to the selected route
 - preserve a visible trace of scores, reasons, context, safety decisions, and feedback
 - validate, deduplicate, and review raw knowledge before it becomes memory, training data, or expert behavior
+- group reviewed Growth Lab seeds into deterministic `GrapeCluster` and `GrapeNode` candidates
 - grow toward specialized local experts without pretending the prototype is production AI
 
 ## Current Prototype Status
@@ -35,6 +36,8 @@ What it does today:
 - validates raw `KnowledgeSeed` values before future promotion
 - detects deterministic duplicate and potential conflict candidates between seeds
 - recommends whether seeds should be promoted, merged, quarantined, rejected, or reviewed
+- groups promote-candidate seeds into deterministic `GrapeCluster` and `GrapeNode` structures
+- bridges candidate grape clusters into deterministic `MemoryRecord` values
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors and execution adapters
 - evaluates planned tool actions with a safety policy
@@ -61,6 +64,9 @@ flowchart TD
     S --> U[KnowledgeDeduplicator]
     U --> V[KnowledgeConflictDetector]
     V --> W[KnowledgeReviewPipeline]
+    W --> X[GrapeClusterer]
+    X --> Y[GrapeCluster / GrapeNode]
+    Y --> H
     W --> T[Promote / Merge / Quarantine / Reject / Review]
     G --> I
     I --> K[Orchestrator]
@@ -82,6 +88,7 @@ flowchart TD
 - Deterministic document ingestion stubs
 - KnowledgeSeed, KnowledgeSource, and deterministic KnowledgeValidator
 - KnowledgeSeed normalization, deduplication, potential conflict detection, and review decisions
+- GrapeNode, GrapeCluster, assignment traces, and memory-record bridge helpers
 - Orchestration and structured result handoff
 - Deterministic expert execution
 - Execution adapter contracts
@@ -134,6 +141,12 @@ Run the deterministic Growth Lab seed review demo:
 python -m grona --growth-review-demo
 ```
 
+Run the deterministic Growth Lab grape cluster demo:
+
+```bash
+python -m grona --grape-demo
+```
+
 Build context from demo memory or deterministic in-memory documents:
 
 ```bash
@@ -168,6 +181,7 @@ python examples/document_ingestion_demo.py
 python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
+python examples/grape_cluster_demo.py
 ```
 
 ## Documentation
@@ -196,11 +210,14 @@ Current Growth Lab foundation:
 - `KnowledgeDeduplicator`: deterministic exact and near duplicate checks
 - `KnowledgeConflictDetector`: conservative potential conflict markers
 - `KnowledgeReviewPipeline`: review decisions before future promotion or clustering
+- `GrapeNode`: a small organized unit created from one reviewed seed
+- `GrapeCluster`: deterministic group of related grape nodes in one primary domain
+- `GrapeAssignment`: trace of seed-to-cluster assignment decisions
 - conversions from document chunks and mock tool results into raw seeds
+- conversion from grape clusters into memory records
 
 Planned concepts include:
 
-- `GrapeCluster`: groups of related specialized modules
 - `GrowthEngine`: controlled expansion from validated knowledge and feedback
 - `BenchmarkSuite`: repeatable tests for routing and expert behavior
 - `DonorModelAdapter` and `LMStudioAdapter`: future optional model interfaces
@@ -218,6 +235,7 @@ See [Growth Lab](docs/growth-lab.md), [Project vision](docs/project-vision.md), 
 - No external APIs, OpenAI API, Ollama integration, web server, vector database, or SQL database.
 - Document ingestion is deterministic in-memory text only.
 - KnowledgeSeed validation and review are deterministic heuristics, not web fact-checking or truth verification.
+- GrapeCluster creation is deterministic keyword/domain grouping, not semantic clustering or training.
 - Conflict detection marks potential conflicts only; it does not resolve factual truth.
 - No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler.
 - Workspace profiles are built-in/in-memory only; no persisted workspace directory or external config loader exists yet.
