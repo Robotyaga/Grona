@@ -4,9 +4,12 @@ from grona import Orchestrator, Router, create_default_registry
 from grona.cli import format_orchestration_result
 
 TASKS = [
+    "Refactor this Python function and explain why the test fails.",
     "Analyze engine overheating symptoms and recommend the first inspection steps.",
-    "Review this Python script for security issues and suspicious network behavior.",
+    "Review firewall logs for suspicious port scans and malware indicators.",
+    "Create thumbnails from a video clip and extract audio metadata.",
     "Find the PDF manual in my document archive and summarize maintenance notes.",
+    "Analyze this repository report and decide whether code, security, or docs matter most.",
 ]
 
 

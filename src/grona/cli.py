@@ -67,14 +67,13 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
     else:
         lines.append("- none")
 
-    lines.extend(["", "Module outputs:"])
-    if result.module_outputs:
-        for module_name, output in result.module_outputs:
-            lines.append(f"- {module_name}: {output}")
-    else:
-        lines.append("- none")
-
-    lines.extend(["", f"Orchestration summary: {result.summary}"])
+    lines.extend(
+        [
+            "",
+            "Execution: not run; this prototype only prepares a structured handoff.",
+            f"Orchestration summary: {result.summary}",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -133,7 +132,7 @@ def build_parser() -> ArgumentParser:
     parser.add_argument(
         "--orchestrate",
         action="store_true",
-        help="Build route-scoped context and run selected modules through the orchestrator.",
+        help="Build route-scoped context and prepare an orchestration handoff.",
     )
     parser.add_argument(
         "--save-feedback",

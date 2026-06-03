@@ -24,9 +24,9 @@ User task
 +----------------+       +----------------+
    |
    v
-+----------------+       +--------------+
-| ContextBuilder | <---- | MemoryModule |
-+----------------+       +--------------+
++----------------+
+| ContextBuilder |
++----------------+
    |
    v
 +--------------+
@@ -34,9 +34,10 @@ User task
 +--------------+
    |
    v
-+-------------------------------+
-| Selected ExpertModules only   |
-+-------------------------------+
++--------------------------------+
+| Structured handoff for later   |
+| execution layer                |
++--------------------------------+
 ```
 
 ## Components
@@ -51,75 +52,31 @@ The router returns an explainable decision: selected modules, skipped modules, b
 
 The adaptive layer is an opt-in scoring adjustment that uses route history. It is not neural learning and does not replace the base router.
 
-When enabled, it reads feedback records and builds per-module statistics: times selected, successes, failures, average rating, success rate, and average confidence. Modules with positive history can receive a small score boost. Modules with negative history can receive a small penalty.
-
-Adaptive routing is intentionally conservative:
-
-- It is disabled by default.
-- Adjustments are bounded by `max_adjustment`.
-- It never selects a module that has no base relevance only because of history.
-- It explains the base score, adaptive adjustment, final score, and feedback summary.
-
-### ExpertModule
-
-An expert module is a specialized component with metadata and an invocation method. It may eventually wrap many different kinds of capability:
-
-- local or remote LLMs
-- scripts
-- command-line tools
-- databases
-- vector indexes
-- search APIs
-- code analyzers
-- media processors
-- cybersecurity tools
-- domain-specific reasoning modules
-
-The first prototype uses mock expert modules so routing behavior stays easy to inspect.
-
-### ModuleRegistry
-
-The module registry stores available modules and their metadata: name, domain, capabilities, keywords, cost, and callable handler. It is the system's catalog of grapes in the cluster.
-
-A future registry should support adding, disabling, replacing, and versioning modules without forcing the whole system to be rebuilt.
+When enabled, it reads feedback records and builds per-module statistics. Modules with positive history can receive a small score boost. Modules with negative history can receive a small penalty.
 
 ### ContextBuilder
 
-The context builder gathers only the information needed by the selected modules. Its role is to avoid dumping every memory region, tool description, or document into one giant prompt.
+The context builder receives the routing decision and original task text. It gathers only route-relevant context for selected modules. In the current prototype, this context is built from deterministic stubs such as code review checklists, automotive diagnostic notes, cybersecurity review prompts, media workflow notes, document search notes, and general reasoning checklists.
 
-In future versions, it may collect snippets from vector memory, SQL tables, local files, structured notes, or API responses based on the route.
+This separation matters: routing decides which branches and grapes are relevant, while context building gathers only the nutrients those selected grapes need. It avoids dumping unrelated memory, tools, or documents into every task.
+
+There is no real retrieval yet. Future versions may collect snippets from local files, document indexes, structured notes, memory graphs, databases, or APIs based on the route.
 
 ### Orchestrator
 
-The orchestrator executes the selected route. It decides call order, passes built context to modules, handles failures, and merges outputs into a final response.
+The orchestrator coordinates the selected path. Today it routes the task, asks `ContextBuilder` for route-scoped context, and returns an `OrchestrationResult` with selected modules, context items, summary, and metadata.
 
-The orchestrator should be boring and explicit: it should make the route visible rather than hiding the system's behavior behind a single opaque call.
+It does not execute real experts yet. It prepares a structured handoff that a later execution layer could use.
 
-### MemoryModule
+### ExpertModule
 
-A memory module stores domain-specific knowledge. It can be implemented as a vector store, SQL database, local file index, text search index, structured notebook, API cache, or domain graph.
+An expert module is a specialized component with metadata and an invocation method. The first prototype uses mock expert modules so routing behavior stays easy to inspect. Future modules may wrap local tools, scripts, databases, local models, search indexes, or APIs.
 
-Memory should be modular. A code assistant memory should not automatically load automotive diagnostic notes unless the route calls for it.
+### FeedbackLayer and Route History
 
-### FeedbackLayer
+The feedback layer records what route was selected and whether the result was useful. Route history can be summarized and can slightly adjust future activation when adaptive routing is enabled.
 
-The feedback layer records what route was selected, which modules succeeded or failed, and whether the result was useful.
-
-The first implementation stores `FeedbackRecord` values with task text, selected modules, skipped modules, confidence, a route summary, timestamp, optional rating, optional success/failure, optional notes, and optional metadata. Records can be kept in memory for tests and demos or appended to JSONL for local route history.
-
-This fits the grape-cluster metaphor: the system can remember which branches and grapes were useful without making every future request activate the whole cluster.
-
-### Route History
-
-Route history is the saved trail of feedback records. The current summary functions can report:
-
-- total feedback records
-- most selected modules
-- average confidence
-- success count when success flags exist
-- failure count when success flags exist
-
-The adaptive layer can read this history and apply transparent score adjustments. It still does not perform real machine learning.
+This fits the grape-cluster metaphor: the system remembers which branches and grapes were useful without making every future request activate the whole cluster.
 
 ## Request Lifecycle
 
@@ -128,51 +85,19 @@ The adaptive layer can read this history and apply transparent score adjustments
 3. Base module scores are computed from task/domain/keyword/capability matches.
 4. If adaptive routing is enabled, route history can slightly adjust relevant module scores.
 5. Relevant modules are selected and irrelevant modules are skipped.
-6. ContextBuilder gathers only route-relevant context.
-7. Orchestrator invokes selected experts in the correct order.
-8. Results are merged into a response with a visible route trace.
-9. FeedbackLayer can store route outcome and module performance signals.
-10. Route history can be summarized for later inspection or future adaptive routing.
-
-## Concrete Example
-
-User asks: "Analyze why my car engine overheats after idling in traffic, and suggest what to inspect first."
-
-A Grona-style route might activate:
-
-```text
-Selected modules
-- automotive-diagnostics
-  Reason: matched car, engine, overheats, idling, inspect
-- maintenance-memory
-  Reason: automotive troubleshooting notes are relevant
-- safety-advisor
-  Reason: overheating can involve risk and urgent stop conditions
-```
-
-If route history shows that `automotive-diagnostics` had several successful previous routes, adaptive routing might add a small boost:
-
-```text
-Base score 5.00; adaptive boost +0.15; final score 5.15
-```
-
-If history shows repeated failures, it might apply a small penalty:
-
-```text
-Base score 5.00; adaptive penalty -0.15; final score 4.85
-```
-
-The important property is not that the first adaptive layer is smart. The important property is that the system makes a sparse, inspectable choice, avoids activating unrelated capabilities, and can transparently account for past route outcomes.
+6. ContextBuilder prepares only route-relevant stub context.
+7. Orchestrator returns a structured handoff with route, context, selected modules, and summary.
+8. FeedbackLayer can store route outcome and module performance signals.
+9. Route history can be summarized for later inspection or future adaptive routing.
 
 ## Design Principles
 
 - Do not activate the whole brain for every problem.
-- Route first, think second.
+- Route first, build focused context second.
 - Prefer small specialized components where possible.
 - Keep selected and skipped modules explainable.
-- Keep modules replaceable and versionable.
-- Prefer local-first architecture where possible.
+- Keep context scoped to selected modules.
+- Keep orchestration honest and non-production.
 - Store feedback before attempting adaptive routing.
 - Keep adaptive routing opt-in, bounded, and transparent.
-- Support heterogeneous experts: models, scripts, databases, search indexes, tools, and APIs.
 - Let the system grow organically, like a grape cluster.

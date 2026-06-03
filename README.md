@@ -2,7 +2,7 @@
 
 Grona is a lightweight research prototype for a modular sparse AI architecture inspired by grape-cluster-like expert activation.
 
-The core idea is simple: do not activate every capability for every task. Route a task to a small relevant set of expert modules, build only route-scoped context, run the selected modules, and keep the decision trace visible.
+The core idea is simple: do not activate every capability for every task. Route a task to a small relevant set of expert modules, build only route-scoped context, prepare a structured handoff, and keep the decision trace visible.
 
 ## Architecture Metaphor
 
@@ -12,13 +12,13 @@ The core idea is simple: do not activate every capability for every task. Route 
 - New grapes can be attached without rebuilding the whole cluster.
 - Weak or expensive grapes can be replaced without disturbing the whole system.
 
-Grona explores sparse activation across heterogeneous components: mock expert modules today, and eventually local tools, scripts, memories, models, search indexes, or APIs.
+In the current prototype, the router chooses relevant branches and grapes, the context builder gathers only the information needed by those selected grapes, the orchestrator coordinates the selected path, and the feedback layer remembers which paths worked.
 
 ## Current Prototype
 
 The current prototype includes:
 
-- `ExpertModule`: metadata and a callable mock expert.
+- `ExpertModule`: metadata and a callable mock expert for routing demos.
 - `ModuleRegistry`: a simple catalog of available modules.
 - `Router`: keyword/domain/capability routing.
 - `RoutingDecision`: selected/skipped modules, scores, reasons, and feedback metadata.
@@ -26,7 +26,7 @@ The current prototype includes:
 - `InMemoryFeedbackStore` and `JsonlFeedbackStore`: simple route history stores.
 - `AdaptiveRoutingConfig`: opt-in feedback-informed score adjustments.
 - `ContextItem` and `ContextBuilder`: route-scoped synthetic context for selected modules.
-- `Orchestrator` and `OrchestrationResult`: visible routing, context building, and selected module execution.
+- `Orchestrator` and `OrchestrationResult`: visible routing, context building, and planned handoff.
 - CLI, examples, tests, and GitHub Actions CI.
 
 The default demo registry includes modules for code, car diagnostics, cybersecurity, media/video, document search, and general reasoning.
@@ -72,7 +72,7 @@ Enable adaptive routing from feedback history:
 python -m grona "Analyze engine overheating symptoms" --feedback-file feedback.jsonl --adaptive
 ```
 
-Build route-scoped context and run selected demo modules through the orchestrator:
+Build route-scoped context and prepare an orchestration handoff:
 
 ```bash
 python -m grona "Review this Python script for security issues" --orchestrate
@@ -135,6 +135,7 @@ ruff check .
 - Keep routing decisions visible.
 - Keep modules small, replaceable, and metadata-driven.
 - Keep context route-scoped instead of loading everything for every task.
+- Keep orchestration honest: planned handoff now, execution later.
 - Keep adaptive routing opt-in, bounded, deterministic, and explainable.
 - Add heavier infrastructure only after the simple prototype proves what it needs.
 - Treat tests as a guardrail for explainable behavior, not as proof that routing is solved.
@@ -143,7 +144,7 @@ ruff check .
 
 - The router is keyword-based.
 - Context building is synthetic demo context, not retrieval.
-- The orchestrator is sequential and simple.
+- The orchestrator prepares a structured handoff but does not execute real experts yet.
 - Adaptive routing is deterministic score adjustment, not machine learning.
 - There is no real LLM integration yet.
 - There is no neural learning yet.

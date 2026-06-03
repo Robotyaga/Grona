@@ -6,16 +6,18 @@ Grona is currently an early research prototype. The code should stay small, read
 
 ```text
 src/grona/
-├── __init__.py      Public package exports
-├── __main__.py      Enables `python -m grona`
-├── adaptive.py      Feedback-informed score adjustment helpers
-├── cli.py           Small routing CLI and output formatting
-├── decision.py      Routing result data structures
-├── defaults.py      Default mock/demo modules
-├── feedback.py      Feedback records and route history stores
-├── module.py        ExpertModule definition
-├── registry.py      ModuleRegistry definition
-└── router.py        Keyword/domain router
+|-- __init__.py      Public package exports
+|-- __main__.py      Enables `python -m grona`
+|-- adaptive.py      Feedback-informed score adjustment helpers
+|-- cli.py           Small routing CLI and output formatting
+|-- context.py       ContextItem and route-scoped ContextBuilder
+|-- decision.py      Routing result data structures
+|-- defaults.py      Default mock/demo modules
+|-- feedback.py      Feedback records and route history stores
+|-- module.py        ExpertModule definition
+|-- orchestrator.py  Orchestrator and OrchestrationResult
+|-- registry.py      ModuleRegistry definition
+`-- router.py        Keyword/domain router
 ```
 
 Supporting files:
@@ -23,7 +25,8 @@ Supporting files:
 - `examples/basic_routing_demo.py` shows multiple task routes.
 - `examples/feedback_demo.py` shows route history without persistent storage.
 - `examples/adaptive_routing_demo.py` shows feedback-informed score adjustments.
-- `tests/` covers core routing, feedback, and adaptive behavior.
+- `examples/orchestration_demo.py` shows route-scoped context and handoff summaries.
+- `tests/` covers routing, feedback, adaptive routing, context building, and orchestration.
 - `pyproject.toml` defines packaging, test, and lint settings.
 - `.github/workflows/tests.yml` runs the test suite in CI.
 
@@ -63,44 +66,33 @@ Routing is currently based on normalized text terms from three metadata fields:
 
 Keep keywords concrete and domain-specific. Avoid adding every generic word to every module, because that makes sparse routing less useful.
 
-## Use Feedback Records
+## Add Context Stubs
 
-A feedback record captures one route decision and optional outcome information:
+Context stubs live in `src/grona/context.py`. Add small deterministic strings that help explain what context a selected module would receive later.
+
+Good context stubs are:
+
+- domain-specific
+- deterministic
+- short enough to inspect in CLI output
+- honest that they are not real retrieval
+- covered by tests when they affect routing or orchestration expectations
+
+Do not add file indexing, vector retrieval, SQL, external APIs, or LLM memory here yet.
+
+## Use the Orchestrator
+
+The orchestrator routes a task, builds route-scoped context, and returns a structured handoff:
 
 ```python
-from grona import FeedbackRecord, InMemoryFeedbackStore, Router, create_default_registry
+from grona import Orchestrator, Router, create_default_registry
 
 router = Router(create_default_registry())
-decision = router.route("Analyze engine overheating symptoms")
-record = FeedbackRecord.from_decision(decision, rating=5, success=True, notes="Good route")
-
-store = InMemoryFeedbackStore()
-store.add(record)
+result = Orchestrator(router).run("Analyze engine overheating symptoms")
+print(result.to_text())
 ```
 
-Use `InMemoryFeedbackStore` for tests and demos. Use `JsonlFeedbackStore` when you explicitly want a local JSONL route history file. The JSONL store writes one JSON object per line and does not require a database.
-
-## Use Adaptive Routing
-
-Adaptive routing is opt-in. It uses feedback records to slightly adjust module scores after the base keyword/domain score is computed:
-
-```python
-from grona import AdaptiveRoutingConfig, Router, create_default_registry
-
-router = Router(
-    create_default_registry(),
-    adaptive_config=AdaptiveRoutingConfig(enabled=True),
-    feedback_records=store.list(),
-)
-decision = router.route("Analyze engine overheating symptoms")
-```
-
-Keep adaptive scoring conservative:
-
-- Do not let history select modules with no base relevance.
-- Keep `max_adjustment` small.
-- Include adjustment explanations in route decisions.
-- Treat this as deterministic scoring, not machine learning.
+The orchestrator does not execute real experts yet. Keep it as a visible coordination layer until real module execution is designed and tested.
 
 ## Run Tests
 
@@ -119,19 +111,23 @@ ruff check .
 - Keep scoring deterministic while the router is rule-based.
 - Keep feedback passive unless adaptive routing is explicitly enabled.
 - Keep adaptive routing bounded, explainable, and tested.
+- Keep context building separate from routing.
+- Keep orchestration separate from real execution.
 
 ## What Not to Add Yet
 
-Do not add these until the routing prototype justifies them:
+Do not add these until the routing and context prototype justifies them:
 
 - web servers
 - vector databases
+- SQL databases
 - production task queues
 - external LLM dependencies
 - heavy agent frameworks
 - hidden global memory
 - opaque learned routing
+- fake AI execution
 - automatic route adaptation without tests and route traces
 - claims that Grona has neural learning or production orchestration
 
-The current goal is a clean foundation for research, tests, route history, adaptive scoring experiments, and extension.
+The current goal is a clean foundation for research, tests, route history, adaptive scoring, route-scoped context, and future orchestration experiments.

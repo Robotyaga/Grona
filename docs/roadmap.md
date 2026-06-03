@@ -34,28 +34,36 @@ Grona should begin as a clear research/prototype project. The roadmap keeps the 
 - Prevent feedback history from selecting modules with no base relevance.
 - Keep this as transparent deterministic scoring, not neural learning.
 
-## Phase 4: Real Local Tools and Modules
+## Phase 4: Context Builder and Orchestration Foundation
+
+- Add `ContextItem` and `ContextBuilder` for route-scoped synthetic context.
+- Add domain-specific context stubs for code, automotive, cybersecurity, media, documents, and general reasoning.
+- Add `Orchestrator` and `OrchestrationResult` for visible coordination.
+- Keep orchestration as a structured handoff, not real expert execution.
+- Preserve clear CLI output for routing, selected modules, context items, and summary.
+
+## Phase 5: Real Local Tools and Modules
 
 - Replace selected mock modules with simple local tools.
 - Add scripts for code inspection, file search, document parsing, or media metadata extraction.
 - Keep tool interfaces small and explicit.
 - Track module cost, latency, and failure modes.
 
-## Phase 5: Memory and Feedback Integration
+## Phase 6: Memory and Feedback Integration
 
 - Introduce module-specific memory stores.
-- Experiment with local text indexes, SQL, or structured notes.
+- Experiment with local text indexes or structured notes.
 - Store which routes worked, failed, or needed human correction.
 - Use feedback to design better routing rules without hiding decisions.
 
-## Phase 6: Local LLM Integration
+## Phase 7: Local LLM Integration
 
 - Add optional local LLM modules.
 - Route only selected tasks to LLM-backed experts.
 - Compare local model behavior against script/tool modules.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 7: Learned Routing Experiments
+## Phase 8: Learned Routing Experiments
 
 - Experiment with learned or semi-learned routing scores only after deterministic baselines are understood.
 - Add route confidence calibration.
@@ -63,9 +71,9 @@ Grona should begin as a clear research/prototype project. The roadmap keeps the 
 - Explore hierarchical routing: branch first, grape second.
 - Evaluate whether feedback improves module selection over time.
 
-## Phase 8: UI and API Layer
+## Phase 9: UI and API Layer
 
 - Add a minimal API for submitting tasks and viewing route traces.
-- Add a small UI only after the routing and module concepts are stable.
+- Add a small UI only after the routing, context, and module concepts are stable.
 - Show activated modules, skipped modules, context sources, and feedback signals.
 - Keep the interface explainable rather than hiding the route.

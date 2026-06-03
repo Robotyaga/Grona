@@ -12,28 +12,40 @@ from .router import Router
 
 @dataclass(frozen=True)
 class OrchestrationResult:
-    """The visible result of routing, context building, and module execution."""
+    """The visible result of routing and context preparation."""
 
     task: str
     routing_decision: RoutingDecision
     context_items: tuple[ContextItem, ...]
-    module_outputs: tuple[tuple[str, str], ...]
+    selected_modules: tuple[str, ...]
     summary: str
     metadata: Metadata = field(default_factory=dict)
-
-    @property
-    def selected_modules(self) -> tuple[str, ...]:
-        """Return selected module names in route order."""
-        return self.routing_decision.selected_names
 
     @property
     def context_sources(self) -> tuple[str, ...]:
         """Return context source names in build order."""
         return tuple(item.source for item in self.context_items)
 
+    def to_text(self) -> str:
+        """Format the orchestration result without claiming expert execution."""
+        selected = ", ".join(self.selected_modules) or "none"
+        lines = [
+            f"Task: {self.task}",
+            f"Selected modules: {selected}",
+            "Context items:",
+        ]
+        if self.context_items:
+            for item in self.context_items:
+                lines.append(f"- {item.source} (relevance {item.relevance:.2f})")
+                lines.append(f"  content: {item.content}")
+        else:
+            lines.append("- none")
+        lines.append(f"Orchestration summary: {self.summary}")
+        return "\n".join(lines)
+
 
 class Orchestrator:
-    """Coordinate routing, context building, and selected module execution."""
+    """Coordinate routing and context building for a selected path."""
 
     def __init__(
         self,
@@ -44,45 +56,31 @@ class Orchestrator:
         self.context_builder = context_builder or ContextBuilder()
 
     def run(self, task: str) -> OrchestrationResult:
-        """Route a task, build context, and invoke selected demo modules."""
+        """Route a task, build context, and return a planned handoff result."""
         decision = self.router.route(task)
-        context_items = self.context_builder.build(decision)
-        module_context = {
-            "selected_modules": ", ".join(decision.selected_names),
-            "context_sources": ", ".join(item.source for item in context_items),
-            "context_summary": summarize_context(context_items),
-        }
-        outputs = tuple(
-            (match.module.name, match.module.run(task, module_context))
-            for match in decision.selected_modules
-        )
+        context_items = self.context_builder.build(decision, task)
+        selected_modules = decision.selected_names
         return OrchestrationResult(
             task=task,
             routing_decision=decision,
             context_items=context_items,
-            module_outputs=outputs,
-            summary=summarize_orchestration(decision, context_items, outputs),
-            metadata={"context_count": len(context_items), "output_count": len(outputs)},
+            selected_modules=selected_modules,
+            summary=summarize_orchestration(decision, context_items),
+            metadata={
+                "context_count": len(context_items),
+                "selected_count": len(selected_modules),
+                "execution": "not_run",
+            },
         )
-
-
-def summarize_context(context_items: tuple[ContextItem, ...]) -> str:
-    """Create a compact context summary for module handlers."""
-    if not context_items:
-        return "No context items were built."
-    sources = ", ".join(item.source for item in context_items)
-    return f"Built {len(context_items)} context items from: {sources}."
 
 
 def summarize_orchestration(
     decision: RoutingDecision,
     context_items: tuple[ContextItem, ...],
-    outputs: tuple[tuple[str, str], ...],
 ) -> str:
     """Create a compact orchestration summary."""
-    selected = ", ".join(decision.selected_names) or "none"
+    selected = ", ".join(decision.selected_names) or "no specialized modules"
     return (
-        f"Selected {len(decision.selected_modules)} modules ({selected}), "
-        f"built {len(context_items)} context items, "
-        f"and collected {len(outputs)} module outputs."
+        f"Grona selected {selected}, prepared {len(context_items)} context items, "
+        "and would pass this focused context to the next execution layer."
     )
