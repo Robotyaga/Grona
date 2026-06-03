@@ -18,8 +18,39 @@ from .orchestrator import OrchestrationResult, Orchestrator, format_result_backe
 from .router import Router
 from .safety import create_default_safety_policy
 from .tools import SafeToolRunner, create_default_tool_registry
+from .workspace import (
+    BUILTIN_WORKSPACES,
+    WorkspaceProfile,
+    filter_modules_for_workspace,
+    get_builtin_workspace_profile,
+)
 
 DEFAULT_TASK = "Analyze engine overheating symptoms and explain what to inspect first."
+
+
+def format_workspace_profile(profile: WorkspaceProfile, module_names: Sequence[str]) -> str:
+    """Format active workspace settings for humans."""
+    domains = (
+        ", ".join(profile.enabled_domains)
+        if profile.enabled_domains
+        else "all default domains"
+    )
+    modules = ", ".join(module_names) if module_names else "none"
+    memory = ", ".join(profile.memory_sources) if profile.memory_sources else "none"
+    tools = ", ".join(profile.tool_profiles) if profile.tool_profiles else "none"
+    return "\n".join(
+        (
+            f"Workspace: {profile.name}",
+            f"Description: {profile.description}",
+            f"Routing mode: {profile.routing_mode}",
+            f"Adaptive default: {profile.adaptive_enabled}",
+            f"Safety default: {profile.safety_enabled}",
+            f"Enabled domains: {domains}",
+            f"Enabled modules: {modules}",
+            f"Memory sources: {memory}",
+            f"Tool profiles: {tools}",
+        )
+    )
 
 
 def format_decision(decision: RoutingDecision) -> str:
@@ -150,23 +181,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    profile = get_builtin_workspace_profile(args.workspace)
+    registry = filter_modules_for_workspace(create_default_registry(), profile)
+    adaptive_enabled = (
+        args.adaptive or profile.adaptive_enabled or profile.routing_mode == "adaptive"
+    )
     task = " ".join(args.task).strip() or DEFAULT_TASK
     feedback_file = args.feedback_file or args.save_feedback
     feedback_records = (
-        load_feedback_records(feedback_file) if args.adaptive and feedback_file else ()
+        load_feedback_records(feedback_file) if adaptive_enabled and feedback_file else ()
     )
     router = Router(
-        create_default_registry(),
+        registry,
         top_k=args.top_k,
-        adaptive_config=AdaptiveRoutingConfig(enabled=args.adaptive),
+        adaptive_config=AdaptiveRoutingConfig(enabled=adaptive_enabled),
         feedback_records=feedback_records,
     )
+    print(format_workspace_profile(profile, registry.names()))
+    print()
 
+    profile_orchestrates = profile.routing_mode in {"orchestrated", "safe_orchestrated"}
     should_orchestrate = (
         args.orchestrate
         or args.execute_demo_experts
         or args.use_demo_adapters
         or args.use_demo_tools
+        or profile_orchestrates
     )
     if should_orchestrate:
         context_builder = ContextBuilder(memory_modules=build_cli_memory_modules(args))
@@ -175,9 +215,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             create_default_executor_registry() if args.execute_demo_experts else None
         )
         adapter_registry = create_default_adapter_registry() if use_adapters else None
+        safety_enabled = (
+            args.safe
+            or args.dry_run_tools
+            or args.use_demo_tools
+            or profile.safety_enabled
+            or profile.routing_mode == "safe_orchestrated"
+        )
         safety_policy = (
             create_default_safety_policy(dry_run=args.dry_run_tools)
-            if args.safe or args.dry_run_tools or args.use_demo_tools
+            if safety_enabled
             else None
         )
         tool_runner = None
@@ -196,23 +243,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             dry_run_tools=args.dry_run_tools,
             tool_runner=tool_runner,
         ).run(task)
-        if args.execute_demo_experts and not args.orchestrate:
-            print("Execution note: --execute-demo-experts implies --orchestrate.\n")
-        if args.use_demo_adapters and not args.orchestrate:
-            print("Execution note: --use-demo-adapters implies --orchestrate.\n")
-        if args.use_demo_tools and not args.orchestrate:
-            print("Execution note: --use-demo-tools implies --orchestrate.\n")
-        if args.use_demo_tools and not args.safe:
-            print("Execution note: --use-demo-tools uses the default safety policy.\n")
-        if args.ingest_demo_docs:
-            print("Memory note: --ingest-demo-docs added deterministic ingested memory.\n")
-        if args.dry_run_tools and not args.safe:
-            print("Execution note: --dry-run-tools enables the default safety policy.\n")
-        if args.execute_demo_experts and args.use_demo_adapters:
-            print(
-                "Execution note: --execute-demo-experts takes precedence "
-                "over --use-demo-adapters.\n"
-            )
+        print_workspace_notes(args, profile, profile_orchestrates, safety_enabled)
         print(format_orchestration_result(result))
         decision = result.routing_decision
     else:
@@ -240,6 +271,38 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0
 
 
+def print_workspace_notes(
+    args,
+    profile: WorkspaceProfile,
+    profile_orchestrates: bool,
+    safety_enabled: bool,
+) -> None:  # noqa: ANN001
+    """Print concise notes for implied workspace and execution settings."""
+    if profile_orchestrates and not args.orchestrate:
+        print(f"Workspace note: {profile.name} workspace implies orchestration.\n")
+    if profile.adaptive_enabled and not args.adaptive:
+        print(f"Workspace note: {profile.name} workspace enables adaptive routing by default.\n")
+    if safety_enabled and profile.safety_enabled and not args.safe:
+        print(f"Workspace note: {profile.name} workspace enables safety by default.\n")
+    if args.execute_demo_experts and not args.orchestrate:
+        print("Execution note: --execute-demo-experts implies --orchestrate.\n")
+    if args.use_demo_adapters and not args.orchestrate:
+        print("Execution note: --use-demo-adapters implies --orchestrate.\n")
+    if args.use_demo_tools and not args.orchestrate:
+        print("Execution note: --use-demo-tools implies --orchestrate.\n")
+    if args.use_demo_tools and not args.safe:
+        print("Execution note: --use-demo-tools uses the default safety policy.\n")
+    if args.ingest_demo_docs:
+        print("Memory note: --ingest-demo-docs added deterministic ingested memory.\n")
+    if args.dry_run_tools and not args.safe:
+        print("Execution note: --dry-run-tools enables the default safety policy.\n")
+    if args.execute_demo_experts and args.use_demo_adapters:
+        print(
+            "Execution note: --execute-demo-experts takes precedence "
+            "over --use-demo-adapters.\n"
+        )
+
+
 def build_cli_memory_modules(args) -> tuple[MemoryModule, ...]:  # noqa: ANN001
     """Build memory modules requested by CLI flags."""
     modules: list[MemoryModule] = []
@@ -260,6 +323,12 @@ def build_parser() -> ArgumentParser:
     parser = ArgumentParser(description="Route a task through Grona's demo module registry.")
     parser.add_argument("task", nargs="*", help="Task text to route. Uses a demo task if omitted.")
     parser.add_argument("--top-k", type=int, default=3, help="Maximum number of modules to select.")
+    parser.add_argument(
+        "--workspace",
+        choices=BUILTIN_WORKSPACES,
+        default="default",
+        help="Built-in workspace profile to use for routing defaults.",
+    )
     parser.add_argument(
         "--adaptive",
         action="store_true",
