@@ -13,7 +13,12 @@ from .registry import ModuleRegistry
 class Router:
     """Select relevant modules with transparent keyword/domain matching."""
 
-    def __init__(self, registry: ModuleRegistry, top_k: int = 3, minimum_score: float = 1.0) -> None:
+    def __init__(
+        self,
+        registry: ModuleRegistry,
+        top_k: int = 3,
+        minimum_score: float = 1.0,
+    ) -> None:
         if top_k < 1:
             raise ValueError("top_k must be at least 1")
         if minimum_score < 0:
@@ -28,7 +33,9 @@ class Router:
         matches = [self._score_module(module, task_terms) for module in self.registry]
         matches.sort(key=lambda match: (-match.score, match.module.cost, match.module.name))
 
-        selected = tuple(match for match in matches if match.score >= self.minimum_score)[: self.top_k]
+        selected = tuple(
+            match for match in matches if match.score >= self.minimum_score
+        )[: self.top_k]
         selected_names = {match.module.name for match in selected}
         skipped = tuple(match for match in matches if match.module.name not in selected_names)
         return RoutingDecision(task=task, selected_modules=selected, skipped_modules=skipped)
@@ -38,7 +45,10 @@ class Router:
         decision = self.route(task)
         route_context = dict(context or {})
         route_context["selected_modules"] = ", ".join(decision.selected_names)
-        return [(match, match.module.run(task, route_context)) for match in decision.selected_modules]
+        return [
+            (match, match.module.run(task, route_context))
+            for match in decision.selected_modules
+        ]
 
     def _score_module(self, module: ExpertModule, task_terms: set[str]) -> ModuleMatch:
         reasons: list[str] = []

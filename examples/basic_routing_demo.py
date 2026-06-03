@@ -1,6 +1,7 @@
+# ruff: noqa: I001
 """Demonstrate Grona's lightweight routing prototype."""
 
-from grona import Router, create_default_registry
+import grona
 from grona.cli import format_decision
 
 
@@ -10,12 +11,15 @@ TASKS = [
     "Review firewall logs for suspicious port scans and malware indicators.",
     "Create thumbnails from a video clip and extract audio metadata.",
     "Find the PDF manual in my document archive and summarize the maintenance notes.",
-    "Analyze this repository report and plan whether the issue is code, documentation, or search related.",
+    (
+        "Analyze this repository report and plan whether the issue is code, "
+        "documentation, or search related."
+    ),
 ]
 
 
 def main() -> None:
-    router = Router(create_default_registry(), top_k=3)
+    router = grona.Router(grona.create_default_registry(), top_k=3)
 
     for task in TASKS:
         decision = router.route(task)

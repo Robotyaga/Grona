@@ -32,9 +32,9 @@ User task
 Merged result + route trace
    |
    v
-+---------------+
-| FeedbackLayer |
-+---------------+
++---------------+       +----------------+
+| FeedbackLayer | ----> | Route History  |
++---------------+       +----------------+
 ```
 
 ## Components
@@ -88,9 +88,23 @@ Memory should be modular. A code assistant memory should not automatically load 
 
 ### FeedbackLayer
 
-The feedback layer records what route was selected, which modules succeeded or failed, and whether the result was useful. It does not need to be complex at first. Even simple route traces can help identify weak routing rules or unreliable modules.
+The feedback layer records what route was selected, which modules succeeded or failed, and whether the result was useful. It does not learn yet and does not change routing automatically.
 
-Future feedback can support adaptive routing, module scoring, and replacement decisions.
+The first implementation stores `FeedbackRecord` values with task text, selected modules, skipped modules, confidence, a route summary, timestamp, optional rating, optional success/failure, optional notes, and optional metadata. Records can be kept in memory for tests and demos or appended to JSONL for local route history.
+
+This fits the grape-cluster metaphor: the system can remember which branches and grapes were useful without making every future request activate the whole cluster.
+
+### Route History
+
+Route history is the saved trail of feedback records. The current summary functions can report:
+
+- total feedback records
+- most selected modules
+- average confidence
+- success count when success flags exist
+- failure count when success flags exist
+
+Later, route history may help adjust routing weights, detect unreliable modules, or suggest replacements. For now, it is intentionally passive and inspectable.
 
 ## Request Lifecycle
 
@@ -100,7 +114,8 @@ Future feedback can support adaptive routing, module scoring, and replacement de
 4. ContextBuilder gathers only route-relevant context.
 5. Orchestrator invokes selected experts in the correct order.
 6. Results are merged into a response with a visible route trace.
-7. FeedbackLayer stores route outcome and module performance signals.
+7. FeedbackLayer optionally stores route outcome and module performance signals.
+8. Route history can be summarized for later inspection.
 
 ## Concrete Example
 
@@ -128,7 +143,15 @@ Skipped modules
   Reason: no security, network, malware, or vulnerability signals
 ```
 
-The important property is not that the first router is smart. The important property is that the system makes a sparse, inspectable choice and avoids activating unrelated capabilities.
+A feedback record for this route might later store:
+
+```text
+rating: 5
+success: true
+notes: Good first diagnostic route; inspect coolant, radiator fan, and thermostat next.
+```
+
+The important property is not that the first router is smart. The important property is that the system makes a sparse, inspectable choice, avoids activating unrelated capabilities, and can remember whether the route appeared useful.
 
 ## Design Principles
 
@@ -138,5 +161,6 @@ The important property is not that the first router is smart. The important prop
 - Keep selected and skipped modules explainable.
 - Keep modules replaceable and versionable.
 - Prefer local-first architecture where possible.
+- Store feedback before attempting adaptive routing.
 - Support heterogeneous experts: models, scripts, databases, search indexes, tools, and APIs.
 - Let the system grow organically, like a grape cluster.

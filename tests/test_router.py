@@ -44,7 +44,9 @@ def test_irrelevant_modules_are_skipped() -> None:
 
 def test_routing_decisions_include_reasons_and_scores() -> None:
     decision = route("Find the PDF manual in my document archive.")
-    document_match = next(match for match in decision.selected_modules if match.module.name == "document-search")
+    document_match = next(
+        match for match in decision.selected_modules if match.module.name == "document-search"
+    )
 
     assert document_match.score > 0
     assert document_match.reasons

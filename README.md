@@ -27,6 +27,7 @@ Grona explores the opposite direction:
 3. Keep routing decisions explainable.
 4. Let modules have their own scope, cost, and memory.
 5. Make modules easy to add, remove, or replace.
+6. Remember which routes worked so future routing can improve.
 
 ## Relationship to MoE and Sparse Activation
 
@@ -34,7 +35,7 @@ Grona is related to Mixture of Experts, sparse activation, routing networks, mod
 
 Classic MoE usually refers to learned expert layers inside a neural network. Grona is broader: an expert can be a local LLM, a script, a database query layer, a vector index, a code analyzer, a cybersecurity scanner, a media tool, a domain-specific memory module, or an API wrapper.
 
-The shared idea is sparsity. The broader Grona idea is heterogeneous modular activation across models, tools, memory, and orchestration.
+The shared idea is sparsity. The broader Grona idea is heterogeneous modular activation across models, tools, memory, feedback, and orchestration.
 
 ## First Prototype
 
@@ -44,6 +45,8 @@ The first prototype is intentionally small and dependency-free at runtime. It in
 - `ModuleRegistry`: a simple registry for available modules.
 - `Router`: keyword/domain matching over task text.
 - `RoutingDecision`: selected modules, skipped modules, scores, and reasons.
+- `FeedbackRecord`: a lightweight route history record.
+- `InMemoryFeedbackStore` and `JsonlFeedbackStore`: simple feedback storage options.
 - A default demo registry for code, car diagnostics, cybersecurity, media/video, document search, and general reasoning.
 - A CLI and tests so the project is easier to run and extend.
 
@@ -67,6 +70,12 @@ pip install -e .[dev]
 python examples/basic_routing_demo.py
 ```
 
+Feedback history demo:
+
+```bash
+python examples/feedback_demo.py
+```
+
 Or use the console script installed by the package:
 
 ```bash
@@ -80,6 +89,22 @@ python -m grona "Review firewall logs for suspicious port scans"
 ```
 
 The demo prints selected modules, skipped modules, reasons, scores, and mock outputs from activated modules.
+
+## Save Route Feedback
+
+The CLI can optionally save one feedback record per run to a JSONL file:
+
+```bash
+python -m grona "Review this Python script for security issues" --feedback-file feedback.jsonl
+```
+
+Optional feedback fields:
+
+```bash
+python -m grona "Analyze engine overheating symptoms" --feedback-file feedback.jsonl --rating 5 --success true --notes "Good route"
+```
+
+If no feedback file is provided, the CLI behaves as before and does not write route history.
 
 ## Run Tests
 
@@ -104,7 +129,8 @@ ruff check .
 │   ├── research-notes.md
 │   └── roadmap.md
 ├── examples/
-│   └── basic_routing_demo.py
+│   ├── basic_routing_demo.py
+│   └── feedback_demo.py
 ├── src/
 │   └── grona/
 │       ├── __init__.py
@@ -112,6 +138,7 @@ ruff check .
 │       ├── cli.py
 │       ├── decision.py
 │       ├── defaults.py
+│       ├── feedback.py
 │       ├── module.py
 │       ├── registry.py
 │       └── router.py
@@ -125,12 +152,14 @@ ruff check .
 - Keep routing decisions visible.
 - Keep modules small, replaceable, and metadata-driven.
 - Prefer local-first building blocks where possible.
+- Store feedback as route history before attempting adaptive routing.
 - Add heavier infrastructure only after the simple prototype proves what it needs.
 - Treat tests as a guardrail for explainable behavior, not as a claim that routing is solved.
 
 ## Current Limitations
 
 - The router is keyword-based.
+- Feedback is recorded and summarized, but it does not change routing yet.
 - There is no real LLM integration yet.
 - There is no learning or adaptive routing yet.
 - There is no memory graph yet.

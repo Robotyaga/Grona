@@ -17,29 +17,36 @@ Grona should begin as a clear research/prototype project. The roadmap keeps the 
 - Add demo tasks across multiple domains.
 - Keep the prototype dependency-free.
 
-## Phase 2: Real Local Tools and Modules
+## Phase 2: Feedback Layer and Route History
+
+- Add `FeedbackRecord` for storing route decisions and optional outcomes.
+- Add in-memory and JSONL feedback stores.
+- Add simple route history summaries by module, confidence, and success/failure counts.
+- Keep feedback passive: no automatic route adaptation yet.
+- Use route history to inspect which branches and modules appear useful.
+
+## Phase 3: Real Local Tools and Modules
 
 - Replace selected mock modules with simple local tools.
 - Add scripts for code inspection, file search, document parsing, or media metadata extraction.
 - Keep tool interfaces small and explicit.
 - Track module cost, latency, and failure modes.
 
-## Phase 3: Memory and Feedback
+## Phase 4: Memory and Feedback Integration
 
-- Add basic route traces.
 - Introduce module-specific memory stores.
 - Experiment with local text indexes, SQL, or structured notes.
 - Store which routes worked, failed, or needed human correction.
-- Use feedback to improve routing rules without hiding decisions.
+- Use feedback to design better routing rules without hiding decisions.
 
-## Phase 4: Local LLM Integration
+## Phase 5: Local LLM Integration
 
 - Add optional local LLM modules.
 - Route only selected tasks to LLM-backed experts.
 - Compare local model behavior against script/tool modules.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 5: Adaptive Routing
+## Phase 6: Adaptive Routing
 
 - Experiment with learned or semi-learned routing scores.
 - Add route confidence calibration.
@@ -47,7 +54,7 @@ Grona should begin as a clear research/prototype project. The roadmap keeps the 
 - Explore hierarchical routing: branch first, grape second.
 - Evaluate whether feedback improves module selection over time.
 
-## Phase 6: UI and API Layer
+## Phase 7: UI and API Layer
 
 - Add a minimal API for submitting tasks and viewing route traces.
 - Add a small UI only after the routing and module concepts are stable.
