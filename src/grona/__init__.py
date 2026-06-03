@@ -12,6 +12,13 @@ from .feedback import (
     JsonlFeedbackStore,
     summarize_feedback,
 )
+from .memory import (
+    InMemoryKeywordMemory,
+    JsonlMemoryStore,
+    MemoryModule,
+    MemoryRecord,
+    create_default_memory_modules,
+)
 from .module import ExpertModule
 from .orchestrator import OrchestrationResult, Orchestrator
 from .registry import ModuleRegistry
@@ -26,7 +33,11 @@ __all__ = [
     "FeedbackStore",
     "FeedbackSummary",
     "InMemoryFeedbackStore",
+    "InMemoryKeywordMemory",
     "JsonlFeedbackStore",
+    "JsonlMemoryStore",
+    "MemoryModule",
+    "MemoryRecord",
     "ModuleFeedbackStats",
     "ModuleMatch",
     "ModuleRegistry",
@@ -35,6 +46,7 @@ __all__ = [
     "Router",
     "RoutingDecision",
     "build_module_feedback_stats",
+    "create_default_memory_modules",
     "create_default_registry",
     "summarize_feedback",
 ]

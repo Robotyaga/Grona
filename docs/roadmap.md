@@ -40,30 +40,38 @@ Grona should begin as a clear research/prototype project. The roadmap keeps the 
 - Add domain-specific context stubs for code, automotive, cybersecurity, media, documents, and general reasoning.
 - Add `Orchestrator` and `OrchestrationResult` for visible coordination.
 - Keep orchestration as a structured handoff, not real expert execution.
-- Preserve clear CLI output for routing, selected modules, context items, and summary.
 
-## Phase 5: Real Local Tools and Modules
+## Phase 5: Memory Modules and Retrieval Stubs
+
+- Add `MemoryRecord` for small stored knowledge items.
+- Add a `MemoryModule` protocol.
+- Add `InMemoryKeywordMemory` for deterministic keyword/domain retrieval.
+- Allow `ContextBuilder` to query relevant memory modules only.
+- Add demo memory for automotive, cybersecurity, code, media, documents, and general planning.
+- Keep this as keyword retrieval, not embeddings or semantic search.
+
+## Phase 6: Real Local Tools and Modules
 
 - Replace selected mock modules with simple local tools.
 - Add scripts for code inspection, file search, document parsing, or media metadata extraction.
 - Keep tool interfaces small and explicit.
 - Track module cost, latency, and failure modes.
 
-## Phase 6: Memory and Feedback Integration
+## Phase 7: Memory and Feedback Integration
 
-- Introduce module-specific memory stores.
+- Introduce module-specific local memory stores.
 - Experiment with local text indexes or structured notes.
 - Store which routes worked, failed, or needed human correction.
 - Use feedback to design better routing rules without hiding decisions.
 
-## Phase 7: Local LLM Integration
+## Phase 8: Local LLM Integration
 
 - Add optional local LLM modules.
 - Route only selected tasks to LLM-backed experts.
 - Compare local model behavior against script/tool modules.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 8: Learned Routing Experiments
+## Phase 9: Learned Routing Experiments
 
 - Experiment with learned or semi-learned routing scores only after deterministic baselines are understood.
 - Add route confidence calibration.
@@ -71,9 +79,9 @@ Grona should begin as a clear research/prototype project. The roadmap keeps the 
 - Explore hierarchical routing: branch first, grape second.
 - Evaluate whether feedback improves module selection over time.
 
-## Phase 9: UI and API Layer
+## Phase 10: UI and API Layer
 
 - Add a minimal API for submitting tasks and viewing route traces.
-- Add a small UI only after the routing, context, and module concepts are stable.
+- Add a small UI only after the routing, context, memory, and module concepts are stable.
 - Show activated modules, skipped modules, context sources, and feedback signals.
 - Keep the interface explainable rather than hiding the route.

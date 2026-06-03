@@ -6,7 +6,7 @@ Grona explores sparse modular AI systems inspired by grape-cluster-like expert a
 
 A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, and visible orchestration, a router can activate a small relevant subset and keep the rest dormant.
 
-This may improve efficiency, explainability, replaceability, and local-first control. It may also introduce new problems: routing errors, brittle module metadata, incomplete context, coordination overhead, and feedback loops that reinforce bad routes.
+This may improve efficiency, explainability, replaceability, and local-first control. It may also introduce new problems: routing errors, brittle module metadata, incomplete context, weak retrieval, coordination overhead, and feedback loops that reinforce bad routes.
 
 ## Sparse Activation
 
@@ -16,28 +16,33 @@ Sparse activation is the principle that only a subset of available capacity shou
 - Which modules were skipped?
 - Why did the router make that choice?
 - What context was prepared for the selected modules?
+- Which context came from stubs versus memory modules?
 - Did feedback later suggest that route was useful?
 
-The first prototype implements simple keyword/domain sparsity plus deterministic context stubs. It is a starting point, not a final routing or retrieval strategy.
+## Memory Modules
 
-## Routing
+Memory modules are small knowledge pockets attached to parts of the cluster. They are different from feedback stores:
 
-Routing is the central research problem. A router must balance relevance, cost, confidence, safety, memory availability, and task complexity.
+- Feedback stores remember route outcomes.
+- Memory modules provide knowledge records for context building.
 
-Early routing can be rule-based. Later routing may combine rules, embeddings, learned classifiers, route history, and feedback. The risk is that routing becomes another opaque model. Grona should preserve route traces wherever possible.
+The current memory implementation is deliberately simple. `InMemoryKeywordMemory` matches `MemoryRecord` values by deterministic keyword, domain, capability, and content overlap. It returns `ContextItem` values with source metadata and relevance scores.
+
+This is not semantic search. There are no embeddings, vector databases, SQL databases, memory graphs, real document ingestion, or external APIs yet.
 
 ## Context Building
 
 Context building is separate from routing. Routing chooses the relevant branches and grapes. Context building gathers only the information needed by those selected grapes.
 
-The current `ContextBuilder` uses built-in deterministic stubs for code, automotive diagnostics, cybersecurity, media/video, document search, and general reasoning. This is not retrieval. It is a scaffold for future local memory, document search, or tool-specific context gathering.
+The context builder can now combine deterministic built-in stubs with memory-derived context. It still keeps the output small and traceable.
 
 Open questions:
 
-- How much context should each module receive?
-- How should context relevance be scored?
-- How should skipped context be audited?
-- When should context be shared across modules versus kept module-specific?
+- How much memory context should each route receive?
+- How should relevance be scored across different memory modules?
+- How should duplicate or stale memory records be handled?
+- When should memory be module-specific versus shared across domains?
+- How should future retrieval be evaluated against this keyword baseline?
 
 ## Orchestration
 
@@ -45,17 +50,11 @@ The current orchestrator does not execute real experts. It routes, builds focuse
 
 Future orchestration may decide call order, tool execution, retries, partial failures, and result synthesis. Those behaviors should not be hidden behind a single opaque call.
 
-## Feedback and Adaptive Routing
-
-Feedback is the first step toward adaptive routing, but it is not the same as learning. The current feedback layer records route decisions and optional outcomes. Adaptive routing can apply small bounded boosts or penalties when explicitly enabled.
-
-Automatic route changes need careful evaluation because a bad feedback loop could reinforce weak routing instead of improving it.
-
 ## Retrieval-Augmented Generation
 
 RAG usually retrieves relevant context and passes it to a model. Grona can use RAG as one kind of memory module, but it should not load every memory source for every task.
 
-A route may decide that document search is relevant, then a future context builder can retrieve only the needed snippets. Another route may skip retrieval entirely.
+A route may decide that document search is relevant, then a future memory module can retrieve only the needed snippets. Another route may skip retrieval entirely.
 
 ## Memory Graphs
 
@@ -74,13 +73,13 @@ This is future work. The current prototype does not implement memory graphs.
 
 Start with transparent keyword/domain matching. Use it as a baseline for later embedding or learned routing.
 
-### Route-Scoped Context Stubs
+### Keyword Memory Baseline
 
-Use deterministic context stubs to inspect whether selected modules receive relevant, focused context before adding real retrieval.
+Use deterministic keyword/domain memory records to inspect whether selected modules receive useful focused context before adding vector search or semantic retrieval.
 
 ### Route Trace Review
 
-Inspect selected and skipped modules for each task. Use surprising routes to improve metadata and scoring.
+Inspect selected and skipped modules for each task. Use surprising routes to improve metadata, memory records, and scoring.
 
 ### Feedback Simulation
 
