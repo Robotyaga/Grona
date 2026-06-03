@@ -1,114 +1,134 @@
 # Roadmap
 
-Grona should stay readable before adding heavier infrastructure.
+Grona should stay readable before adding heavier infrastructure. The roadmap is intentionally staged so public polish, tests, safety boundaries, and research questions stay ahead of larger integrations.
 
-## Phase 0: Concept and Documentation
+## Documentation Map
 
-- Define the grape-cluster architecture metaphor.
-- Explain sparse modular activation.
-- Establish a lightweight repository structure.
+- [Project vision](project-vision.md)
+- [Architecture](architecture.md)
+- [Workspace profiles](workspaces.md)
+- [Research notes](research-notes.md)
+- [v0.1.0 prototype release notes](release-notes-v0.1.0-prototype.md)
 
-## Phase 1: Mock Router and Module Registry
+## Completed Prototype Foundation
 
-- Implement `ExpertModule`, `ModuleRegistry`, `Router`, and `RoutingDecision`.
-- Use simple keyword/domain matching.
-- Show selected modules, skipped modules, scores, and reasons.
+The repository already has the first deterministic foundation:
 
-## Phase 2: Feedback Layer and Route History
+- `ExpertModule`, `ModuleRegistry`, `Router`, and `RoutingDecision`
+- feedback records and adaptive routing
+- memory modules and keyword memory
+- in-memory document ingestion
+- `ContextBuilder`, `Orchestrator`, and `OrchestrationResult`
+- deterministic expert executors
+- execution adapters
+- safety policy planning
+- mock tool adapters and safe mock runner
+- workspace profiles and workspace-aware CLI
+- examples, tests, CI, and documentation
 
-- Add `FeedbackRecord` and simple route history stores.
-- Summarize selected modules, confidence, and success/failure counts.
+## v0.1.0-prototype Polish
 
-## Phase 3: Feedback-Informed Adaptive Routing
+Goal: make the public repository coherent, inspectable, and easy to evaluate.
 
-- Add opt-in adaptive routing configuration.
-- Apply small bounded boosts or penalties from feedback history.
-- Keep this deterministic, not neural learning.
+- Polish README as a public landing page.
+- Add architecture diagrams and documentation navigation.
+- Add project vision and future release notes.
+- Add contribution, security, changelog, issue template, and PR template files.
+- Keep the prototype honest about what is not implemented.
 
-## Phase 4: Context Builder and Orchestration Foundation
+## Growth Lab
 
-- Add `ContextItem`, `ContextBuilder`, `Orchestrator`, and `OrchestrationResult`.
-- Keep orchestration as a structured handoff.
+Goal: create a controlled environment for experimenting with growth of modular AI systems.
 
-## Phase 5: Memory Modules and Retrieval Stubs
+Potential work:
 
-- Add `MemoryRecord`, `MemoryModule`, and deterministic keyword memory.
-- Allow `ContextBuilder` to query relevant memory modules only.
-- Keep this keyword retrieval, not embeddings or semantic search.
+- scenario fixtures for routing, memory, workspaces, and safety decisions
+- repeatable traces for how tasks move through the cluster
+- clear experiment records for what changed and why
+- no real tool execution until safety design is stronger
 
-## Phase 6: Expert Execution Interface
+## KnowledgeSeed
 
-- Add `ExpertResult` and `ExecutableExpert`.
-- Add `ExpertExecutorRegistry`.
-- Add deterministic demo executors for default modules.
-- Allow `Orchestrator` to optionally execute selected demo experts.
-- Keep this as proof of contract, not real AI execution.
+Goal: represent external structured knowledge before it becomes training data or durable expert behavior.
 
-## Phase 7: Execution Adapters
+Potential fields:
 
-- Add `ExecutionRequest`, `ExecutionAdapter`, and `ExecutionAdapterRegistry`.
-- Add deterministic `StaticExecutionAdapter` and `PythonFunctionAdapter` demos.
-- Allow `Orchestrator` to optionally execute selected modules through adapters.
-- Keep adapters safe: no subprocess, shell execution, external APIs, or LLM calls yet.
+- source and provenance
+- domain and workspace relevance
+- content summary or structured facts
+- confidence and validation status
+- links to feedback, routes, or examples
 
-## Phase 8: Tool Safety Policy and Planning
+## KnowledgeValidator
 
-- Add `ToolAction`, `PolicyDecision`, `SafetyPolicy`, and `ExecutionPlan`.
-- Add `SafeExecutionAdapter` for adapter-side policy evaluation.
-- Support dry-run planning, allowlists, denylists, and visible blocked reasons.
-- Keep this as policy evaluation only, not sandboxing or execution.
+Goal: test whether imported or generated knowledge should influence a workspace.
 
-## Phase 9: Safe Mock Tool Adapter Prototype
+Possible checks:
 
-- Add `ToolSpec`, `ToolRequest`, and `ToolResult`.
-- Add `ToolAdapter`, deterministic `MockToolAdapter`, `ToolRegistry`, and `SafeToolRunner`.
-- Add `create_default_tool_registry()` for mock code, car diagnostics, cybersecurity, media/video, and document search tools.
-- Allow selected adapter-backed modules to attach deterministic mock tool results.
-- Keep this mock-only: no shell, subprocess, network, external APIs, real filesystem tools, or sandboxing claims.
+- source visibility
+- consistency with existing seeds
+- usefulness for routing or context
+- safety concerns
+- benchmark impact
+- human review status
 
-## Phase 10: Document/File Ingestion Stub
+## GrapeCluster
 
-- Add `DocumentSource`, `DocumentChunk`, `TextChunker`, and `DocumentIngestor`.
-- Convert in-memory text sources into deterministic chunks, keyword/domain metadata, `MemoryRecord` values, and `InMemoryKeywordMemory` modules.
-- Add `create_demo_document_sources()` for automotive, code, cybersecurity, media, and document indexing notes.
-- Add CLI `--ingest-demo-docs` and a document ingestion example.
-- Keep this in-memory only: no filesystem crawling, PDF parsing, OCR, embeddings, vector database, or external APIs.
+Goal: group related expert modules, memory sources, tool profiles, safety defaults, and routing behavior into a coherent cluster.
 
-## Phase 11: Workspace / Project Profile Layer
+This would extend workspace profiles into richer modular arrangements while keeping the current deterministic profile layer as the simple foundation.
 
-- Add `WorkspaceProfile` and `WorkspaceConfig`.
-- Add deterministic dict/JSON serialization.
-- Add built-in profiles for default, code, cybersecurity, media, automotive, and documents.
-- Add registry filtering by enabled modules or enabled domains while preserving general fallback.
-- Add CLI `--workspace` and workspace demo/docs.
-- Keep this in-memory only: no persisted workspace directory, disk config loading, secrets, or production config management.
+## GrowthEngine
 
-## Phase 12: Real Local Tools and Modules
+Goal: propose controlled changes to modules, seeds, routing metadata, or feedback rules.
 
-- Replace selected mock/demo modules with simple local tools only after safety design matures.
-- Add scripts for code inspection, file search, document parsing, or media metadata extraction only with explicit boundaries.
-- Keep tool interfaces small and explicit.
-- Add real sandboxing and safety design before any shell or subprocess backend.
+The GrowthEngine should be conservative and auditable. It should produce proposals and traces, not silently mutate core behavior.
 
-## Phase 13: Memory and Feedback Integration
+## BenchmarkSuite
 
-- Introduce module-specific local memory stores.
-- Experiment with local text indexes or structured notes.
-- Use feedback to evaluate routes, execution results, tool results, ingestion results, workspace profiles, and safety decisions.
+Goal: make route quality and orchestration behavior measurable.
 
-## Phase 14: Local LLM Integration
+Potential benchmark types:
 
-- Add optional local LLM modules through adapter contracts.
-- Route only selected tasks to LLM-backed experts.
-- Keep prompts scoped to route-relevant context.
+- routing selection tests
+- workspace profile comparison tests
+- context assembly relevance tests
+- safety policy edge cases
+- mock tool planning tests
+- regression tests for Growth Lab experiments
 
-## Phase 15: Learned Routing Experiments
+## DonorModelAdapter / LMStudioAdapter
 
-- Experiment with learned routing only after deterministic baselines are understood.
-- Add route confidence calibration.
-- Explore hierarchical routing: branch first, grape second.
+Goal: optionally use model outputs as proposal sources.
 
-## Phase 16: UI and API Layer
+A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated before they become durable knowledge or training data.
 
-- Add UI/API only after routing, workspaces, context, memory, ingestion, execution, adapter, tool, and safety contracts are stable.
-- Show workspace profile, route traces, context sources, expert results, adapter backends, mock tool results, safety plans, and feedback signals.
+## TrainingDataExporter
+
+Goal: export validated traces, corrections, examples, and knowledge seeds for future specialized expert training.
+
+This should preserve provenance and validation metadata instead of flattening everything into opaque text.
+
+## Future Local LLM Integration
+
+Goal: add optional local LLM-backed modules only after routing, safety, context, and evaluation contracts are strong enough.
+
+Near-term boundaries:
+
+- no production claims
+- no hidden network calls
+- no secrets in workspace profiles
+- no unrestricted tool use
+- prompt/context should remain route-scoped and inspectable
+
+## Later Product Surfaces
+
+UI/API layers should come after the architecture contracts are stable enough to display useful traces:
+
+- active workspace profile
+- selected modules and scores
+- context sources
+- expert results
+- mock tool results
+- safety decisions
+- feedback signals
