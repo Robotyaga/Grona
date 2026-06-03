@@ -9,6 +9,7 @@ from .adaptive import AdaptiveRoutingConfig
 from .decision import RoutingDecision
 from .defaults import create_default_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
+from .orchestrator import OrchestrationResult, Orchestrator
 from .router import Router
 
 DEFAULT_TASK = "Analyze engine overheating symptoms and explain what to inspect first."
@@ -55,6 +56,28 @@ def format_decision(decision: RoutingDecision) -> str:
     return "\n".join(lines)
 
 
+def format_orchestration_result(result: OrchestrationResult) -> str:
+    """Format an orchestration result for humans."""
+    lines = [format_decision(result.routing_decision)]
+    lines.extend(["", "Context items:"])
+    if result.context_items:
+        for item in result.context_items:
+            lines.append(f"- {item.source} (relevance {item.relevance:.2f})")
+            lines.append(f"  content: {item.content}")
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "Module outputs:"])
+    if result.module_outputs:
+        for module_name, output in result.module_outputs:
+            lines.append(f"- {module_name}: {output}")
+    else:
+        lines.append("- none")
+
+    lines.extend(["", f"Orchestration summary: {result.summary}"])
+    return "\n".join(lines)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the Grona demo router from the command line."""
     parser = build_parser()
@@ -71,12 +94,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         adaptive_config=AdaptiveRoutingConfig(enabled=args.adaptive),
         feedback_records=feedback_records,
     )
-    decision = router.route(task)
-    print(format_decision(decision))
 
-    print("\nActivated outputs:")
-    for match, output in router.run(task):
-        print(f"- {match.module.name}: {output}")
+    if args.orchestrate:
+        result = Orchestrator(router).run(task)
+        print(format_orchestration_result(result))
+        decision = result.routing_decision
+    else:
+        decision = router.route(task)
+        print(format_decision(decision))
+
+        print("\nActivated outputs:")
+        for match, output in router.run(task):
+            print(f"- {match.module.name}: {output}")
 
     if feedback_file:
         record = FeedbackRecord.from_decision(
@@ -100,6 +129,11 @@ def build_parser() -> ArgumentParser:
         "--adaptive",
         action="store_true",
         help="Enable feedback-informed score adjustments when feedback history is available.",
+    )
+    parser.add_argument(
+        "--orchestrate",
+        action="store_true",
+        help="Build route-scoped context and run selected modules through the orchestrator.",
     )
     parser.add_argument(
         "--save-feedback",
