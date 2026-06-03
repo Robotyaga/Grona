@@ -2,11 +2,12 @@
 
 Grona is a lightweight research prototype for a modular sparse AI architecture inspired by grape-cluster-like expert activation.
 
-The core idea is simple: do not activate every capability for every task. Route a task to relevant expert modules, gather focused context from stubs or memory modules, optionally run deterministic demo experts or execution adapters, evaluate planned tool and mock tool actions with safety policy, and keep the trace visible.
+The core idea is simple: do not activate every capability for every task. Route a task to relevant expert modules, gather focused context from stubs, memory modules, or ingested in-memory documents, optionally run deterministic demo experts or execution adapters, evaluate planned tool and mock tool actions with safety policy, and keep the trace visible.
 
 ## Architecture Metaphor
 
 - The router chooses relevant branches and grapes.
+- Documents are nutrient sources that can be split into small digestible chunks.
 - Memory modules are small knowledge pockets attached to parts of the cluster.
 - The context builder gathers only the information needed by selected grapes.
 - The orchestrator coordinates the selected path.
@@ -30,11 +31,12 @@ The current prototype includes:
 - `ExecutionPlan` and `SafeExecutionAdapter`: dry-run planning around execution adapters.
 - `ToolSpec`, `ToolRequest`, and `ToolResult`: structured mock tool contracts.
 - `ToolAdapter`, `MockToolAdapter`, `ToolRegistry`, and `SafeToolRunner`: deterministic tool adapter prototype with policy checks.
+- `DocumentSource`, `DocumentChunk`, `TextChunker`, and `DocumentIngestor`: deterministic in-memory text ingestion into memory records.
 - `ExpertResult`: structured deterministic output from executors, adapters, and tool summaries.
-- deterministic demo executors, deterministic demo adapters, and deterministic mock tool adapters for default modules.
+- deterministic demo executors, deterministic demo adapters, deterministic mock tools, and demo document sources.
 - `Router`, `RoutingDecision`, feedback, adaptive routing, memory modules, context building, orchestration, CLI, examples, tests, and CI.
 
-The demo executors, adapters, tool adapters, and safety layer are not real AI, real tooling, or sandboxing. They are deterministic proof-of-contract implementations.
+The demo executors, adapters, tool adapters, ingestion layer, and safety layer are not real AI, real tooling, real RAG, or sandboxing. They are deterministic proof-of-contract implementations.
 
 ## Install
 
@@ -60,6 +62,7 @@ python examples/expert_execution_demo.py
 python examples/execution_adapters_demo.py
 python examples/safety_policy_demo.py
 python examples/tool_adapter_demo.py
+python examples/document_ingestion_demo.py
 ```
 
 ## Run the CLI
@@ -74,6 +77,12 @@ Build context with demo memory:
 
 ```bash
 python -m grona "Diagnose engine overheating" --orchestrate --use-demo-memory
+```
+
+Build context from ingested in-memory demo documents:
+
+```bash
+python -m grona "Diagnose engine overheating" --orchestrate --ingest-demo-docs
 ```
 
 Run deterministic demo adapters:
@@ -101,6 +110,27 @@ python -m grona "Analyze engine overheating symptoms" --use-demo-tools
 ```
 
 `--execute-demo-experts`, `--use-demo-adapters`, and `--use-demo-tools` imply orchestration if `--orchestrate` is omitted. If both execution options are supplied, explicit demo experts take precedence over adapters. `--use-demo-tools` enables demo adapters, creates the default mock tool registry, and evaluates mock tool plans with the default safety policy.
+
+`--ingest-demo-docs` is used during orchestration. Without orchestration, the CLI routes normally and prints a note that document ingestion is only used with orchestration.
+
+## Document Ingestion Stub
+
+The document ingestion layer prepares future local document workflows without adding real RAG infrastructure.
+
+- `DocumentSource` stores in-memory raw text with an id, title, source type, content, and metadata.
+- `DocumentChunk` stores a deterministic chunk with source id, content, index, keywords, domains, and metadata.
+- `TextChunker` splits text by character windows with overlap and practical word-boundary handling.
+- `extract_keywords()` and `assign_domains()` use simple deterministic rules, not ML.
+- `DocumentIngestor` converts `DocumentSource` values into chunks, chunks into `MemoryRecord` values, and sources into an `InMemoryKeywordMemory` module.
+- `create_demo_document_sources()` provides small in-memory examples for car diagnostics, code review, cybersecurity, media workflow, and document indexing.
+
+The path is:
+
+```text
+Raw document text -> DocumentSource -> DocumentChunk -> MemoryRecord -> InMemoryKeywordMemory -> ContextBuilder
+```
+
+This is in-memory deterministic text ingestion only. It does not parse PDFs, run OCR, crawl the filesystem, build embeddings, use a vector database, or call external APIs.
 
 ## Safety Policy Layer
 
@@ -143,15 +173,15 @@ ruff check .
 ## Current Limitations
 
 - Demo executors, adapters, and mock tool adapters are deterministic stubs, not real AI reasoning.
-- The router is keyword/domain based.
+- Document ingestion is in-memory deterministic text ingestion only.
+- The router and memory retrieval are keyword/domain based.
+- No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler is implemented.
 - The safety layer is policy/planning only, not a real sandbox.
 - No process isolation is implemented.
 - No shell commands, subprocess execution, sandboxing, real filesystem tools, or unsafe tools are implemented.
 - No external tools, network requests, or external APIs are called.
 - No OpenAI API, Ollama integration, web server, vector database, SQL database, or external APIs.
 - No learning, adaptive tool execution, or real memory graph yet.
-- Memory retrieval is keyword/domain overlap only.
-- No embeddings or semantic search yet.
 - No production orchestration.
 
 These limits are intentional. Grona is currently a research/prototype foundation for sparse modular AI architecture.

@@ -4,7 +4,25 @@ Grona explores sparse modular AI systems inspired by grape-cluster-like expert a
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+
+## Document Ingestion Stub
+
+Document ingestion explores a simple path from raw text to route-scoped memory:
+
+```text
+Raw document text -> DocumentSource -> DocumentChunk -> MemoryRecord -> InMemoryKeywordMemory -> ContextBuilder
+```
+
+- `DocumentSource` is in-memory raw text plus title, type, id, and metadata.
+- `TextChunker` creates deterministic character chunks with overlap and practical word-boundary handling.
+- `DocumentChunk` stores chunk content, source id, index, keywords, domains, and metadata.
+- `DocumentIngestor` converts chunks to `MemoryRecord` values and builds an `InMemoryKeywordMemory` module.
+- `create_demo_document_sources()` gives small sample notes for automotive, code, cybersecurity, media, and document indexing routes.
+
+This fits the grape-cluster metaphor as nutrient preparation. Documents are sources; ingestion breaks them into small pieces; memory stores them near relevant branches; `ContextBuilder` retrieves only the pieces relevant to the selected route.
+
+The current implementation is deliberately not RAG. It has no embeddings, semantic search, vector database, PDF parsing, OCR, filesystem crawler, file watcher, or external API.
 
 ## Expert Execution Interface
 
@@ -55,20 +73,22 @@ The safety layer asks policy questions before future tools exist:
 
 This fits the grape-cluster metaphor as protective skin around risky grapes. A module being selected should not automatically grant permission to run tools.
 
-## Why Deterministic Safety Planning Matters
+## Why Deterministic Ingestion Matters
 
-Safety planning makes future execution testable before real tools are introduced. It lets Grona validate questions such as:
+Deterministic ingestion makes future document workflows testable before real document infrastructure is introduced. It lets Grona validate questions such as:
 
-- Did the adapter plan the expected action type?
-- Did the policy block destructive or critical actions?
-- Did medium-risk actions become dry-run plans?
-- Were required confirmations visible?
-- Did orchestrator metadata expose planned, allowed, blocked, dry-run, and mock tool counts?
-- Did a selected module get a suitable mock tool result without hidden side effects?
+- Did the source split into stable chunks?
+- Did overlap behave as expected?
+- Did chunks carry source metadata?
+- Did keyword/domain extraction align with router domains?
+- Did chunks become memory records?
+- Did `ContextBuilder` retrieve ingested chunks for the selected route?
 
 ## Current Limits
 
 - No real AI expert execution yet.
+- No real RAG yet.
+- No PDF parsing, OCR, embeddings, vector search, or filesystem crawling yet.
 - No external tools yet.
 - No shell execution, subprocess usage, network calls, or sandboxing yet.
 - No process isolation or filesystem isolation.
@@ -76,13 +96,19 @@ Safety planning makes future execution testable before real tools are introduced
 - No OpenAI API or Ollama integration.
 - No vector database, SQL database, web server, or external API.
 - No production orchestration.
-- Demo executors, adapters, tool adapters, and safety policies are deterministic proof-of-contract implementations.
+- Demo executors, adapters, tool adapters, ingestion, and safety policies are deterministic proof-of-contract implementations.
 
-## Future Safety Work
+## Future Safety and Document Work
 
 Before adding real execution, Grona needs explicit designs for subprocess control, sandboxing, file access boundaries, network access boundaries, secrets handling, audit logs, user confirmation flows, and rollback or recovery expectations.
 
+Before adding real document workflows, Grona needs explicit designs for file selection, parser dependencies, citation tracking, content updates, embeddings, vector search, privacy boundaries, and deletion semantics.
+
 ## Near-Term Experiments
+
+### Ingestion Trace Review
+
+Compare document sources, chunks, keywords, domains, memory records, and context retrieval results for the same task. Use mismatches to improve extraction rules and domain metadata.
 
 ### Execution Trace Review
 
