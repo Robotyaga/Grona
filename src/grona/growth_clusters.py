@@ -410,7 +410,10 @@ def create_demo_grape_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:grape-document-retrieval",
-            "Document retrieval review supports metadata, chunk boundaries, citations, and summaries.",
+            (
+                "Document retrieval review supports metadata, chunks, citations, "
+                "and summaries."
+            ),
             source,
             domains=("documents",),
             keywords=("documents", "retrieval", "chunks", "citations"),
@@ -445,7 +448,8 @@ def aggregate_keywords(seeds: Sequence[KnowledgeSeed]) -> tuple[str, ...]:
     counts: Counter[str] = Counter()
     for seed in seeds:
         counts.update(normalize_keyword_values(seed.keywords))
-    return tuple(keyword for keyword, _ in sorted(counts.items(), key=lambda item: (-item[1], item[0])))
+    sorted_counts = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return tuple(keyword for keyword, _ in sorted_counts)
 
 
 def primary_domain(seed: KnowledgeSeed) -> str:
