@@ -25,21 +25,26 @@ class ContextItem:
 class ContextBuilder:
     """Build lightweight synthetic context for the selected route."""
 
-    def build(self, decision: RoutingDecision) -> tuple[ContextItem, ...]:
-        """Build context items for a routing decision."""
+    def build(
+        self,
+        decision: RoutingDecision,
+        task: str | None = None,
+    ) -> tuple[ContextItem, ...]:
+        """Build context items for a routing decision and original task text."""
+        task_text = task or decision.task
         if not decision.selected_modules:
             return (
                 ContextItem(
                     source="demo:fallback",
                     content="No specialized modules were selected for this task.",
                     relevance=0.0,
-                    metadata={"task": decision.task},
+                    metadata={"task": task_text},
                 ),
             )
 
         max_score = max(match.score for match in decision.selected_modules) or 1.0
         return tuple(
-            self._context_for_match(decision.task, match, max_score)
+            self._context_for_match(task_text, match, max_score)
             for match in decision.selected_modules
         )
 
@@ -58,6 +63,7 @@ class ContextBuilder:
             metadata={
                 "module": module_name,
                 "domain": match.module.domain,
+                "capabilities": list(match.module.capabilities),
                 "score": match.score,
                 "base_score": match.base_score,
             },
@@ -68,32 +74,32 @@ def context_stub_for_module(module_name: str, task: str) -> str:
     """Return deterministic demo context for a selected module."""
     if module_name == "code-assistant":
         return (
-            "Focus on code structure, tests, errors, and refactoring "
-            f"signals in: {task}"
+            "Code review checklist: inspect control flow, error handling, tests, "
+            f"static analysis signals, and debugging clues for: {task}"
         )
     if module_name == "automotive-diagnostics":
         return (
-            "Consider symptoms, operating conditions, safety checks, "
-            f"and inspection order for: {task}"
+            "Automotive diagnostic stub: check coolant level, thermostat operation, "
+            f"radiator flow, fan activation, air pockets, and symptom order for: {task}"
         )
     if module_name == "cybersecurity-scanner":
         return (
-            "Look for threat indicators, suspicious network behavior, "
-            f"logs, and risk evidence in: {task}"
+            "Cybersecurity checklist: review input validation, secrets handling, "
+            f"authentication, permissions, logs, and threat exposure for: {task}"
         )
     if module_name == "media-video-tool":
         return (
-            "Prepare media workflow details such as clips, audio, frames, "
-            f"metadata, and rendering for: {task}"
+            "Media workflow stub: inspect codec needs, color workflow, audio/video "
+            f"processing, stabilization, metadata, and export constraints for: {task}"
         )
     if module_name == "document-search":
         return (
-            "Search for documents, manuals, notes, reports, and source "
-            f"evidence related to: {task}"
+            "Document context stub: consider indexing, extraction, search terms, "
+            f"source evidence, and summarization needs for: {task}"
         )
     if module_name == "general-reasoning":
         return (
-            "Break down the task, identify ambiguity, and coordinate "
-            f"selected modules for: {task}"
+            "General reasoning checklist: clarify goals, decompose ambiguity, "
+            f"compare likely paths, and coordinate selected modules for: {task}"
         )
     return f"Prepare route-scoped demo context for {module_name}: {task}"
