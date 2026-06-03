@@ -44,31 +44,39 @@ Grona should stay readable before adding heavier infrastructure.
 - Allow `Orchestrator` to optionally execute selected demo experts.
 - Keep this as proof of contract, not real AI execution.
 
-## Phase 7: Real Local Tools and Modules
+## Phase 7: Execution Adapters
+
+- Add `ExecutionRequest`, `ExecutionAdapter`, and `ExecutionAdapterRegistry`.
+- Add deterministic `StaticExecutionAdapter` and `PythonFunctionAdapter` demos.
+- Allow `Orchestrator` to optionally execute selected modules through adapters.
+- Keep adapters safe: no subprocess, shell execution, external APIs, or LLM calls yet.
+
+## Phase 8: Real Local Tools and Modules
 
 - Replace selected mock/demo modules with simple local tools.
 - Add scripts for code inspection, file search, document parsing, or media metadata extraction.
 - Keep tool interfaces small and explicit.
+- Add sandboxing and safety design before any shell or subprocess backend.
 
-## Phase 8: Memory and Feedback Integration
+## Phase 9: Memory and Feedback Integration
 
 - Introduce module-specific local memory stores.
 - Experiment with local text indexes or structured notes.
 - Use feedback to evaluate routes and execution results.
 
-## Phase 9: Local LLM Integration
+## Phase 10: Local LLM Integration
 
-- Add optional local LLM modules.
+- Add optional local LLM modules through adapter contracts.
 - Route only selected tasks to LLM-backed experts.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 10: Learned Routing Experiments
+## Phase 11: Learned Routing Experiments
 
 - Experiment with learned routing only after deterministic baselines are understood.
 - Add route confidence calibration.
 - Explore hierarchical routing: branch first, grape second.
 
-## Phase 11: UI and API Layer
+## Phase 12: UI and API Layer
 
-- Add UI/API only after routing, context, memory, and execution contracts are stable.
-- Show route traces, context sources, expert results, and feedback signals.
+- Add UI/API only after routing, context, memory, execution, and adapter contracts are stable.
+- Show route traces, context sources, expert results, adapter backends, and feedback signals.

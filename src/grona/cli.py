@@ -6,13 +6,14 @@ from argparse import ArgumentParser
 from collections.abc import Sequence
 
 from .adaptive import AdaptiveRoutingConfig
+from .adapters import create_default_adapter_registry
 from .context import ContextBuilder
 from .decision import RoutingDecision
 from .defaults import create_default_registry
 from .executor import create_default_executor_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
 from .memory import create_default_memory_modules
-from .orchestrator import OrchestrationResult, Orchestrator
+from .orchestrator import OrchestrationResult, Orchestrator, format_result_backend
 from .router import Router
 
 DEFAULT_TASK = "Analyze engine overheating symptoms and explain what to inspect first."
@@ -78,23 +79,37 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
     if result.expert_results:
         for expert_result in result.expert_results:
             lines.append(expert_result.to_text())
+            backend = format_result_backend(expert_result)
+            if backend:
+                lines.append(backend)
     else:
         lines.append("- not run")
 
-    missing = result.metadata.get("missing_executors") or ()
-    if missing:
-        lines.append(f"Missing executors: {', '.join(str(name) for name in missing)}")
+    missing_executors = result.metadata.get("missing_executors") or ()
+    if missing_executors:
+        lines.append(f"Missing executors: {', '.join(str(name) for name in missing_executors)}")
+    missing_adapters = result.metadata.get("missing_adapters") or ()
+    if missing_adapters:
+        lines.append(f"Missing adapters: {', '.join(str(name) for name in missing_adapters)}")
 
     lines.extend(
         [
             "",
-            "Execution: deterministic demo executors only; no real AI or tools were called."
-            if result.expert_results
-            else "Execution: not run; this prototype only prepares a structured handoff.",
+            execution_line(result),
             f"Orchestration summary: {result.summary}",
         ]
     )
     return "\n".join(lines)
+
+
+def execution_line(result: OrchestrationResult) -> str:
+    """Return a human-readable execution status line."""
+    backend = result.metadata.get("execution_backend")
+    if backend == "expert_executor":
+        return "Execution: deterministic demo executors only; no real AI or tools were called."
+    if backend == "execution_adapter":
+        return "Execution: deterministic demo adapters only; no real AI or tools were called."
+    return "Execution: not run; this prototype only prepares a structured handoff."
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -114,7 +129,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         feedback_records=feedback_records,
     )
 
-    should_orchestrate = args.orchestrate or args.execute_demo_experts
+    should_orchestrate = (
+        args.orchestrate or args.execute_demo_experts or args.use_demo_adapters
+    )
     if should_orchestrate:
         context_builder = ContextBuilder(
             memory_modules=create_default_memory_modules() if args.use_demo_memory else (),
@@ -122,13 +139,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         executor_registry = (
             create_default_executor_registry() if args.execute_demo_experts else None
         )
+        adapter_registry = (
+            create_default_adapter_registry() if args.use_demo_adapters else None
+        )
         result = Orchestrator(
             router,
             context_builder=context_builder,
             executor_registry=executor_registry,
+            adapter_registry=adapter_registry,
         ).run(task)
         if args.execute_demo_experts and not args.orchestrate:
             print("Execution note: --execute-demo-experts implies --orchestrate.\n")
+        if args.use_demo_adapters and not args.orchestrate:
+            print("Execution note: --use-demo-adapters implies --orchestrate.\n")
+        if args.execute_demo_experts and args.use_demo_adapters:
+            print(
+                "Execution note: --execute-demo-experts takes precedence "
+                "over --use-demo-adapters.\n"
+            )
         print(format_orchestration_result(result))
         decision = result.routing_decision
     else:
@@ -178,6 +206,11 @@ def build_parser() -> ArgumentParser:
         "--execute-demo-experts",
         action="store_true",
         help="Run deterministic demo experts during orchestration.",
+    )
+    parser.add_argument(
+        "--use-demo-adapters",
+        action="store_true",
+        help="Run deterministic demo execution adapters during orchestration.",
     )
     parser.add_argument(
         "--save-feedback",
