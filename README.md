@@ -18,11 +18,12 @@ Grona explores a different shape:
 - route each task to a focused subset
 - keep context scoped to the selected route
 - preserve a visible trace of scores, reasons, context, safety decisions, and feedback
+- validate raw knowledge before it becomes memory, training data, or expert behavior
 - grow toward specialized local experts without pretending the prototype is production AI
 
 ## Current Prototype Status
 
-Grona is currently deterministic and local-first. It does not call an LLM, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, or run real tools.
+Grona is currently deterministic and local-first. It does not call an LLM, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, train models, or run real tools.
 
 What it does today:
 
@@ -31,6 +32,7 @@ What it does today:
 - adjusts routing with optional feedback-informed scoring
 - builds route-scoped context from deterministic memory modules
 - ingests in-memory demo documents into memory records
+- validates raw `KnowledgeSeed` values before future promotion
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors and execution adapters
 - evaluates planned tool actions with a safety policy
@@ -50,6 +52,11 @@ flowchart TD
     E --> G[RoutingDecision]
     H[Memory Modules] --> I[ContextBuilder]
     J[Document Ingestion] --> H
+    J --> Q[KnowledgeSeed]
+    R[Tool Result] --> Q
+    F --> Q
+    Q --> S[KnowledgeValidator]
+    S --> T[Validated / Weak / Quarantined / Rejected]
     G --> I
     I --> K[Orchestrator]
     K --> L[Expert Executors]
@@ -68,6 +75,7 @@ flowchart TD
 - Adaptive feedback-informed routing
 - Memory modules and context building
 - Deterministic document ingestion stubs
+- KnowledgeSeed, KnowledgeSource, and deterministic KnowledgeValidator
 - Orchestration and structured result handoff
 - Deterministic expert execution
 - Execution adapter contracts
@@ -108,6 +116,12 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Find document indexing notes" --workspace documents
 ```
 
+Run the deterministic Growth Lab seed validation demo:
+
+```bash
+python -m grona --growth-demo
+```
+
 Build context from demo memory or deterministic in-memory documents:
 
 ```bash
@@ -140,11 +154,13 @@ python examples/safety_policy_demo.py
 python examples/tool_adapter_demo.py
 python examples/document_ingestion_demo.py
 python examples/workspace_profile_demo.py
+python examples/knowledge_seed_demo.py
 ```
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Growth Lab](docs/growth-lab.md)
 - [Development notes](docs/development.md)
 - [Workspace profiles](docs/workspaces.md)
 - [Research notes](docs/research-notes.md)
@@ -159,26 +175,34 @@ python examples/workspace_profile_demo.py
 
 The next research direction is a Growth Lab: a controlled environment for experimenting with how modular AI systems can grow from structured knowledge, feedback, donor model outputs, validation loops, and local tools.
 
+Current Growth Lab foundation:
+
+- `KnowledgeSource`: source type, name, reliability, metadata
+- `KnowledgeSeed`: raw knowledge candidate with domains, keywords, confidence, and status
+- `KnowledgeValidator`: deterministic scoring, warnings, and validation status
+- conversions from document chunks and mock tool results into raw seeds
+
 Planned concepts include:
 
-- `KnowledgeSeed`: structured external knowledge before any model training
-- `KnowledgeValidator`: checks and scoring around imported knowledge
+- `KnowledgeValidator`: richer validation, deduplication, and conflict checks
 - `GrapeCluster`: groups of related specialized modules
 - `GrowthEngine`: controlled expansion from validated knowledge and feedback
 - `BenchmarkSuite`: repeatable tests for routing and expert behavior
 - `DonorModelAdapter` and `LMStudioAdapter`: future optional model interfaces
 - `TrainingDataExporter`: future export of validated traces for specialized experts
 
-See [Project vision](docs/project-vision.md) and [Roadmap](docs/roadmap.md) for the longer version.
+See [Growth Lab](docs/growth-lab.md), [Project vision](docs/project-vision.md), and [Roadmap](docs/roadmap.md) for the longer version.
 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
 - No real LLM integration yet.
+- No real donor model integration yet.
 - No real tool execution, shell execution, subprocesses, filesystem tools, or network tools.
 - No real sandboxing or process isolation.
 - No external APIs, OpenAI API, Ollama integration, web server, vector database, or SQL database.
 - Document ingestion is deterministic in-memory text only.
+- KnowledgeSeed validation is deterministic scoring, not web fact-checking or truth verification.
 - No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler.
 - Workspace profiles are built-in/in-memory only; no persisted workspace directory or external config loader exists yet.
 - Safety policy is planning/policy evaluation only, not a security boundary.
