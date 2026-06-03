@@ -65,7 +65,7 @@ def test_exact_duplicate_detection() -> None:
 def test_keyword_overlap_duplicate_detection() -> None:
     seeds = [
         seed("seed:a", "Code review supports checking tests, lint, imports, and API boundaries."),
-        seed("seed:b", "Review notes should inspect tests, lint, imports, and API boundaries."),
+        seed("seed:b", "Review memo supports inspecting tests, lint, imports, and API boundaries."),
     ]
 
     results = KnowledgeDeduplicator().find_duplicates(seeds)
@@ -80,7 +80,7 @@ def test_no_false_duplicate_for_different_domains() -> None:
         seed("seed:code", "Code review supports tests and lint checks.", domains=("code",)),
         seed(
             "seed:auto",
-            "Automotive review supports tests and lint checks for a diagnostic worksheet.",
+            "Automotive review allows tests and lint checks for a diagnostic worksheet.",
             domains=("automotive",),
         ),
     ]
