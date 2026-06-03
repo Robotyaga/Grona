@@ -271,6 +271,16 @@ def get_builtin_workspace_profile(name: str) -> WorkspaceProfile:
         raise ValueError(f"unknown workspace '{name}'. Available: {available}") from exc
 
 
+def workspace_domain_terms(domains: Sequence[str]) -> set[str]:
+    """Normalize workspace domain labels and small human-friendly aliases."""
+    terms = normalized_terms(domains)
+    if "documents" in terms:
+        terms.add("document")
+    if "document" in terms:
+        terms.add("documents")
+    return terms
+
+
 def filter_modules_for_workspace(
     registry: ModuleRegistry,
     profile: WorkspaceProfile,
@@ -282,7 +292,7 @@ def filter_modules_for_workspace(
         enabled_names = set(profile.enabled_modules)
         selected = [module for module in modules if module.name in enabled_names]
     elif profile.enabled_domains:
-        enabled_terms = normalized_terms(profile.enabled_domains)
+        enabled_terms = workspace_domain_terms(profile.enabled_domains)
         selected = [
             module for module in modules if normalized_terms((module.domain,)) & enabled_terms
         ]
