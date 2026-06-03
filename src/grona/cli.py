@@ -30,7 +30,11 @@ DEFAULT_TASK = "Analyze engine overheating symptoms and explain what to inspect 
 
 def format_workspace_profile(profile: WorkspaceProfile, module_names: Sequence[str]) -> str:
     """Format active workspace settings for humans."""
-    domains = ", ".join(profile.enabled_domains) if profile.enabled_domains else "all default domains"
+    domains = (
+        ", ".join(profile.enabled_domains)
+        if profile.enabled_domains
+        else "all default domains"
+    )
     modules = ", ".join(module_names) if module_names else "none"
     memory = ", ".join(profile.memory_sources) if profile.memory_sources else "none"
     tools = ", ".join(profile.tool_profiles) if profile.tool_profiles else "none"
@@ -179,7 +183,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     profile = get_builtin_workspace_profile(args.workspace)
     registry = filter_modules_for_workspace(create_default_registry(), profile)
-    adaptive_enabled = args.adaptive or profile.adaptive_enabled or profile.routing_mode == "adaptive"
+    adaptive_enabled = (
+        args.adaptive or profile.adaptive_enabled or profile.routing_mode == "adaptive"
+    )
     task = " ".join(args.task).strip() or DEFAULT_TASK
     feedback_file = args.feedback_file or args.save_feedback
     feedback_records = (
