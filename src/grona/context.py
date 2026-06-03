@@ -67,15 +67,33 @@ class ContextBuilder:
 def context_stub_for_module(module_name: str, task: str) -> str:
     """Return deterministic demo context for a selected module."""
     if module_name == "code-assistant":
-        return f"Focus on code structure, tests, errors, and refactoring signals in: {task}"
+        return (
+            "Focus on code structure, tests, errors, and refactoring "
+            f"signals in: {task}"
+        )
     if module_name == "automotive-diagnostics":
-        return f"Consider symptoms, operating conditions, safety checks, and inspection order for: {task}"
+        return (
+            "Consider symptoms, operating conditions, safety checks, "
+            f"and inspection order for: {task}"
+        )
     if module_name == "cybersecurity-scanner":
-        return f"Look for threat indicators, suspicious network behavior, logs, and risk evidence in: {task}"
+        return (
+            "Look for threat indicators, suspicious network behavior, "
+            f"logs, and risk evidence in: {task}"
+        )
     if module_name == "media-video-tool":
-        return f"Prepare media workflow details such as clips, audio, frames, metadata, and rendering for: {task}"
+        return (
+            "Prepare media workflow details such as clips, audio, frames, "
+            f"metadata, and rendering for: {task}"
+        )
     if module_name == "document-search":
-        return f"Search for documents, manuals, notes, reports, and source evidence related to: {task}"
+        return (
+            "Search for documents, manuals, notes, reports, and source "
+            f"evidence related to: {task}"
+        )
     if module_name == "general-reasoning":
-        return f"Break down the task, identify ambiguity, and coordinate selected modules for: {task}"
+        return (
+            "Break down the task, identify ambiguity, and coordinate "
+            f"selected modules for: {task}"
+        )
     return f"Prepare route-scoped demo context for {module_name}: {task}"
