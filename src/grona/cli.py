@@ -16,6 +16,7 @@ from .memory import create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator, format_result_backend
 from .router import Router
 from .safety import create_default_safety_policy
+from .tools import SafeToolRunner, create_default_tool_registry
 
 DEFAULT_TASK = "Analyze engine overheating symptoms and explain what to inspect first."
 
@@ -94,6 +95,8 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
         lines.append(f"Missing adapters: {', '.join(str(name) for name in missing_adapters)}")
     if result.metadata.get("safety_policy_used"):
         lines.append(format_safety_summary(result))
+    if result.metadata.get("tool_results_used"):
+        lines.append(format_tool_summary(result))
 
     lines.extend(
         [
@@ -116,12 +119,25 @@ def format_safety_summary(result: OrchestrationResult) -> str:
     )
 
 
+def format_tool_summary(result: OrchestrationResult) -> str:
+    """Format mock tool summary metadata."""
+    return (
+        "Tools: mock tool results used; "
+        f"count {result.metadata.get('tool_result_count', 0)}, "
+        f"success {result.metadata.get('tool_success_count', 0)}, "
+        f"blocked {result.metadata.get('tool_blocked_count', 0)}, "
+        f"dry-run {result.metadata.get('tool_dry_run_count', 0)}"
+    )
+
+
 def execution_line(result: OrchestrationResult) -> str:
     """Return a human-readable execution status line."""
     backend = result.metadata.get("execution_backend")
     if backend == "expert_executor":
         return "Execution: deterministic demo executors only; no real AI or tools were called."
     if backend == "execution_adapter":
+        if result.metadata.get("tool_results_used"):
+            return "Execution: deterministic mock tools only; no real tools were called."
         if result.metadata.get("safety_policy_used"):
             return "Execution: safety policy planning only; no real tools were called."
         return "Execution: deterministic demo adapters only; no real AI or tools were called."
@@ -146,23 +162,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     should_orchestrate = (
-        args.orchestrate or args.execute_demo_experts or args.use_demo_adapters
+        args.orchestrate
+        or args.execute_demo_experts
+        or args.use_demo_adapters
+        or args.use_demo_tools
     )
     if should_orchestrate:
         context_builder = ContextBuilder(
             memory_modules=create_default_memory_modules() if args.use_demo_memory else (),
         )
+        use_adapters = args.use_demo_adapters or args.use_demo_tools
         executor_registry = (
             create_default_executor_registry() if args.execute_demo_experts else None
         )
-        adapter_registry = (
-            create_default_adapter_registry() if args.use_demo_adapters else None
-        )
+        adapter_registry = create_default_adapter_registry() if use_adapters else None
         safety_policy = (
             create_default_safety_policy(dry_run=args.dry_run_tools)
-            if args.safe or args.dry_run_tools
+            if args.safe or args.dry_run_tools or args.use_demo_tools
             else None
         )
+        tool_runner = None
+        if args.use_demo_tools:
+            tool_runner = SafeToolRunner(
+                create_default_tool_registry(),
+                policy=safety_policy,
+                force_dry_run=args.dry_run_tools,
+            )
         result = Orchestrator(
             router,
             context_builder=context_builder,
@@ -170,11 +195,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             adapter_registry=adapter_registry,
             safety_policy=safety_policy,
             dry_run_tools=args.dry_run_tools,
+            tool_runner=tool_runner,
         ).run(task)
         if args.execute_demo_experts and not args.orchestrate:
             print("Execution note: --execute-demo-experts implies --orchestrate.\n")
         if args.use_demo_adapters and not args.orchestrate:
             print("Execution note: --use-demo-adapters implies --orchestrate.\n")
+        if args.use_demo_tools and not args.orchestrate:
+            print("Execution note: --use-demo-tools implies --orchestrate.\n")
+        if args.use_demo_tools and not args.safe:
+            print("Execution note: --use-demo-tools uses the default safety policy.\n")
         if args.dry_run_tools and not args.safe:
             print("Execution note: --dry-run-tools enables the default safety policy.\n")
         if args.execute_demo_experts and args.use_demo_adapters:
@@ -236,6 +266,11 @@ def build_parser() -> ArgumentParser:
         "--use-demo-adapters",
         action="store_true",
         help="Run deterministic demo execution adapters during orchestration.",
+    )
+    parser.add_argument(
+        "--use-demo-tools",
+        action="store_true",
+        help="Run deterministic mock tools through SafeToolRunner during orchestration.",
     )
     parser.add_argument(
         "--safe",

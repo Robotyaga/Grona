@@ -52,6 +52,16 @@ from .safety import (
     ToolAction,
     create_default_safety_policy,
 )
+from .tools import (
+    MockToolAdapter,
+    SafeToolRunner,
+    ToolAdapter,
+    ToolRegistry,
+    ToolRequest,
+    ToolResult,
+    ToolSpec,
+    create_default_tool_registry,
+)
 
 __all__ = [
     "AdaptiveRoutingConfig",
@@ -80,6 +90,7 @@ __all__ = [
     "MediaWorkflowExpertExecutor",
     "MemoryModule",
     "MemoryRecord",
+    "MockToolAdapter",
     "ModuleFeedbackStats",
     "ModuleMatch",
     "ModuleRegistry",
@@ -91,14 +102,21 @@ __all__ = [
     "Router",
     "RoutingDecision",
     "SafeExecutionAdapter",
+    "SafeToolRunner",
     "SafetyPolicy",
     "StaticExecutionAdapter",
     "ToolAction",
+    "ToolAdapter",
+    "ToolRegistry",
+    "ToolRequest",
+    "ToolResult",
+    "ToolSpec",
     "build_module_feedback_stats",
     "create_default_adapter_registry",
     "create_default_executor_registry",
     "create_default_memory_modules",
     "create_default_registry",
     "create_default_safety_policy",
+    "create_default_tool_registry",
     "summarize_feedback",
 ]
