@@ -12,9 +12,9 @@ Router -> RoutingDecision -> ContextBuilder -> Orchestrator
              ^                    ^              |
              |                    |              v
       Adaptive Routing       Memory Modules   Expert Results
-             ^                                   |
-             |                                   v
-       Feedback Layer                  Structured handoff/result
+             ^                                   ^
+             |                                   |
+       Feedback Layer          Executors or Execution Adapters
 ```
 
 ## Components
@@ -25,26 +25,38 @@ Router -> RoutingDecision -> ContextBuilder -> Orchestrator
 
 ### ExecutableExpert
 
-`ExecutableExpert` is the execution contract. It is separate from `ExpertModule` so metadata and execution can evolve independently. An executor receives the task and focused `ContextItem` values, then returns an `ExpertResult`.
+`ExecutableExpert` is the direct execution contract. It is separate from `ExpertModule` so metadata and execution can evolve independently. An executor receives the task and focused `ContextItem` values, then returns an `ExpertResult`.
 
 The current executors are deterministic demos. They do not call LLMs, external APIs, shell tools, databases, or scanners.
 
+### ExecutionRequest and ExecutionAdapter
+
+`ExecutionRequest` normalizes the task, selected module name, route-scoped context, and metadata passed to an adapter.
+
+`ExecutionAdapter` is a bridge between a selected expert module and a concrete execution backend. It is intentionally separate from both `ExpertModule` metadata and direct `ExecutableExpert` classes.
+
+Future adapters could wrap local Python functions, scripts, shell tools, local LLM wrappers, code analyzers, document processors, media analyzers, or cybersecurity scanners. The current adapters are deterministic and safe only.
+
 ### ExpertResult
 
-`ExpertResult` stores structured output from an executor:
+`ExpertResult` stores structured output from an executor or adapter:
 
 - module name
 - task
 - summary
 - detail bullets
 - confidence
-- metadata
+- metadata, including backend information when available
 
 This gives the orchestrator a consistent shape for future real expert adapters.
 
-### ExpertExecutorRegistry
+### Registries
 
-The executor registry maps routed module names to executors. If a selected module has no executor, the orchestrator records a missing-executor note instead of crashing.
+`ExpertExecutorRegistry` maps routed module names to direct executors.
+
+`ExecutionAdapterRegistry` maps routed module names to adapters. If a selected module has no adapter, the orchestrator records a missing-adapter note instead of crashing.
+
+When both registries are provided, explicit direct executors take precedence over adapters. This keeps existing behavior predictable while adapters evolve.
 
 ### Router and Adaptive Routing
 
@@ -56,9 +68,9 @@ Memory modules provide small knowledge records. `ContextBuilder` combines built-
 
 ### Orchestrator
 
-The orchestrator routes the task, builds focused context, optionally executes deterministic demo experts through the registry, and returns an `OrchestrationResult`.
+The orchestrator routes the task, builds focused context, optionally executes selected modules through direct executors or adapters, and returns an `OrchestrationResult`.
 
-If no executor registry is provided, orchestration keeps the previous handoff-only behavior.
+If no execution registry is provided, orchestration keeps the previous handoff-only behavior.
 
 ## Request Lifecycle
 
@@ -66,30 +78,33 @@ If no executor registry is provided, orchestration keeps the previous handoff-on
 2. Router selects relevant modules.
 3. Adaptive routing may adjust scores from feedback history.
 4. ContextBuilder prepares stub and memory context for selected modules.
-5. Orchestrator optionally calls registered `ExecutableExpert` implementations.
-6. Expert results are collected into `OrchestrationResult`.
-7. Missing executors are reported in metadata and summary.
-8. Feedback can later record whether the route worked.
+5. Orchestrator prefers `ExpertExecutorRegistry` when provided.
+6. Otherwise, Orchestrator can use `ExecutionAdapterRegistry` when provided.
+7. Expert results are collected into `OrchestrationResult`.
+8. Missing executors or adapters are reported in metadata and summary.
+9. Feedback can later record whether the route worked.
 
 ## Grape-Cluster Metaphor
 
 - Router selects the relevant grapes/modules.
 - Memory modules provide relevant knowledge.
 - ContextBuilder prepares focused context.
-- Orchestrator coordinates the selected path.
-- Expert executors are the first tiny working grapes that can respond using context.
+- Expert executors are tiny working grapes that can respond directly.
+- Execution adapters are stems from grapes to future execution backends.
+- Orchestrator coordinates the selected path and backend choice.
 - Feedback remembers which execution routes worked.
 
-## Future Execution Adapters
+## Future Execution Backends
 
-Real future experts could wrap:
+Future adapters may support:
 
-- local LLMs
-- scripts
+- local Python functions
+- local scripts
 - shell tools
-- retrievers
-- media analyzers
+- local LLM wrappers
 - code analyzers
+- document processors
+- media analyzers
 - cybersecurity scanners
 
-Those are future adapters. The current execution interface is only a deterministic proof of contract.
+These are future backends. Grona does not implement subprocess execution, sandboxing, real tool calls, external APIs, or LLM integration yet.
