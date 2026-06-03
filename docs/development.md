@@ -8,24 +8,25 @@ See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Archit
 
 ```text
 src/grona/
-|-- adaptive.py      Feedback-informed score adjustment helpers
-|-- adapters.py      ExecutionRequest, adapters, and adapter registry
-|-- cli.py           Routing, workspace, memory, ingestion, execution, safety, and tool CLI
-|-- context.py       ContextItem and ContextBuilder
-|-- decision.py      Routing decision data structures
-|-- defaults.py      Default module registry
-|-- documents.py     DocumentSource, TextChunker, DocumentIngestor
-|-- executor.py      ExpertResult, ExecutableExpert, demo executors
-|-- feedback.py      Feedback records and route history stores
-|-- growth.py        KnowledgeSource, KnowledgeSeed, KnowledgeValidator
-|-- memory.py        MemoryRecord and deterministic keyword memory
-|-- module.py        ExpertModule routing metadata
-|-- orchestrator.py  Orchestrator and OrchestrationResult
-|-- registry.py      ModuleRegistry
-|-- router.py        Keyword/domain router
-|-- safety.py        ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
-|-- tools.py         ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
-`-- workspace.py     WorkspaceProfile, WorkspaceConfig, built-in profiles
+|-- adaptive.py       Feedback-informed score adjustment helpers
+|-- adapters.py       ExecutionRequest, adapters, and adapter registry
+|-- cli.py            Routing, workspace, memory, ingestion, execution, safety, and tool CLI
+|-- context.py        ContextItem and ContextBuilder
+|-- decision.py       Routing decision data structures
+|-- defaults.py       Default module registry
+|-- documents.py      DocumentSource, TextChunker, DocumentIngestor
+|-- executor.py       ExpertResult, ExecutableExpert, demo executors
+|-- feedback.py       Feedback records and route history stores
+|-- growth.py         KnowledgeSource, KnowledgeSeed, KnowledgeValidator
+|-- growth_review.py  KnowledgeSeed deduplication, conflict checks, and review decisions
+|-- memory.py         MemoryRecord and deterministic keyword memory
+|-- module.py         ExpertModule routing metadata
+|-- orchestrator.py   Orchestrator and OrchestrationResult
+|-- registry.py       ModuleRegistry
+|-- router.py         Keyword/domain router
+|-- safety.py         ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
+|-- tools.py          ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
+`-- workspace.py      WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
 
 ## Metadata vs Workspace vs Ingestion vs Growth vs Execution
@@ -37,6 +38,9 @@ Keep concerns separate:
 - ingestion turns raw text into deterministic chunks and memory records
 - growth seeds represent raw knowledge before trust or promotion
 - validation scores seeds without fact-checking, web access, or model calls
+- deduplication marks repeated seeds as merge candidates without deleting provenance
+- conflict detection marks potential contradictions without resolving truth
+- review decisions recommend next steps before future memory or cluster promotion
 - memory modules retrieve route-relevant context
 - direct executors produce `ExpertResult` values from a task and context
 - adapters normalize backend integration through `ExecutionRequest`
@@ -110,6 +114,19 @@ result = KnowledgeValidator().validate(seed)
 
 Validation is deterministic scoring and warnings only. It is not truth verification, training, or promotion into trusted memory.
 
+## Review Knowledge Seeds
+
+Use `KnowledgeReviewPipeline` when seeds should be checked for duplicates and potential conflicts before future promotion:
+
+```python
+from grona import KnowledgeReviewPipeline
+
+pipeline = KnowledgeReviewPipeline()
+decisions = pipeline.review([seed])
+```
+
+Review decisions are recommendations only. They do not mutate modules, memory, clusters, tools, or model weights.
+
 ## Run Demo Execution
 
 ```bash
@@ -118,8 +135,10 @@ python -m grona "Review this Python script for security issues" --workspace cybe
 python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Diagnose engine overheating" --orchestrate --ingest-demo-docs
 python -m grona --growth-demo
+python -m grona --growth-review-demo
 python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
+python examples/knowledge_review_demo.py
 ```
 
 ## Run Tests
@@ -162,10 +181,13 @@ Do not add these until the workspace, ingestion, growth, execution, and safety i
 - PDF parsing dependencies
 - OCR
 - embeddings or semantic search
+- LLM-based contradiction detection
+- external evidence lookup
+- automatic truth resolution
 - subprocess or shell execution
 - real filesystem tool execution
 - network tool execution
 - sandboxing claims
 - automatic model training
 
-The current workspace, ingestion, growth, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, training, or config management.
+The current workspace, ingestion, growth, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, or config management.
