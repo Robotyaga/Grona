@@ -10,9 +10,10 @@ from .adaptive import AdaptiveRoutingConfig
 from .context import ContextBuilder
 from .decision import RoutingDecision
 from .defaults import create_default_registry
+from .documents import DocumentIngestor, create_demo_document_sources
 from .executor import create_default_executor_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
-from .memory import create_default_memory_modules
+from .memory import MemoryModule, create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator, format_result_backend
 from .router import Router
 from .safety import create_default_safety_policy
@@ -168,9 +169,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         or args.use_demo_tools
     )
     if should_orchestrate:
-        context_builder = ContextBuilder(
-            memory_modules=create_default_memory_modules() if args.use_demo_memory else (),
-        )
+        context_builder = ContextBuilder(memory_modules=build_cli_memory_modules(args))
         use_adapters = args.use_demo_adapters or args.use_demo_tools
         executor_registry = (
             create_default_executor_registry() if args.execute_demo_experts else None
@@ -205,6 +204,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("Execution note: --use-demo-tools implies --orchestrate.\n")
         if args.use_demo_tools and not args.safe:
             print("Execution note: --use-demo-tools uses the default safety policy.\n")
+        if args.ingest_demo_docs:
+            print("Memory note: --ingest-demo-docs added deterministic ingested memory.\n")
         if args.dry_run_tools and not args.safe:
             print("Execution note: --dry-run-tools enables the default safety policy.\n")
         if args.execute_demo_experts and args.use_demo_adapters:
@@ -223,6 +224,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"- {match.module.name}: {output}")
         if args.use_demo_memory:
             print("\nMemory note: --use-demo-memory is only used with --orchestrate.")
+        if args.ingest_demo_docs:
+            print("\nMemory note: --ingest-demo-docs is only used with orchestration.")
 
     if feedback_file:
         record = FeedbackRecord.from_decision(
@@ -235,6 +238,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"\nSaved feedback: {feedback_file}")
 
     return 0
+
+
+def build_cli_memory_modules(args) -> tuple[MemoryModule, ...]:  # noqa: ANN001
+    """Build memory modules requested by CLI flags."""
+    modules: list[MemoryModule] = []
+    if args.use_demo_memory:
+        modules.extend(create_default_memory_modules())
+    if args.ingest_demo_docs:
+        modules.append(
+            DocumentIngestor().build_memory_module(
+                "demo-document-ingestion",
+                create_demo_document_sources(),
+            )
+        )
+    return tuple(modules)
 
 
 def build_parser() -> ArgumentParser:
@@ -256,6 +274,11 @@ def build_parser() -> ArgumentParser:
         "--use-demo-memory",
         action="store_true",
         help="Use built-in deterministic demo memory during orchestration.",
+    )
+    parser.add_argument(
+        "--ingest-demo-docs",
+        action="store_true",
+        help="Ingest deterministic in-memory demo documents during orchestration.",
     )
     parser.add_argument(
         "--execute-demo-experts",

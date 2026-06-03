@@ -13,6 +13,15 @@ from .adaptive import AdaptiveRoutingConfig, ModuleFeedbackStats, build_module_f
 from .context import ContextBuilder, ContextItem
 from .decision import ModuleMatch, RoutingDecision
 from .defaults import create_default_registry
+from .documents import (
+    DocumentChunk,
+    DocumentIngestor,
+    DocumentSource,
+    TextChunker,
+    assign_domains,
+    create_demo_document_sources,
+    extract_keywords,
+)
 from .executor import (
     AutomotiveDiagnosticsExpertExecutor,
     CodeExpertExecutor,
@@ -70,7 +79,10 @@ __all__ = [
     "ContextBuilder",
     "ContextItem",
     "CybersecurityExpertExecutor",
+    "DocumentChunk",
+    "DocumentIngestor",
     "DocumentSearchExpertExecutor",
+    "DocumentSource",
     "ExecutableExpert",
     "ExecutionAdapter",
     "ExecutionAdapterRegistry",
@@ -105,12 +117,14 @@ __all__ = [
     "SafeToolRunner",
     "SafetyPolicy",
     "StaticExecutionAdapter",
+    "TextChunker",
     "ToolAction",
     "ToolAdapter",
     "ToolRegistry",
     "ToolRequest",
     "ToolResult",
     "ToolSpec",
+    "assign_domains",
     "build_module_feedback_stats",
     "create_default_adapter_registry",
     "create_default_executor_registry",
@@ -118,5 +132,7 @@ __all__ = [
     "create_default_registry",
     "create_default_safety_policy",
     "create_default_tool_registry",
+    "create_demo_document_sources",
+    "extract_keywords",
     "summarize_feedback",
 ]
