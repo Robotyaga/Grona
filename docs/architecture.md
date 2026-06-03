@@ -30,7 +30,10 @@ flowchart TD
     R[Tool Result] --> Q
     F --> Q
     Q --> S[KnowledgeValidator]
-    S --> T[Validated / Weak / Quarantined / Rejected]
+    S --> U[KnowledgeDeduplicator]
+    U --> V[KnowledgeConflictDetector]
+    V --> W[KnowledgeReviewPipeline]
+    W --> T[Promote / Merge / Quarantine / Reject / Review]
     G --> I
     I --> K[Orchestrator]
     K --> L[Expert Executors]
@@ -50,14 +53,17 @@ flowchart TD
 3. Raw demo document text may be converted into memory records.
 4. Document chunks, tool results, feedback, or notes may be represented as raw `KnowledgeSeed` values.
 5. `KnowledgeValidator` scores seeds as validated, weak, quarantined, or rejected.
-6. A user task enters the system.
-7. `Router` selects relevant modules from the workspace registry.
-8. Adaptive routing may adjust scores from feedback history.
-9. `ContextBuilder` prepares stub and memory context for selected modules.
-10. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
-11. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
-12. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
-13. Feedback can be written later and used to influence future adaptive routing.
+6. `KnowledgeDeduplicator` marks exact or deterministic near duplicates as merge candidates.
+7. `KnowledgeConflictDetector` marks conservative potential conflicts without resolving truth.
+8. `KnowledgeReviewPipeline` recommends promote, merge, quarantine, reject, or review decisions.
+9. A user task enters the system.
+10. `Router` selects relevant modules from the workspace registry.
+11. Adaptive routing may adjust scores from feedback history.
+12. `ContextBuilder` prepares stub and memory context for selected modules.
+13. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
+14. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
+15. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
+16. Feedback can be written later and used to influence future adaptive routing.
 
 ## Workspace Layer
 
@@ -79,6 +85,10 @@ Growth Lab begins with raw knowledge candidates, not trusted memory.
 - `KnowledgeSeed` stores raw content, domains, keywords, confidence, status, source, and metadata.
 - `ValidationResult` records accepted status, score, reasons, warnings, and metadata.
 - `KnowledgeValidator` applies deterministic checks without web fact-checking or model calls.
+- `NormalizedKnowledge` provides a deterministic normalized view for matching.
+- `KnowledgeDeduplicator` marks exact and simple near duplicates as merge candidates.
+- `KnowledgeConflictDetector` marks potential conflicts from conservative polarity patterns.
+- `KnowledgeReviewPipeline` combines checks into `SeedReviewDecision` recommendations.
 
 The current seed layer can convert existing `DocumentChunk` values and mock `ToolResult` values into seeds. That connects existing ingestion and tool contracts to future growth experiments without automatically promoting raw data.
 
@@ -125,7 +135,7 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 - Workspace is the vineyard/environment.
 - Profile is how the cluster is arranged for a specific use case.
 - Enabled modules are active grapes.
-- Knowledge seeds are raw nutrients that still need validation.
+- Knowledge seeds are raw nutrients that still need validation and review.
 - Memory sources are knowledge nutrients that have entered the context path.
 - Safety policy is the protective layer.
 - Routing config is the growth/activation rule set.
@@ -133,4 +143,4 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 
 ## Prototype Boundaries
 
-The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, seed validation, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, or production configuration management.
+The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, seed validation, seed review, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, or production configuration management.
