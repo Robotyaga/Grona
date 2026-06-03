@@ -2,10 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from re import findall
 
+from .adaptive import (
+    AdaptiveRoutingConfig,
+    ModuleFeedbackStats,
+    adaptive_adjustment,
+    build_module_feedback_stats,
+    describe_adaptive_adjustment,
+)
 from .decision import ModuleMatch, RoutingDecision
+from .feedback import FeedbackRecord
 from .module import ExpertModule, TaskContext
 from .registry import ModuleRegistry
 
@@ -18,6 +26,8 @@ class Router:
         registry: ModuleRegistry,
         top_k: int = 3,
         minimum_score: float = 1.0,
+        adaptive_config: AdaptiveRoutingConfig | None = None,
+        feedback_records: Sequence[FeedbackRecord] = (),
     ) -> None:
         if top_k < 1:
             raise ValueError("top_k must be at least 1")
@@ -26,6 +36,9 @@ class Router:
         self.registry = registry
         self.top_k = top_k
         self.minimum_score = minimum_score
+        self.adaptive_config = adaptive_config or AdaptiveRoutingConfig()
+        self.feedback_records = tuple(feedback_records)
+        self.feedback_stats = build_module_feedback_stats(self.feedback_records)
 
     def route(self, task: str) -> RoutingDecision:
         """Score every module and return selected and skipped module matches."""
@@ -38,7 +51,13 @@ class Router:
         )[: self.top_k]
         selected_names = {match.module.name for match in selected}
         skipped = tuple(match for match in matches if match.module.name not in selected_names)
-        return RoutingDecision(task=task, selected_modules=selected, skipped_modules=skipped)
+        return RoutingDecision(
+            task=task,
+            selected_modules=selected,
+            skipped_modules=skipped,
+            adaptive_enabled=self.adaptive_config.enabled,
+            feedback_available=bool(self.feedback_records),
+        )
 
     def run(self, task: str, context: TaskContext | None = None) -> list[tuple[ModuleMatch, str]]:
         """Route a task and invoke only the selected modules."""
@@ -52,27 +71,51 @@ class Router:
 
     def _score_module(self, module: ExpertModule, task_terms: set[str]) -> ModuleMatch:
         reasons: list[str] = []
-        score = 0.0
+        base_score = 0.0
 
         domain_hits = sorted(task_terms & tokenize(module.domain))
         if domain_hits:
-            score += 2.0 * len(domain_hits)
+            base_score += 2.0 * len(domain_hits)
             reasons.append("domain match: " + ", ".join(domain_hits))
 
         keyword_hits = sorted(task_terms & normalized_terms(module.keywords))
         if keyword_hits:
-            score += 1.5 * len(keyword_hits)
+            base_score += 1.5 * len(keyword_hits)
             reasons.append("keyword match: " + ", ".join(keyword_hits))
 
         capability_hits = sorted(task_terms & normalized_terms(module.capabilities))
         if capability_hits:
-            score += 1.0 * len(capability_hits)
+            base_score += 1.0 * len(capability_hits)
             reasons.append("capability match: " + ", ".join(capability_hits))
 
         if not reasons:
             reasons.append("no keyword, domain, or capability match")
 
-        return ModuleMatch(module=module, score=score, reasons=tuple(reasons))
+        adjustment, feedback_summary = self._adaptive_adjustment(module.name, base_score)
+        if feedback_summary:
+            reasons.append(f"base score {base_score:.2f}; {feedback_summary}")
+
+        final_score = max(0.0, base_score + adjustment)
+        return ModuleMatch(
+            module=module,
+            score=round(final_score, 4),
+            reasons=tuple(reasons),
+            base_score=round(base_score, 4),
+            adaptive_adjustment=adjustment,
+            adaptive_enabled=self.adaptive_config.enabled,
+            feedback_summary=feedback_summary,
+        )
+
+    def _adaptive_adjustment(self, module_name: str, base_score: float) -> tuple[float, str | None]:
+        if not self.adaptive_config.enabled:
+            return 0.0, None
+        if base_score <= 0:
+            return 0.0, "adaptive routing enabled; ignored because base score has no relevance"
+
+        stats: ModuleFeedbackStats | None = self.feedback_stats.get(module_name)
+        adjustment = adaptive_adjustment(stats, self.adaptive_config)
+        summary = describe_adaptive_adjustment(stats, self.adaptive_config, adjustment)
+        return adjustment, summary
 
 
 def tokenize(text: str) -> set[str]:

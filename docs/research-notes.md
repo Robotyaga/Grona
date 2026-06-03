@@ -6,7 +6,7 @@ Grona explores sparse modular AI systems inspired by grape-cluster-like expert a
 
 A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, and inspectable invocation boundaries, a router can activate a small relevant subset and keep the rest dormant.
 
-This may improve efficiency, explainability, replaceability, and local-first control. It may also introduce new problems: routing errors, brittle module metadata, coordination overhead, and incomplete context.
+This may improve efficiency, explainability, replaceability, and local-first control. It may also introduce new problems: routing errors, brittle module metadata, coordination overhead, incomplete context, and feedback loops that reinforce bad routes.
 
 ## Mixture of Experts
 
@@ -40,7 +40,7 @@ Early routing can be rule-based. Later routing may combine rules, embeddings, le
 
 ## Feedback and Route History
 
-Feedback is the first step toward adaptive routing, but it is not the same as learning. The current feedback layer only records route decisions and optional outcomes. It can summarize which modules were selected most often, average confidence, and success/failure counts when those flags are available.
+Feedback is the first step toward adaptive routing, but it is not the same as learning. The current feedback layer records route decisions and optional outcomes. It can summarize which modules were selected most often, average confidence, and success/failure counts when those flags are available.
 
 This route history may later support questions such as:
 
@@ -49,7 +49,21 @@ This route history may later support questions such as:
 - Which task types produce low confidence routes?
 - Which skipped modules later turned out to be important?
 
-For now, feedback should remain passive and inspectable. Automatic route changes need careful evaluation because a bad feedback loop could reinforce weak routing instead of improving it.
+For now, feedback should remain inspectable. Automatic route changes need careful evaluation because a bad feedback loop could reinforce weak routing instead of improving it.
+
+## Adaptive Routing
+
+The current adaptive routing layer is a transparent score adjustment, not neural learning. It builds per-module stats from feedback records and can apply a small boost or penalty when adaptive routing is explicitly enabled.
+
+The adjustment is intentionally limited:
+
+- It starts from the base keyword/domain score.
+- It can use success/failure outcomes and ratings.
+- It is capped by configuration.
+- It does not activate modules with zero base relevance.
+- It explains the adjustment in the route decision.
+
+This is useful as a research baseline because it makes feedback effects visible. It is not proof that the system has learned. Future learned routing should be compared against this deterministic baseline.
 
 ## Local-First AI
 
@@ -85,6 +99,7 @@ This is future work. The first prototype does not implement memory graphs.
 - How should local memories be scoped to modules and domains?
 - When does modularity add too much coordination overhead?
 - How can route history improve routing without creating a self-reinforcing failure loop?
+- When should deterministic adaptive scoring give way to learned routing experiments?
 
 ## Near-Term Experiments
 
@@ -103,3 +118,7 @@ Inspect selected and skipped modules for each task. Use surprising routes to imp
 ### Feedback Simulation
 
 Before building a full adaptive feedback layer, record which routes looked correct and which modules were missing. Use that data to design better routing experiments rather than changing routes automatically.
+
+### Adaptive Scoring Baseline
+
+Use conservative score boosts and penalties from feedback history. Check whether the explanations make sense before increasing adjustment strength or trying learned routing.
