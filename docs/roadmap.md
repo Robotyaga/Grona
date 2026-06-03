@@ -58,32 +58,40 @@ Grona should stay readable before adding heavier infrastructure.
 - Support dry-run planning, allowlists, denylists, and visible blocked reasons.
 - Keep this as policy evaluation only, not sandboxing or execution.
 
-## Phase 9: Real Local Tools and Modules
+## Phase 9: Safe Mock Tool Adapter Prototype
 
-- Replace selected mock/demo modules with simple local tools.
-- Add scripts for code inspection, file search, document parsing, or media metadata extraction.
+- Add `ToolSpec`, `ToolRequest`, and `ToolResult`.
+- Add `ToolAdapter`, deterministic `MockToolAdapter`, `ToolRegistry`, and `SafeToolRunner`.
+- Add `create_default_tool_registry()` for mock code, car diagnostics, cybersecurity, media/video, and document search tools.
+- Allow selected adapter-backed modules to attach deterministic mock tool results.
+- Keep this mock-only: no shell, subprocess, network, external APIs, real filesystem tools, or sandboxing claims.
+
+## Phase 10: Real Local Tools and Modules
+
+- Replace selected mock/demo modules with simple local tools only after safety design matures.
+- Add scripts for code inspection, file search, document parsing, or media metadata extraction only with explicit boundaries.
 - Keep tool interfaces small and explicit.
 - Add real sandboxing and safety design before any shell or subprocess backend.
 
-## Phase 10: Memory and Feedback Integration
+## Phase 11: Memory and Feedback Integration
 
 - Introduce module-specific local memory stores.
 - Experiment with local text indexes or structured notes.
-- Use feedback to evaluate routes, execution results, and safety decisions.
+- Use feedback to evaluate routes, execution results, tool results, and safety decisions.
 
-## Phase 11: Local LLM Integration
+## Phase 12: Local LLM Integration
 
 - Add optional local LLM modules through adapter contracts.
 - Route only selected tasks to LLM-backed experts.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 12: Learned Routing Experiments
+## Phase 13: Learned Routing Experiments
 
 - Experiment with learned routing only after deterministic baselines are understood.
 - Add route confidence calibration.
 - Explore hierarchical routing: branch first, grape second.
 
-## Phase 13: UI and API Layer
+## Phase 14: UI and API Layer
 
-- Add UI/API only after routing, context, memory, execution, adapter, and safety contracts are stable.
-- Show route traces, context sources, expert results, adapter backends, safety plans, and feedback signals.
+- Add UI/API only after routing, context, memory, execution, adapter, tool, and safety contracts are stable.
+- Show route traces, context sources, expert results, adapter backends, mock tool results, safety plans, and feedback signals.

@@ -8,7 +8,7 @@ Grona is an early research prototype. Keep the code small, readable, determinist
 src/grona/
 |-- adaptive.py      Feedback-informed score adjustment helpers
 |-- adapters.py      ExecutionRequest, adapters, and adapter registry
-|-- cli.py           Routing, orchestration, memory, execution, and safety CLI
+|-- cli.py           Routing, orchestration, memory, execution, safety, and tool CLI
 |-- context.py       ContextItem and ContextBuilder
 |-- decision.py      Routing decision data structures
 |-- executor.py      ExpertResult, ExecutableExpert, demo executors
@@ -18,19 +18,21 @@ src/grona/
 |-- orchestrator.py  Orchestrator and OrchestrationResult
 |-- registry.py      ModuleRegistry
 |-- router.py        Keyword/domain router
-`-- safety.py        ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
+|-- safety.py        ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
+`-- tools.py         ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
 ```
 
-## Metadata vs Execution vs Safety
+## Metadata vs Execution vs Safety vs Tools
 
-`ExpertModule` is metadata for routing. `ExecutableExpert` is a direct runnable contract. `ExecutionAdapter` is a bridge from a selected module to a backend. `SafetyPolicy` evaluates planned future tool actions before an adapter backend becomes real.
+`ExpertModule` is metadata for routing. `ExecutableExpert` is a direct runnable contract. `ExecutionAdapter` is a bridge from a selected module to a backend. `ToolAdapter` is a future-facing mock tool boundary. `SafetyPolicy` evaluates planned future tool actions before an adapter backend becomes real.
 
 Keep them separate:
 
 - metadata helps the router select modules
 - direct executors produce `ExpertResult` values from a task and context
 - adapters normalize backend integration through `ExecutionRequest`
-- safety policy evaluates `ToolAction` plans without executing anything
+- tool adapters normalize mock tool integration through `ToolRequest` and `ToolResult`
+- safety policy evaluates `ToolAction` plans without executing anything unsafe
 - real tools or models can be added later without changing routing metadata
 
 ## Add an Execution Adapter
@@ -56,6 +58,27 @@ adapter = PythonFunctionAdapter(
 )
 ```
 
+## Add a Mock Tool Adapter
+
+Use a tool adapter only for deterministic mock tool behavior right now:
+
+```python
+from grona import MockToolAdapter, ToolSpec
+
+adapter = MockToolAdapter(
+    ToolSpec(
+        name="mock-my-tool",
+        description="Returns a deterministic demo result.",
+        action_type="read_file",
+        risk_level="low",
+        read_only=True,
+        metadata={"domain": "docs"},
+    )
+)
+```
+
+Register it with `ToolRegistry`, or add it to `create_default_tool_registry()` if it is a useful default demo tool.
+
 ## Add a Safety Plan
 
 Adapters may later expose planned actions. Today, `SafeExecutionAdapter` can evaluate deterministic default plans:
@@ -69,7 +92,7 @@ safe_adapter = SafeExecutionAdapter(adapter, create_default_safety_policy())
 result = safe_adapter.execute(ExecutionRequest("Review code", "code-assistant"))
 ```
 
-A dry-run plan is only a plan. It must not run shell commands, subprocesses, scanners, file processors, or external APIs.
+A dry-run plan is only a plan. It must not run shell commands, subprocesses, scanners, file processors, network requests, or external APIs.
 
 ## Run Demo Execution
 
@@ -78,6 +101,8 @@ python -m grona "Diagnose engine overheating" --orchestrate --use-demo-memory --
 python -m grona "Review security logs" --orchestrate --use-demo-adapters
 python -m grona "Review security logs" --orchestrate --use-demo-adapters --safe
 python -m grona "Review code" --use-demo-adapters --dry-run-tools
+python -m grona "Analyze engine overheating symptoms" --use-demo-tools
+python examples/tool_adapter_demo.py
 ```
 
 ## Run Tests
@@ -100,11 +125,13 @@ Do not add these until the execution and safety interfaces have stronger tests a
 - SQL databases
 - production task queues
 - subprocess or shell execution
+- real filesystem tool execution
+- network tool execution
 - sandboxing claims
 - real cybersecurity scanning
 - real document or media processing
 - hidden global memory
 - claims that policy evaluation is real isolation
-- claims that deterministic demo executors or adapters are real AI reasoning
+- claims that deterministic demo executors, adapters, or mock tool adapters are real AI reasoning
 
-The current safety layer is policy and planning only, not production execution or sandboxing.
+The current safety and tool layers are policy and planning only, not production execution or sandboxing.
