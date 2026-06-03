@@ -38,6 +38,19 @@ Routing is the central research problem. A router must balance relevance, cost, 
 
 Early routing can be rule-based. Later routing may combine rules, embeddings, learned classifiers, route history, and feedback. The risk is that routing becomes another opaque model. Grona should preserve route traces wherever possible.
 
+## Feedback and Route History
+
+Feedback is the first step toward adaptive routing, but it is not the same as learning. The current feedback layer only records route decisions and optional outcomes. It can summarize which modules were selected most often, average confidence, and success/failure counts when those flags are available.
+
+This route history may later support questions such as:
+
+- Which branches and modules are repeatedly useful?
+- Which modules are selected often but rated poorly?
+- Which task types produce low confidence routes?
+- Which skipped modules later turned out to be important?
+
+For now, feedback should remain passive and inspectable. Automatic route changes need careful evaluation because a bad feedback loop could reinforce weak routing instead of improving it.
+
 ## Local-First AI
 
 A local-first architecture keeps sensitive data, personal knowledge, and domain-specific tools close to the user when possible. Grona is well suited to local-first experiments because modules can wrap local files, local databases, local models, and local scripts.
@@ -71,6 +84,7 @@ This is future work. The first prototype does not implement memory graphs.
 - Can route traces improve trust without overwhelming the user?
 - How should local memories be scoped to modules and domains?
 - When does modularity add too much coordination overhead?
+- How can route history improve routing without creating a self-reinforcing failure loop?
 
 ## Near-Term Experiments
 
@@ -88,4 +102,4 @@ Inspect selected and skipped modules for each task. Use surprising routes to imp
 
 ### Feedback Simulation
 
-Before building a full feedback layer, manually record which routes looked correct and which modules were missing.
+Before building a full adaptive feedback layer, record which routes looked correct and which modules were missing. Use that data to design better routing experiments rather than changing routes automatically.

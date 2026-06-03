@@ -11,6 +11,7 @@ src/grona/
 ├── cli.py           Small routing CLI and output formatting
 ├── decision.py      Routing result data structures
 ├── defaults.py      Default mock/demo modules
+├── feedback.py      Feedback records and route history stores
 ├── module.py        ExpertModule definition
 ├── registry.py      ModuleRegistry definition
 └── router.py        Keyword/domain router
@@ -19,7 +20,8 @@ src/grona/
 Supporting files:
 
 - `examples/basic_routing_demo.py` shows multiple task routes.
-- `tests/` covers core routing behavior.
+- `examples/feedback_demo.py` shows route history without persistent storage.
+- `tests/` covers core routing and feedback behavior.
 - `pyproject.toml` defines packaging, test, and lint settings.
 - `.github/workflows/tests.yml` runs the test suite in CI.
 
@@ -59,6 +61,23 @@ Routing is currently based on normalized text terms from three metadata fields:
 
 Keep keywords concrete and domain-specific. Avoid adding every generic word to every module, because that makes sparse routing less useful.
 
+## Use Feedback Records
+
+A feedback record captures one route decision and optional outcome information:
+
+```python
+from grona import FeedbackRecord, InMemoryFeedbackStore, Router, create_default_registry
+
+router = Router(create_default_registry())
+decision = router.route("Analyze engine overheating symptoms")
+record = FeedbackRecord.from_decision(decision, rating=5, success=True, notes="Good route")
+
+store = InMemoryFeedbackStore()
+store.add(record)
+```
+
+Use `InMemoryFeedbackStore` for tests and demos. Use `JsonlFeedbackStore` when you explicitly want a local JSONL route history file. The JSONL store writes one JSON object per line and does not require a database.
+
 ## Run Tests
 
 ```bash
@@ -74,6 +93,7 @@ ruff check .
 - Prefer route traces over hidden behavior.
 - Let modules be added, disabled, or replaced through the registry.
 - Keep scoring deterministic while the router is rule-based.
+- Keep feedback passive until adaptive routing is designed and tested.
 
 ## What Not to Add Yet
 
@@ -85,6 +105,7 @@ Do not add these until the routing prototype justifies them:
 - external LLM dependencies
 - heavy agent frameworks
 - hidden global memory
+- automatic route adaptation without tests and route traces
 - claims that Grona has learned routing or production orchestration
 
-The current goal is a clean foundation for research, tests, and extension.
+The current goal is a clean foundation for research, tests, route history, and extension.
