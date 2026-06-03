@@ -5,8 +5,8 @@ from __future__ import annotations
 from argparse import ArgumentParser
 from collections.abc import Sequence
 
-from .adaptive import AdaptiveRoutingConfig
 from .adapters import create_default_adapter_registry
+from .adaptive import AdaptiveRoutingConfig
 from .context import ContextBuilder
 from .decision import RoutingDecision
 from .defaults import create_default_registry

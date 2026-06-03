@@ -1,6 +1,5 @@
 """Grona: sparse modular AI routing experiments."""
 
-from .adaptive import AdaptiveRoutingConfig, ModuleFeedbackStats, build_module_feedback_stats
 from .adapters import (
     ExecutionAdapter,
     ExecutionAdapterRegistry,
@@ -10,6 +9,7 @@ from .adapters import (
     StaticExecutionAdapter,
     create_default_adapter_registry,
 )
+from .adaptive import AdaptiveRoutingConfig, ModuleFeedbackStats, build_module_feedback_stats
 from .context import ContextBuilder, ContextItem
 from .decision import ModuleMatch, RoutingDecision
 from .defaults import create_default_registry

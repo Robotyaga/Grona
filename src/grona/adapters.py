@@ -212,7 +212,8 @@ def create_default_adapter_registry() -> ExecutionAdapterRegistry:
                     "automotive-diagnostics": (
                         "Adapter prepared an automotive diagnostic outline.",
                         (
-                            "Check coolant, thermostat behavior, radiator flow, and fan activation.",
+                            "Check coolant, thermostat behavior, radiator flow, "
+                            "and fan activation.",
                             "Treat this as deterministic guidance, not a real diagnostic tool.",
                         ),
                     ),
