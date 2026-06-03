@@ -1,77 +1,105 @@
 # Grona
 
-Grona is a lightweight research prototype for a modular sparse AI architecture inspired by grape-cluster-like expert activation.
+[![tests](https://github.com/Robotyaga/Grona/actions/workflows/tests.yml/badge.svg)](https://github.com/Robotyaga/Grona/actions/workflows/tests.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-The core idea is simple: do not activate every capability for every task. Route a task through a workspace profile to relevant expert modules, gather focused context from stubs, memory modules, or ingested in-memory documents, optionally run deterministic demo experts or execution adapters, evaluate planned tool and mock tool actions with safety policy, and keep the trace visible.
+Grona is a lightweight research prototype for explainable sparse AI routing: instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules.
 
-## Architecture Metaphor
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, memory sources are nutrients, routing rules decide which grapes wake up, and safety policy is the protective layer around future tool use.
 
-- Workspace profiles describe the vineyard: which grapes, nutrients, and protective defaults are active.
-- The router chooses relevant branches and grapes.
-- Documents are nutrient sources that can be split into small digestible chunks.
-- Memory modules are small knowledge pockets attached to parts of the cluster.
-- The context builder gathers only the information needed by selected grapes.
-- The orchestrator coordinates the selected path.
-- Demo expert executors are the first tiny working grapes that can return structured results.
-- Execution adapters are bridges from selected grapes to future execution backends.
-- Tool adapters are safe mock grapes for testing future tool boundaries.
-- Safety policy is protective skin around risky grapes before any future tool use.
-- The feedback layer remembers which paths worked.
-- Adaptive routing slightly adjusts future activation from previous outcomes.
+## Why This Exists
 
-## Current Prototype
+Many AI systems behave like one large monolith: every request is pushed through the same broad model, prompt, memory, and tool surface. That can make behavior expensive, hard to inspect, and difficult to constrain.
 
-The current prototype includes:
+Grona explores a different shape:
 
-- `WorkspaceProfile` and `WorkspaceConfig`: lightweight built-in project profile/config objects.
-- `ExpertModule`: metadata used for routing and module identity.
-- `ExecutableExpert`: a lightweight direct execution contract for runnable experts.
-- `ExecutionAdapter`: a bridge from selected modules to future execution backends.
-- `ExecutionRequest`: normalized task, module, context, and metadata input for adapters.
-- `ToolAction`, `SafetyPolicy`, `PolicyDecision`, `ExecutionPlan`, and `SafeExecutionAdapter`.
-- `ToolSpec`, `ToolRequest`, `ToolResult`, `ToolAdapter`, `MockToolAdapter`, `ToolRegistry`, and `SafeToolRunner`.
-- `DocumentSource`, `DocumentChunk`, `TextChunker`, and `DocumentIngestor`.
-- deterministic demo executors, deterministic demo adapters, deterministic mock tools, demo document sources, CLI, examples, tests, and CI.
+- describe capabilities as small modules with metadata
+- route each task to a focused subset
+- keep context scoped to the selected route
+- preserve a visible trace of scores, reasons, context, safety decisions, and feedback
+- grow toward specialized local experts without pretending the prototype is production AI
 
-The workspace, ingestion, demo execution, tool, and safety layers are deterministic proof-of-contract implementations. They are not real AI, real tooling, real RAG, production config management, or sandboxing.
+## Current Prototype Status
 
-## Install
+Grona is currently deterministic and local-first. It does not call an LLM, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, or run real tools.
+
+What it does today:
+
+- routes tasks through an explainable `Router`
+- stores modules in a `ModuleRegistry`
+- adjusts routing with optional feedback-informed scoring
+- builds route-scoped context from deterministic memory modules
+- ingests in-memory demo documents into memory records
+- orchestrates selected modules into structured handoffs
+- runs deterministic demo expert executors and execution adapters
+- evaluates planned tool actions with a safety policy
+- returns deterministic mock tool results through safe adapters
+- supports built-in workspace profiles for default, code, cybersecurity, media, automotive, and documents
+- ships examples, tests, CI, and documentation
+
+## Architecture Pipeline
+
+```mermaid
+flowchart TD
+    A[User Task] --> B[Workspace Profile]
+    B --> C[Filtered ModuleRegistry]
+    C --> D[Router]
+    F[Feedback Store] --> E[Adaptive Scoring]
+    D --> E
+    E --> G[RoutingDecision]
+    H[Memory Modules] --> I[ContextBuilder]
+    J[Document Ingestion] --> H
+    G --> I
+    I --> K[Orchestrator]
+    K --> L[Expert Executors]
+    K --> M[Execution Adapters]
+    K --> N[Mock Tools]
+    M --> O[Safety Policy]
+    N --> O
+    O --> P[Result]
+    L --> P
+    P --> F
+```
+
+## Feature Map
+
+- Explainable routing with selected and skipped modules
+- Adaptive feedback-informed routing
+- Memory modules and context building
+- Deterministic document ingestion stubs
+- Orchestration and structured result handoff
+- Deterministic expert execution
+- Execution adapter contracts
+- Safety policy layer for planned actions
+- Mock tool adapters and safe mock tool runner
+- Workspace profiles and lightweight project configuration
+- Tests and GitHub Actions CI
+
+## Quickstart
 
 ```bash
 pip install -e .
+python -m grona "Review firewall logs for suspicious port scans"
 ```
 
 For tests and linting:
 
 ```bash
 pip install -e .[dev]
+pytest
+ruff check .
 ```
 
-## Run Demos
+## CLI Examples
 
-```bash
-python examples/basic_routing_demo.py
-python examples/feedback_demo.py
-python examples/adaptive_routing_demo.py
-python examples/orchestration_demo.py
-python examples/memory_demo.py
-python examples/expert_execution_demo.py
-python examples/execution_adapters_demo.py
-python examples/safety_policy_demo.py
-python examples/tool_adapter_demo.py
-python examples/document_ingestion_demo.py
-python examples/workspace_profile_demo.py
-```
-
-## Run the CLI
-
-Route a task:
+Route a task with the default workspace:
 
 ```bash
 python -m grona "Review firewall logs for suspicious port scans"
 ```
 
-Use a built-in workspace profile:
+Use a focused workspace profile:
 
 ```bash
 python -m grona "Diagnose engine overheating" --workspace automotive
@@ -80,7 +108,7 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Find document indexing notes" --workspace documents
 ```
 
-Build context with demo memory or ingested demo documents:
+Build context from demo memory or deterministic in-memory documents:
 
 ```bash
 python -m grona "Diagnose engine overheating" --orchestrate --use-demo-memory
@@ -96,57 +124,63 @@ python -m grona "Review this project" --use-demo-adapters --dry-run-tools
 python -m grona "Analyze engine overheating symptoms" --use-demo-tools
 ```
 
-`--execute-demo-experts`, `--use-demo-adapters`, and `--use-demo-tools` imply orchestration if `--orchestrate` is omitted. Some workspace profiles also imply orchestration or safety by default. Explicit flags still enable the same behavior predictably.
+`--execute-demo-experts`, `--use-demo-adapters`, and `--use-demo-tools` imply orchestration if `--orchestrate` is omitted. Some workspace profiles also imply orchestration or safety by default.
 
-## Workspace Profiles
-
-A workspace profile is a lightweight in-memory project profile. It can describe enabled modules, enabled domains, memory sources, tool profiles, routing mode, adaptive defaults, safety defaults, and metadata.
-
-Built-in workspaces:
-
-- `default`: all default modules available.
-- `code`: code and document-focused routing with adaptive routing enabled.
-- `cybersecurity`: security, code, document, and general routing with safety enabled.
-- `media`: media, document, and general workflow routing.
-- `automotive`: automotive, document, and general routing with safety enabled.
-- `documents`: document search, retrieval, and general routing.
-
-This is not a persisted workspace directory or production config system. See `docs/workspaces.md` for details.
-
-## Document Ingestion Stub
-
-The document ingestion layer prepares future local document workflows without adding real RAG infrastructure.
-
-```text
-Raw document text -> DocumentSource -> DocumentChunk -> MemoryRecord -> InMemoryKeywordMemory -> ContextBuilder
-```
-
-This is in-memory deterministic text ingestion only. It does not parse PDFs, run OCR, crawl the filesystem, build embeddings, use a vector database, or call external APIs.
-
-## Run Tests
+## Demo Scripts
 
 ```bash
-pytest
+python examples/basic_routing_demo.py
+python examples/feedback_demo.py
+python examples/adaptive_routing_demo.py
+python examples/orchestration_demo.py
+python examples/memory_demo.py
+python examples/expert_execution_demo.py
+python examples/execution_adapters_demo.py
+python examples/safety_policy_demo.py
+python examples/tool_adapter_demo.py
+python examples/document_ingestion_demo.py
+python examples/workspace_profile_demo.py
 ```
 
-Optional linting:
+## Documentation
 
-```bash
-ruff check .
-```
+- [Architecture](docs/architecture.md)
+- [Development notes](docs/development.md)
+- [Workspace profiles](docs/workspaces.md)
+- [Research notes](docs/research-notes.md)
+- [Project vision](docs/project-vision.md)
+- [Roadmap](docs/roadmap.md)
+- [v0.1.0 prototype release notes](docs/release-notes-v0.1.0-prototype.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
+- [Changelog](CHANGELOG.md)
+
+## Roadmap Toward Growth Lab
+
+The next research direction is a Growth Lab: a controlled environment for experimenting with how modular AI systems can grow from structured knowledge, feedback, donor model outputs, validation loops, and local tools.
+
+Planned concepts include:
+
+- `KnowledgeSeed`: structured external knowledge before any model training
+- `KnowledgeValidator`: checks and scoring around imported knowledge
+- `GrapeCluster`: groups of related specialized modules
+- `GrowthEngine`: controlled expansion from validated knowledge and feedback
+- `BenchmarkSuite`: repeatable tests for routing and expert behavior
+- `DonorModelAdapter` and `LMStudioAdapter`: future optional model interfaces
+- `TrainingDataExporter`: future export of validated traces for specialized experts
+
+See [Project vision](docs/project-vision.md) and [Roadmap](docs/roadmap.md) for the longer version.
 
 ## Current Limitations
 
-- Workspace profiles are built-in/in-memory only; no persisted workspace directory is implemented.
-- No external config files are loaded from disk.
-- No user-specific secrets or production config management.
-- Demo executors, adapters, and mock tool adapters are deterministic stubs, not real AI reasoning.
-- Document ingestion is in-memory deterministic text ingestion only.
-- The router and memory retrieval are keyword/domain based.
-- No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler is implemented.
-- The safety layer is policy/planning only, not a real sandbox.
-- No shell commands, subprocess execution, sandboxing, real filesystem tools, or unsafe tools are implemented.
-- No external tools, network requests, OpenAI API, Ollama integration, web server, vector database, SQL database, or external APIs.
-- No production orchestration.
+- This is a prototype, not a production assistant.
+- No real LLM integration yet.
+- No real tool execution, shell execution, subprocesses, filesystem tools, or network tools.
+- No real sandboxing or process isolation.
+- No external APIs, OpenAI API, Ollama integration, web server, vector database, or SQL database.
+- Document ingestion is deterministic in-memory text only.
+- No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler.
+- Workspace profiles are built-in/in-memory only; no persisted workspace directory or external config loader exists yet.
+- Safety policy is planning/policy evaluation only, not a security boundary.
 
-These limits are intentional. Grona is currently a research/prototype foundation for sparse modular AI architecture.
+These limits are intentional. Grona is a public research/prototype foundation for sparse modular AI architecture, not a production claim.
