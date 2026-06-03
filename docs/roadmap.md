@@ -6,6 +6,7 @@ Grona should stay readable before adding heavier infrastructure. The roadmap is 
 
 - [Project vision](project-vision.md)
 - [Architecture](architecture.md)
+- [Growth Lab](growth-lab.md)
 - [Workspace profiles](workspaces.md)
 - [Research notes](research-notes.md)
 - [v0.1.0 prototype release notes](release-notes-v0.1.0-prototype.md)
@@ -24,11 +25,14 @@ The repository already has the first deterministic foundation:
 - safety policy planning
 - mock tool adapters and safe mock runner
 - workspace profiles and workspace-aware CLI
-- examples, tests, CI, and documentation
+- public README polish and project documentation
+- examples, tests, and CI
 
 ## v0.1.0-prototype Polish
 
 Goal: make the public repository coherent, inspectable, and easy to evaluate.
+
+Status: complete as public project preparation.
 
 - Polish README as a public landing page.
 - Add architecture diagrams and documentation navigation.
@@ -36,34 +40,42 @@ Goal: make the public repository coherent, inspectable, and easy to evaluate.
 - Add contribution, security, changelog, issue template, and PR template files.
 - Keep the prototype honest about what is not implemented.
 
-## Growth Lab
+## Growth Lab: KnowledgeSeed Validation Foundation
 
-Goal: create a controlled environment for experimenting with growth of modular AI systems.
+Goal: create the first deterministic layer for raw knowledge before promotion.
 
-Potential work:
+Current foundation:
 
-- scenario fixtures for routing, memory, workspaces, and safety decisions
-- repeatable traces for how tasks move through the cluster
-- clear experiment records for what changed and why
-- no real tool execution until safety design is stronger
+- `KnowledgeSource`
+- `KnowledgeSeed`
+- `ValidationResult`
+- `KnowledgeValidator`
+- conversions from `DocumentChunk` and `ToolResult`
+- deterministic demo seeds
+- CLI `--growth-demo`
+- example and tests
 
-## KnowledgeSeed
+This layer does not fact-check, train models, persist seeds, deduplicate, resolve conflicts, or grow clusters automatically.
+
+## KnowledgeSeed Next Steps
 
 Goal: represent external structured knowledge before it becomes training data or durable expert behavior.
 
-Potential fields:
+Next possible work:
 
-- source and provenance
-- domain and workspace relevance
-- content summary or structured facts
-- confidence and validation status
-- links to feedback, routes, or examples
+- deterministic seed stores
+- seed versioning
+- duplicate detection
+- conflict markers
+- source provenance summaries
+- workspace relevance scoring
+- promotion rules from validated seed to memory candidate
 
 ## KnowledgeValidator
 
 Goal: test whether imported or generated knowledge should influence a workspace.
 
-Possible checks:
+Possible next checks:
 
 - source visibility
 - consistency with existing seeds
@@ -71,6 +83,7 @@ Possible checks:
 - safety concerns
 - benchmark impact
 - human review status
+- temporal freshness flags
 
 ## GrapeCluster
 
@@ -92,6 +105,7 @@ Potential benchmark types:
 
 - routing selection tests
 - workspace profile comparison tests
+- seed validation tests
 - context assembly relevance tests
 - safety policy edge cases
 - mock tool planning tests
@@ -111,13 +125,13 @@ This should preserve provenance and validation metadata instead of flattening ev
 
 ## Future Local LLM Integration
 
-Goal: add optional local LLM-backed modules only after routing, safety, context, and evaluation contracts are strong enough.
+Goal: add optional local LLM-backed modules only after routing, safety, context, validation, and evaluation contracts are strong enough.
 
 Near-term boundaries:
 
 - no production claims
 - no hidden network calls
-- no secrets in workspace profiles
+- no secrets in workspace profiles or seeds
 - no unrestricted tool use
 - prompt/context should remain route-scoped and inspectable
 
@@ -127,6 +141,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 
 - active workspace profile
 - selected modules and scores
+- knowledge seed validation status
 - context sources
 - expert results
 - mock tool results

@@ -2,11 +2,11 @@
 
 Grona explores sparse modular AI systems inspired by grape-cluster-like expert activation. These notes are conceptual and intentionally honest about what the project does not solve yet.
 
-For the longer direction, see [Project vision](project-vision.md). For implementation boundaries, see [Architecture](architecture.md), [Development notes](development.md), and [Roadmap](roadmap.md).
+For the longer direction, see [Project vision](project-vision.md). For implementation boundaries, see [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Development notes](development.md), and [Roadmap](roadmap.md).
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, raw knowledge validation, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -16,6 +16,7 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which modules were skipped
 - which scores and reasons mattered
 - which context was attached
+- which raw knowledge seeds were validated, weakened, quarantined, or rejected
 - which safety policy decisions were made
 - which feedback might alter future routing
 
@@ -52,7 +53,22 @@ The current implementation is deliberately not RAG. It has no embeddings, semant
 
 Grona assumes that some knowledge should remain external, structured, source-aware, and validated before it ever becomes training data or expert behavior.
 
-This motivates future `KnowledgeSeed` and `KnowledgeValidator` work: collect knowledge with provenance, test whether it is useful, and only then decide whether it should influence routing, memory, prompts, benchmarks, or training exports.
+`KnowledgeSeed` and `KnowledgeValidator` now provide the first deterministic version of this idea: collect knowledge with provenance, score it, warn about weak signals, and only then decide whether it might influence routing, memory, prompts, benchmarks, or training exports later.
+
+This does not prove factual truth. It makes uncertainty explicit.
+
+## Knowledge Validation Questions
+
+The current validator is intentionally small. It asks:
+
+- Is the content empty or too short?
+- Is the source known?
+- Is source reliability low?
+- Is seed confidence low?
+- Are domains or keywords missing?
+- Does the content look suspiciously generic?
+
+Future validation can add deduplication, conflict markers, temporal freshness checks, workspace relevance, and benchmark impact.
 
 ## Execution and Tool Boundaries
 
@@ -79,21 +95,23 @@ The safety layer asks policy questions before future tools exist:
 - Can feedback improve routing without turning into opaque learning?
 - Can external knowledge seeds improve modules without being baked into weights too early?
 - Can donor model outputs be validated before becoming durable knowledge?
-- Can benchmark traces expose regressions in routing, context, and safety behavior?
+- Can benchmark traces expose regressions in routing, context, seed validation, and safety behavior?
 - Can a GrowthEngine propose useful changes while staying auditable?
 
 ## Current Limits
 
 - No persisted workspace directory yet.
+- No persisted seed store yet.
 - No external config files loaded from disk.
 - No secrets or user-specific private settings.
 - No production config management.
 - No real AI expert execution yet.
 - No real RAG yet.
 - No PDF parsing, OCR, embeddings, vector search, or filesystem crawling yet.
+- No web fact-checking or temporal freshness checks yet.
 - No shell execution, subprocess usage, network calls, or sandboxing yet.
 - No process isolation or filesystem isolation.
-- No OpenAI API or Ollama integration.
+- No OpenAI API, donor model adapter, or Ollama integration.
 - No vector database, SQL database, web server, or external API.
 - No production orchestration.
 
@@ -104,3 +122,5 @@ Before adding persisted workspace support, Grona needs explicit designs for prof
 Before adding real document workflows, Grona needs explicit designs for file selection, parser dependencies, citation tracking, content updates, embeddings, vector search, privacy boundaries, and deletion semantics.
 
 Before adding real execution, Grona needs explicit designs for subprocess control, sandboxing, file access boundaries, network access boundaries, secrets handling, audit logs, user confirmation flows, and rollback or recovery expectations.
+
+Before adding model-backed growth, Grona needs explicit designs for donor model reliability, validation, provenance, benchmark impact, training data export, and human review.

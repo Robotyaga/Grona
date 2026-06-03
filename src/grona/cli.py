@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from collections import Counter
 from collections.abc import Sequence
 
 from .adapters import create_default_adapter_registry
@@ -13,6 +14,7 @@ from .defaults import create_default_registry
 from .documents import DocumentIngestor, create_demo_document_sources
 from .executor import create_default_executor_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
+from .growth import KnowledgeValidator, ValidationResult, create_demo_knowledge_seeds
 from .memory import MemoryModule, create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator, format_result_backend
 from .router import Router
@@ -181,6 +183,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
 
+    if args.growth_demo:
+        print(format_growth_demo())
+        return 0
+
     profile = get_builtin_workspace_profile(args.workspace)
     registry = filter_modules_for_workspace(create_default_registry(), profile)
     adaptive_enabled = (
@@ -271,6 +277,38 @@ def main(argv: Sequence[str] | None = None) -> int:
     return 0
 
 
+def format_growth_demo() -> str:
+    """Validate deterministic demo knowledge seeds for the Growth Lab CLI path."""
+    validator = KnowledgeValidator()
+    seeds = create_demo_knowledge_seeds()
+    results = tuple(validator.validate(seed) for seed in seeds)
+    counts = Counter(result.status for result in results)
+    lines = [
+        "Growth Lab demo: KnowledgeSeed validation",
+        "Execution: deterministic validation only; no real AI, web, tools, or training.",
+        "",
+        f"Seeds: {len(seeds)}",
+        f"validated: {counts.get('validated', 0)}",
+        f"weak: {counts.get('weak', 0)}",
+        f"quarantined: {counts.get('quarantined', 0)}",
+        f"rejected: {counts.get('rejected', 0)}",
+        "",
+        "Validation results:",
+    ]
+    for result in results:
+        lines.append(format_validation_result_line(result))
+    return "\n".join(lines)
+
+
+def format_validation_result_line(result: ValidationResult) -> str:
+    """Format one compact validation result line."""
+    warnings = f"; warnings: {', '.join(result.warnings)}" if result.warnings else ""
+    return (
+        f"- {result.seed_id}: {result.status} "
+        f"(accepted={result.accepted}, score={result.score:.2f}){warnings}"
+    )
+
+
 def print_workspace_notes(
     args,
     profile: WorkspaceProfile,
@@ -328,6 +366,11 @@ def build_parser() -> ArgumentParser:
         choices=BUILTIN_WORKSPACES,
         default="default",
         help="Built-in workspace profile to use for routing defaults.",
+    )
+    parser.add_argument(
+        "--growth-demo",
+        action="store_true",
+        help="Run the deterministic Growth Lab KnowledgeSeed validation demo.",
     )
     parser.add_argument(
         "--adaptive",

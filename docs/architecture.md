@@ -7,6 +7,7 @@ This document describes the current deterministic prototype, not a production AI
 ## Documentation Map
 
 - [Project vision](project-vision.md)
+- [Growth Lab](growth-lab.md)
 - [Workspace profiles](workspaces.md)
 - [Development notes](development.md)
 - [Research notes](research-notes.md)
@@ -25,6 +26,11 @@ flowchart TD
     E --> G[RoutingDecision]
     H[Memory Modules] --> I[ContextBuilder]
     J[Document Ingestion] --> H
+    J --> Q[KnowledgeSeed]
+    R[Tool Result] --> Q
+    F --> Q
+    Q --> S[KnowledgeValidator]
+    S --> T[Validated / Weak / Quarantined / Rejected]
     G --> I
     I --> K[Orchestrator]
     K --> L[Expert Executors]
@@ -42,14 +48,16 @@ flowchart TD
 1. CLI or caller selects a `WorkspaceProfile`.
 2. Grona filters the `ModuleRegistry` for the workspace.
 3. Raw demo document text may be converted into memory records.
-4. A user task enters the system.
-5. `Router` selects relevant modules from the workspace registry.
-6. Adaptive routing may adjust scores from feedback history.
-7. `ContextBuilder` prepares stub and memory context for selected modules.
-8. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
-9. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
-10. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
-11. Feedback can be written later and used to influence future adaptive routing.
+4. Document chunks, tool results, feedback, or notes may be represented as raw `KnowledgeSeed` values.
+5. `KnowledgeValidator` scores seeds as validated, weak, quarantined, or rejected.
+6. A user task enters the system.
+7. `Router` selects relevant modules from the workspace registry.
+8. Adaptive routing may adjust scores from feedback history.
+9. `ContextBuilder` prepares stub and memory context for selected modules.
+10. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
+11. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
+12. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
+13. Feedback can be written later and used to influence future adaptive routing.
 
 ## Workspace Layer
 
@@ -62,6 +70,17 @@ A workspace is a configured vineyard for one use case.
 Profiles affect routing by narrowing the module registry before `Router` scores modules. If a profile filters modules, Grona preserves `general-reasoning` as a fallback when available.
 
 This is not production config management. No workspace directories, disk-loaded config files, secrets, or external config services are implemented.
+
+## Growth Lab Seed Layer
+
+Growth Lab begins with raw knowledge candidates, not trusted memory.
+
+- `KnowledgeSource` describes where a seed came from and how reliable that source is.
+- `KnowledgeSeed` stores raw content, domains, keywords, confidence, status, source, and metadata.
+- `ValidationResult` records accepted status, score, reasons, warnings, and metadata.
+- `KnowledgeValidator` applies deterministic checks without web fact-checking or model calls.
+
+The current seed layer can convert existing `DocumentChunk` values and mock `ToolResult` values into seeds. That connects existing ingestion and tool contracts to future growth experiments without automatically promoting raw data.
 
 ## Router and Registry
 
@@ -106,11 +125,12 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 - Workspace is the vineyard/environment.
 - Profile is how the cluster is arranged for a specific use case.
 - Enabled modules are active grapes.
-- Memory sources are knowledge nutrients.
+- Knowledge seeds are raw nutrients that still need validation.
+- Memory sources are knowledge nutrients that have entered the context path.
 - Safety policy is the protective layer.
 - Routing config is the growth/activation rule set.
 - Feedback is the trace of which routes worked.
 
 ## Prototype Boundaries
 
-The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, or production configuration management.
+The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, seed validation, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, or production configuration management.
