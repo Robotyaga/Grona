@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from collections import Counter, defaultdict
+from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from typing import Any
 
 from .feedback import Metadata
 from .growth import KnowledgeSeed, KnowledgeSource
@@ -141,6 +142,9 @@ class GrapeAssignment:
             raise ValueError("grape assignment score must be between 0.0 and 1.0")
 
 
+WorkingCluster = dict[str, Any]
+
+
 class GrapeClusterer:
     """Deterministic cluster builder for reviewed knowledge seeds."""
 
@@ -156,7 +160,7 @@ class GrapeClusterer:
     ) -> tuple[tuple[GrapeCluster, ...], tuple[GrapeAssignment, ...]]:
         """Create candidate clusters and assignments from reviewed seeds."""
         decision_map = {decision.seed_id: decision for decision in decisions}
-        working: list[dict[str, object]] = []
+        working: list[WorkingCluster] = []
         assignments: list[GrapeAssignment] = []
 
         for seed in seeds:
@@ -165,30 +169,14 @@ class GrapeClusterer:
                 assignments.append(unassigned_seed(seed, "missing review decision"))
                 continue
             if decision.decision != "promote_candidate":
-                assignments.append(
-                    unassigned_seed(seed, f"review decision is {decision.decision}")
-                )
+                assignments.append(unassigned_seed(seed, f"review decision is {decision.decision}"))
                 continue
             cluster_data, score, reasons = self._find_or_create_cluster(seed, working)
             node = node_from_seed(seed, cluster_data)
             cluster_data["nodes"].append(node)
             cluster_data["seeds"].append(seed)
             cluster_data["keywords"].update(normalize_keyword_values(seed.keywords))
-            assignments.append(
-                GrapeAssignment(
-                    seed.id,
-                    cluster_id=str(cluster_data["id"]),
-                    node_id=node.id,
-                    assigned=True,
-                    score=score,
-                    reasons=reasons,
-                    metadata={
-                        "domain": primary_domain(seed),
-                        "decision": decision.decision,
-                        "source_id": seed.source.id,
-                    },
-                )
-            )
+            assignments.append(assigned_seed(seed, decision, cluster_data, node, score, reasons))
 
         clusters = tuple(finalize_cluster(cluster_data) for cluster_data in working)
         return clusters, tuple(assignments)
@@ -196,32 +184,75 @@ class GrapeClusterer:
     def _find_or_create_cluster(
         self,
         seed: KnowledgeSeed,
-        working: list[dict[str, object]],
-    ) -> tuple[dict[str, object], float, tuple[str, ...]]:
+        working: list[WorkingCluster],
+    ) -> tuple[WorkingCluster, float, tuple[str, ...]]:
         domain = primary_domain(seed)
         seed_keywords = normalize_keyword_values(seed.keywords)
-        best: tuple[float, dict[str, object]] | None = None
-        for cluster_data in working:
-            if cluster_data["domain"] != domain:
-                continue
-            score = keyword_overlap(seed_keywords, tuple(cluster_data["keywords"]))
-            if best is None or score > best[0]:
-                best = (score, cluster_data)
+        best = best_matching_cluster(domain, seed_keywords, working)
         if best is not None and best[0] >= self.keyword_overlap_threshold:
             return best[1], best[0], ("same primary domain", "keyword overlap with cluster")
 
-        cluster_id = f"cluster:{slug(domain)}:{slug(seed_keywords[0] if seed_keywords else 'general')}"
-        existing_ids = {str(cluster_data["id"]) for cluster_data in working}
-        cluster_id = unique_id(cluster_id, existing_ids)
-        cluster_data = {
-            "id": cluster_id,
-            "domain": domain,
-            "keywords": set(seed_keywords),
-            "nodes": [],
-            "seeds": [],
-        }
+        cluster_data = create_working_cluster(domain, seed_keywords, working)
         working.append(cluster_data)
         return cluster_data, 1.0, ("created new cluster", "same primary domain")
+
+
+def best_matching_cluster(
+    domain: str,
+    seed_keywords: Sequence[str],
+    working: Sequence[WorkingCluster],
+) -> tuple[float, WorkingCluster] | None:
+    """Find the highest-overlap working cluster inside one domain."""
+    best: tuple[float, WorkingCluster] | None = None
+    for cluster_data in working:
+        if cluster_data["domain"] != domain:
+            continue
+        score = keyword_overlap(seed_keywords, tuple(cluster_data["keywords"]))
+        if best is None or score > best[0]:
+            best = (score, cluster_data)
+    return best
+
+
+def create_working_cluster(
+    domain: str,
+    seed_keywords: Sequence[str],
+    working: Sequence[WorkingCluster],
+) -> WorkingCluster:
+    """Create mutable cluster state before freezing into GrapeCluster."""
+    first_keyword = seed_keywords[0] if seed_keywords else "general"
+    cluster_id = f"cluster:{slug(domain)}:{slug(first_keyword)}"
+    existing_ids = {str(cluster_data["id"]) for cluster_data in working}
+    return {
+        "id": unique_id(cluster_id, existing_ids),
+        "domain": domain,
+        "keywords": set(seed_keywords),
+        "nodes": [],
+        "seeds": [],
+    }
+
+
+def assigned_seed(
+    seed: KnowledgeSeed,
+    decision: SeedReviewDecision,
+    cluster_data: Mapping[str, object],
+    node: GrapeNode,
+    score: float,
+    reasons: Sequence[str],
+) -> GrapeAssignment:
+    """Create an explicit assigned trace for clustered seeds."""
+    return GrapeAssignment(
+        seed.id,
+        cluster_id=str(cluster_data["id"]),
+        node_id=node.id,
+        assigned=True,
+        score=score,
+        reasons=reasons,
+        metadata={
+            "domain": primary_domain(seed),
+            "decision": decision.decision,
+            "source_id": seed.source.id,
+        },
+    )
 
 
 def unassigned_seed(seed: KnowledgeSeed, reason: str) -> GrapeAssignment:
@@ -339,7 +370,7 @@ def create_demo_grape_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
     return (
         KnowledgeSeed(
             "seed:grape-auto-coolant",
-            "Engine overheating triage supports checking coolant, radiator flow, and fan activation.",
+            "Engine overheating triage supports coolant, radiator flow, and fan checks.",
             source,
             domains=("automotive",),
             keywords=("engine", "overheating", "coolant", "radiator"),
@@ -347,7 +378,7 @@ def create_demo_grape_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:grape-auto-thermostat",
-            "Cooling diagnosis supports thermostat checks, coolant circulation, and leak inspection.",
+            "Cooling diagnosis supports thermostat checks, coolant flow, and leak inspection.",
             source,
             domains=("automotive",),
             keywords=("coolant", "thermostat", "radiator", "leaks"),
@@ -355,7 +386,7 @@ def create_demo_grape_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:grape-security-inputs",
-            "Security review supports input validation, authentication boundaries, and secrets checks.",
+            "Security review supports validation, authentication boundaries, and secrets checks.",
             source,
             domains=("cybersecurity",),
             keywords=("security", "validation", "authentication", "secrets"),
@@ -371,7 +402,7 @@ def create_demo_grape_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:grape-media-workflow",
-            "Media workflow review supports codec choice, color workflow, audio sync, and render checks.",
+            "Media workflow review supports codec choice, color workflow, sync, and render checks.",
             source,
             domains=("media",),
             keywords=("media", "codec", "color", "render"),
@@ -379,7 +410,7 @@ def create_demo_grape_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:grape-document-retrieval",
-            "Document retrieval review supports source metadata, chunk boundaries, citations, and summaries.",
+            "Document retrieval review supports metadata, chunk boundaries, citations, and summaries.",
             source,
             domains=("documents",),
             keywords=("documents", "retrieval", "chunks", "citations"),
@@ -441,7 +472,9 @@ def cluster_name(domain: str, keywords: Sequence[str]) -> str:
 
 def title_from_terms(terms: Sequence[str], fallback: str = "Grape") -> str:
     """Create a compact title from normalized terms."""
-    visible = [term.replace("-", " ").replace("_", " ").title().replace(" ", "") for term in terms]
+    visible = []
+    for term in terms:
+        visible.append(term.replace("-", " ").replace("_", " ").title().replace(" ", ""))
     return "".join(visible[:3]) or fallback
 
 
