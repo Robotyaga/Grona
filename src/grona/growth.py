@@ -429,7 +429,10 @@ def create_demo_knowledge_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             id="seed:low-confidence",
-            content="Possible benchmark observation: route quality changed, but evidence is incomplete.",
+            content=(
+                "Possible benchmark observation: route quality changed, "
+                "but evidence is incomplete."
+            ),
             source=sources["source:feedback"],
             domains=("general",),
             keywords=("benchmark", "route"),
