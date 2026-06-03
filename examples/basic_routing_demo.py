@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 """Demonstrate Grona's lightweight routing prototype."""
 
 import grona

@@ -1,3 +1,4 @@
+# ruff: noqa: I001
 """Demonstrate Grona route feedback records and history summaries."""
 
 import grona
