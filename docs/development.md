@@ -2,7 +2,7 @@
 
 Grona is an early research prototype. Keep the code small, readable, deterministic, and honest about what it does.
 
-See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
+See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
 
 ## Repository Structure
 
@@ -17,6 +17,7 @@ src/grona/
 |-- documents.py     DocumentSource, TextChunker, DocumentIngestor
 |-- executor.py      ExpertResult, ExecutableExpert, demo executors
 |-- feedback.py      Feedback records and route history stores
+|-- growth.py        KnowledgeSource, KnowledgeSeed, KnowledgeValidator
 |-- memory.py        MemoryRecord and deterministic keyword memory
 |-- module.py        ExpertModule routing metadata
 |-- orchestrator.py  Orchestrator and OrchestrationResult
@@ -27,13 +28,15 @@ src/grona/
 `-- workspace.py     WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
 
-## Metadata vs Workspace vs Ingestion vs Execution
+## Metadata vs Workspace vs Ingestion vs Growth vs Execution
 
 Keep concerns separate:
 
 - workspace profiles choose active modules/domains and default behavior
 - metadata helps the router select modules
 - ingestion turns raw text into deterministic chunks and memory records
+- growth seeds represent raw knowledge before trust or promotion
+- validation scores seeds without fact-checking, web access, or model calls
 - memory modules retrieve route-relevant context
 - direct executors produce `ExpertResult` values from a task and context
 - adapters normalize backend integration through `ExecutionRequest`
@@ -86,6 +89,27 @@ records = ingestor.chunks_to_memory_records(ingestor.ingest(source))
 
 This does not read paths, crawl folders, parse PDFs, run OCR, build embeddings, or call a vector database.
 
+## Add Knowledge Seeds
+
+Use `KnowledgeSeed` for raw knowledge that still needs validation:
+
+```python
+from grona import KnowledgeSeed, KnowledgeSource, KnowledgeValidator
+
+source = KnowledgeSource("source:notes", "user_note", "Project notes", reliability=0.8)
+seed = KnowledgeSeed(
+    id="seed:cooling-note",
+    content="Engine overheating triage should check coolant, radiator flow, and fan activation.",
+    source=source,
+    domains=("automotive",),
+    keywords=("engine", "overheating", "coolant"),
+    confidence=0.75,
+)
+result = KnowledgeValidator().validate(seed)
+```
+
+Validation is deterministic scoring and warnings only. It is not truth verification, training, or promotion into trusted memory.
+
 ## Run Demo Execution
 
 ```bash
@@ -93,7 +117,9 @@ python -m grona "Diagnose engine overheating" --workspace automotive
 python -m grona "Review this Python script for security issues" --workspace cybersecurity
 python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Diagnose engine overheating" --orchestrate --ingest-demo-docs
+python -m grona --growth-demo
 python examples/workspace_profile_demo.py
+python examples/knowledge_seed_demo.py
 ```
 
 ## Run Tests
@@ -117,14 +143,16 @@ Before opening a PR, check that the change:
 
 ## What Not to Add Yet
 
-Do not add these until the workspace, ingestion, execution, and safety interfaces have stronger tests and real requirements:
+Do not add these until the workspace, ingestion, growth, execution, and safety interfaces have stronger tests and real requirements:
 
 - persisted workspace directories
+- persisted seed stores
 - external config files loaded from disk
 - secrets or credential handling
 - production config management
 - OpenAI API calls
 - Ollama integration
+- donor model adapters
 - external APIs
 - web servers
 - vector databases
@@ -138,5 +166,6 @@ Do not add these until the workspace, ingestion, execution, and safety interface
 - real filesystem tool execution
 - network tool execution
 - sandboxing claims
+- automatic model training
 
-The current workspace, ingestion, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, or config management.
+The current workspace, ingestion, growth, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, training, or config management.
