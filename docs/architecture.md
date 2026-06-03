@@ -14,7 +14,7 @@ Router -> RoutingDecision -> ContextBuilder -> Orchestrator
       Adaptive Routing       Memory Modules   Expert Results
              ^                                   ^
              |                                   |
-       Feedback Layer          Executors or Execution Adapters
+       Feedback Layer        Executors, Adapters, Safety Policy
 ```
 
 ## Components
@@ -25,52 +25,48 @@ Router -> RoutingDecision -> ContextBuilder -> Orchestrator
 
 ### ExecutableExpert
 
-`ExecutableExpert` is the direct execution contract. It is separate from `ExpertModule` so metadata and execution can evolve independently. An executor receives the task and focused `ContextItem` values, then returns an `ExpertResult`.
-
-The current executors are deterministic demos. They do not call LLMs, external APIs, shell tools, databases, or scanners.
+`ExecutableExpert` is the direct execution contract. It is separate from `ExpertModule` so metadata and execution can evolve independently. The current executors are deterministic demos.
 
 ### ExecutionRequest and ExecutionAdapter
 
 `ExecutionRequest` normalizes the task, selected module name, route-scoped context, and metadata passed to an adapter.
 
-`ExecutionAdapter` is a bridge between a selected expert module and a concrete execution backend. It is intentionally separate from both `ExpertModule` metadata and direct `ExecutableExpert` classes.
+`ExecutionAdapter` is a bridge between a selected expert module and a concrete execution backend. Future adapters could wrap local Python functions, scripts, shell tools, local LLM wrappers, code analyzers, document processors, media analyzers, or cybersecurity scanners. The current adapters are deterministic and safe only.
 
-Future adapters could wrap local Python functions, scripts, shell tools, local LLM wrappers, code analyzers, document processors, media analyzers, or cybersecurity scanners. The current adapters are deterministic and safe only.
+### Safety Policy Layer
+
+The safety layer evaluates planned actions before any future adapter can run a real tool.
+
+- `ToolAction` describes a planned action, action type, risk level, read-only status, confirmation need, and optional command text.
+- `PolicyDecision` records whether the action is allowed, blocked, dry-run only, or requires confirmation.
+- `SafetyPolicy` applies conservative rules: allow low-risk read-only actions, dry-run medium-risk actions, block destructive/high/critical actions by default, and support action/command allowlists and denylists.
+- `ExecutionPlan` groups the adapter request, planned actions, and policy decisions.
+- `SafeExecutionAdapter` wraps an adapter, evaluates planned actions, and returns an `ExpertResult` with policy metadata.
+
+This is not a real sandbox. It does not isolate processes, execute commands, run subprocesses, scan networks, read files, or call external APIs.
 
 ### ExpertResult
 
-`ExpertResult` stores structured output from an executor or adapter:
+`ExpertResult` stores structured output from an executor, adapter, or safe planning wrapper:
 
 - module name
 - task
 - summary
 - detail bullets
 - confidence
-- metadata, including backend information when available
-
-This gives the orchestrator a consistent shape for future real expert adapters.
-
-### Registries
-
-`ExpertExecutorRegistry` maps routed module names to direct executors.
-
-`ExecutionAdapterRegistry` maps routed module names to adapters. If a selected module has no adapter, the orchestrator records a missing-adapter note instead of crashing.
-
-When both registries are provided, explicit direct executors take precedence over adapters. This keeps existing behavior predictable while adapters evolve.
-
-### Router and Adaptive Routing
-
-The router selects relevant modules using deterministic keyword/domain/capability matching. Adaptive routing can slightly adjust scores from feedback history when enabled.
-
-### Memory Modules and ContextBuilder
-
-Memory modules provide small knowledge records. `ContextBuilder` combines built-in stubs with memory-derived context and passes only focused context to the orchestrator.
+- metadata, including backend and safety information when available
 
 ### Orchestrator
 
-The orchestrator routes the task, builds focused context, optionally executes selected modules through direct executors or adapters, and returns an `OrchestrationResult`.
+The orchestrator routes the task, builds focused context, optionally executes selected modules through direct executors or adapters, optionally wraps adapter execution with safety policy, and returns an `OrchestrationResult`.
 
-If no execution registry is provided, orchestration keeps the previous handoff-only behavior.
+Precedence is explicit:
+
+1. `ExpertExecutorRegistry`
+2. `ExecutionAdapterRegistry`
+3. handoff-only behavior
+
+Safety policy applies only to adapter execution when provided.
 
 ## Request Lifecycle
 
@@ -78,11 +74,12 @@ If no execution registry is provided, orchestration keeps the previous handoff-o
 2. Router selects relevant modules.
 3. Adaptive routing may adjust scores from feedback history.
 4. ContextBuilder prepares stub and memory context for selected modules.
-5. Orchestrator prefers `ExpertExecutorRegistry` when provided.
-6. Otherwise, Orchestrator can use `ExecutionAdapterRegistry` when provided.
-7. Expert results are collected into `OrchestrationResult`.
-8. Missing executors or adapters are reported in metadata and summary.
-9. Feedback can later record whether the route worked.
+5. Orchestrator prefers direct executors when provided.
+6. Otherwise, Orchestrator can use adapters.
+7. If safety is enabled, adapter actions are planned and evaluated before any adapter result is returned.
+8. Expert results and safety metadata are collected into `OrchestrationResult`.
+9. Missing executors/adapters are reported in metadata and summary.
+10. Feedback can later record whether the route worked.
 
 ## Grape-Cluster Metaphor
 
@@ -91,20 +88,12 @@ If no execution registry is provided, orchestration keeps the previous handoff-o
 - ContextBuilder prepares focused context.
 - Expert executors are tiny working grapes that can respond directly.
 - Execution adapters are stems from grapes to future execution backends.
+- Safety policy is protective skin around risky grapes.
 - Orchestrator coordinates the selected path and backend choice.
 - Feedback remembers which execution routes worked.
 
 ## Future Execution Backends
 
-Future adapters may support:
+Future adapters may support local Python functions, local scripts, shell tools, local LLM wrappers, code analyzers, document processors, media analyzers, and cybersecurity scanners.
 
-- local Python functions
-- local scripts
-- shell tools
-- local LLM wrappers
-- code analyzers
-- document processors
-- media analyzers
-- cybersecurity scanners
-
-These are future backends. Grona does not implement subprocess execution, sandboxing, real tool calls, external APIs, or LLM integration yet.
+Before adding real execution, Grona still needs explicit safety design for sandboxing, subprocesses, file access, network access, secrets handling, and user consent.

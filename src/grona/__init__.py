@@ -44,6 +44,14 @@ from .module import ExpertModule
 from .orchestrator import OrchestrationResult, Orchestrator
 from .registry import ModuleRegistry
 from .router import Router
+from .safety import (
+    ExecutionPlan,
+    PolicyDecision,
+    SafeExecutionAdapter,
+    SafetyPolicy,
+    ToolAction,
+    create_default_safety_policy,
+)
 
 __all__ = [
     "AdaptiveRoutingConfig",
@@ -56,6 +64,7 @@ __all__ = [
     "ExecutableExpert",
     "ExecutionAdapter",
     "ExecutionAdapterRegistry",
+    "ExecutionPlan",
     "ExecutionRequest",
     "ExpertExecutorRegistry",
     "ExpertModule",
@@ -77,14 +86,19 @@ __all__ = [
     "NoopExecutionAdapter",
     "OrchestrationResult",
     "Orchestrator",
+    "PolicyDecision",
     "PythonFunctionAdapter",
     "Router",
     "RoutingDecision",
+    "SafeExecutionAdapter",
+    "SafetyPolicy",
     "StaticExecutionAdapter",
+    "ToolAction",
     "build_module_feedback_stats",
     "create_default_adapter_registry",
     "create_default_executor_registry",
     "create_default_memory_modules",
     "create_default_registry",
+    "create_default_safety_policy",
     "summarize_feedback",
 ]

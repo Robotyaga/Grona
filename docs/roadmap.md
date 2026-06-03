@@ -51,32 +51,39 @@ Grona should stay readable before adding heavier infrastructure.
 - Allow `Orchestrator` to optionally execute selected modules through adapters.
 - Keep adapters safe: no subprocess, shell execution, external APIs, or LLM calls yet.
 
-## Phase 8: Real Local Tools and Modules
+## Phase 8: Tool Safety Policy and Planning
+
+- Add `ToolAction`, `PolicyDecision`, `SafetyPolicy`, and `ExecutionPlan`.
+- Add `SafeExecutionAdapter` for adapter-side policy evaluation.
+- Support dry-run planning, allowlists, denylists, and visible blocked reasons.
+- Keep this as policy evaluation only, not sandboxing or execution.
+
+## Phase 9: Real Local Tools and Modules
 
 - Replace selected mock/demo modules with simple local tools.
 - Add scripts for code inspection, file search, document parsing, or media metadata extraction.
 - Keep tool interfaces small and explicit.
-- Add sandboxing and safety design before any shell or subprocess backend.
+- Add real sandboxing and safety design before any shell or subprocess backend.
 
-## Phase 9: Memory and Feedback Integration
+## Phase 10: Memory and Feedback Integration
 
 - Introduce module-specific local memory stores.
 - Experiment with local text indexes or structured notes.
-- Use feedback to evaluate routes and execution results.
+- Use feedback to evaluate routes, execution results, and safety decisions.
 
-## Phase 10: Local LLM Integration
+## Phase 11: Local LLM Integration
 
 - Add optional local LLM modules through adapter contracts.
 - Route only selected tasks to LLM-backed experts.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 11: Learned Routing Experiments
+## Phase 12: Learned Routing Experiments
 
 - Experiment with learned routing only after deterministic baselines are understood.
 - Add route confidence calibration.
 - Explore hierarchical routing: branch first, grape second.
 
-## Phase 12: UI and API Layer
+## Phase 13: UI and API Layer
 
-- Add UI/API only after routing, context, memory, execution, and adapter contracts are stable.
-- Show route traces, context sources, expert results, adapter backends, and feedback signals.
+- Add UI/API only after routing, context, memory, execution, adapter, and safety contracts are stable.
+- Show route traces, context sources, expert results, adapter backends, safety plans, and feedback signals.
