@@ -64,7 +64,9 @@ class ContextBuilder:
                 ),
             )
 
-        stub_items = self._build_stub_context(task_text, decision) if self.include_stub_context else ()
+        stub_items = ()
+        if self.include_stub_context:
+            stub_items = self._build_stub_context(task_text, decision)
         memory_items = self._build_memory_context(task_text, decision)
         return dedupe_context_items((*stub_items, *memory_items))[: self.max_context_items]
 

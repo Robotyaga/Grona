@@ -1,6 +1,12 @@
 """Demonstrate Grona's lightweight memory/retrieval stub layer."""
 
-from grona import ContextBuilder, Orchestrator, Router, create_default_memory_modules, create_default_registry
+from grona import (
+    ContextBuilder,
+    Orchestrator,
+    Router,
+    create_default_memory_modules,
+    create_default_registry,
+)
 from grona.cli import format_orchestration_result
 
 TASKS = [
