@@ -142,7 +142,10 @@ def summarize_orchestration(
     """Create a compact orchestration summary."""
     selected = ", ".join(decision.selected_names) or "no specialized modules"
     counts = source_counts or count_context_sources(context_items)
-    execution_note = "no expert execution was requested"
+    execution_note = (
+        "would pass this focused context to the next execution layer; "
+        "no expert execution was requested"
+    )
     if expert_results:
         execution_note = f"executed {len(expert_results)} deterministic demo experts"
     if missing_executors:
