@@ -15,6 +15,7 @@ from .feedback import FeedbackRecord, JsonlFeedbackStore
 from .memory import create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator, format_result_backend
 from .router import Router
+from .safety import create_default_safety_policy
 
 DEFAULT_TASK = "Analyze engine overheating symptoms and explain what to inspect first."
 
@@ -91,6 +92,8 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
     missing_adapters = result.metadata.get("missing_adapters") or ()
     if missing_adapters:
         lines.append(f"Missing adapters: {', '.join(str(name) for name in missing_adapters)}")
+    if result.metadata.get("safety_policy_used"):
+        lines.append(format_safety_summary(result))
 
     lines.extend(
         [
@@ -102,12 +105,25 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
     return "\n".join(lines)
 
 
+def format_safety_summary(result: OrchestrationResult) -> str:
+    """Format safety policy summary metadata."""
+    return (
+        "Safety: policy used; "
+        f"planned {result.metadata.get('planned_action_count', 0)} actions, "
+        f"allowed {result.metadata.get('allowed_action_count', 0)}, "
+        f"blocked {result.metadata.get('blocked_action_count', 0)}, "
+        f"dry-run {result.metadata.get('dry_run_tools', False)}"
+    )
+
+
 def execution_line(result: OrchestrationResult) -> str:
     """Return a human-readable execution status line."""
     backend = result.metadata.get("execution_backend")
     if backend == "expert_executor":
         return "Execution: deterministic demo executors only; no real AI or tools were called."
     if backend == "execution_adapter":
+        if result.metadata.get("safety_policy_used"):
+            return "Execution: safety policy planning only; no real tools were called."
         return "Execution: deterministic demo adapters only; no real AI or tools were called."
     return "Execution: not run; this prototype only prepares a structured handoff."
 
@@ -142,16 +158,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         adapter_registry = (
             create_default_adapter_registry() if args.use_demo_adapters else None
         )
+        safety_policy = (
+            create_default_safety_policy(dry_run=args.dry_run_tools)
+            if args.safe or args.dry_run_tools
+            else None
+        )
         result = Orchestrator(
             router,
             context_builder=context_builder,
             executor_registry=executor_registry,
             adapter_registry=adapter_registry,
+            safety_policy=safety_policy,
+            dry_run_tools=args.dry_run_tools,
         ).run(task)
         if args.execute_demo_experts and not args.orchestrate:
             print("Execution note: --execute-demo-experts implies --orchestrate.\n")
         if args.use_demo_adapters and not args.orchestrate:
             print("Execution note: --use-demo-adapters implies --orchestrate.\n")
+        if args.dry_run_tools and not args.safe:
+            print("Execution note: --dry-run-tools enables the default safety policy.\n")
         if args.execute_demo_experts and args.use_demo_adapters:
             print(
                 "Execution note: --execute-demo-experts takes precedence "
@@ -211,6 +236,16 @@ def build_parser() -> ArgumentParser:
         "--use-demo-adapters",
         action="store_true",
         help="Run deterministic demo execution adapters during orchestration.",
+    )
+    parser.add_argument(
+        "--safe",
+        action="store_true",
+        help="Use the default safety policy for adapter execution planning.",
+    )
+    parser.add_argument(
+        "--dry-run-tools",
+        action="store_true",
+        help="Force planned tool actions into dry-run mode. No tools are executed.",
     )
     parser.add_argument(
         "--save-feedback",

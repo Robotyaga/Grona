@@ -10,6 +10,7 @@ from .decision import RoutingDecision
 from .executor import ExpertExecutorRegistry, ExpertResult
 from .feedback import Metadata
 from .router import Router
+from .safety import SafeExecutionAdapter, SafetyPolicy
 
 
 @dataclass(frozen=True)
@@ -68,11 +69,15 @@ class Orchestrator:
         context_builder: ContextBuilder | None = None,
         executor_registry: ExpertExecutorRegistry | None = None,
         adapter_registry: ExecutionAdapterRegistry | None = None,
+        safety_policy: SafetyPolicy | None = None,
+        dry_run_tools: bool = False,
     ) -> None:
         self.router = router
         self.context_builder = context_builder or ContextBuilder()
         self.executor_registry = executor_registry
         self.adapter_registry = adapter_registry
+        self.safety_policy = safety_policy
+        self.dry_run_tools = dry_run_tools
 
     def run(self, task: str) -> OrchestrationResult:
         """Route a task, build context, and optionally execute selected modules."""
@@ -102,6 +107,7 @@ class Orchestrator:
                 "missing_executors": execution.missing_executors,
                 "missing_adapters": execution.missing_adapters,
                 "source_counts": source_counts,
+                **execution.safety_summary,
             },
         )
 
@@ -157,6 +163,12 @@ class Orchestrator:
             if adapter is None:
                 missing.append(module_name)
                 continue
+            if self.safety_policy is not None or self.dry_run_tools:
+                adapter = SafeExecutionAdapter(
+                    adapter,
+                    policy=self.safety_policy,
+                    force_dry_run=self.dry_run_tools,
+                )
             request = ExecutionRequest(
                 task=task,
                 module_name=module_name,
@@ -169,6 +181,7 @@ class Orchestrator:
             backend="execution_adapter",
             results=tuple(results),
             missing_adapters=tuple(missing),
+            safety_summary=summarize_safety_results(results),
         )
 
 
@@ -181,6 +194,7 @@ class ExecutionOutcome:
     results: tuple[ExpertResult, ...] = ()
     missing_executors: tuple[str, ...] = ()
     missing_adapters: tuple[str, ...] = ()
+    safety_summary: Metadata = field(default_factory=dict)
 
 
 def count_context_sources(context_items: tuple[ContextItem, ...]) -> dict[str, int]:
@@ -192,12 +206,36 @@ def count_context_sources(context_items: tuple[ContextItem, ...]) -> dict[str, i
     return counts
 
 
+def summarize_safety_results(results: tuple[ExpertResult, ...]) -> Metadata:
+    """Aggregate safety metadata from expert results."""
+    safe_results = [item for item in results if item.metadata.get("safety_policy_used")]
+    if not safe_results:
+        return {"safety_policy_used": False}
+    return {
+        "safety_policy_used": True,
+        "planned_action_count": sum(
+            int(item.metadata.get("planned_action_count", 0)) for item in safe_results
+        ),
+        "allowed_action_count": sum(
+            int(item.metadata.get("allowed_action_count", 0)) for item in safe_results
+        ),
+        "blocked_action_count": sum(
+            int(item.metadata.get("blocked_action_count", 0)) for item in safe_results
+        ),
+        "dry_run_tools": any(bool(item.metadata.get("dry_run_tools")) for item in safe_results),
+    }
+
+
 def format_result_backend(result: ExpertResult) -> str:
     """Format adapter or executor backend metadata for a result."""
     adapter_name = result.metadata.get("adapter_name")
+    safe_adapter_name = result.metadata.get("safe_adapter_name")
     if adapter_name:
         kind = result.metadata.get("backend_kind", "adapter")
-        return f"Backend: adapter {adapter_name} ({kind})"
+        prefix = f"safe wrapper {safe_adapter_name}; " if safe_adapter_name else ""
+        return f"Backend: {prefix}adapter {adapter_name} ({kind})"
+    if result.metadata.get("safety_policy_used"):
+        return "Backend: safe adapter planning result"
     executor_kind = result.metadata.get("executor_kind")
     if executor_kind:
         return f"Backend: executor ({executor_kind})"
@@ -228,6 +266,11 @@ def summarize_orchestration(
     if outcome.missing_adapters:
         missing = ", ".join(outcome.missing_adapters)
         execution_note += f"; missing adapters for {missing}"
+    if outcome.safety_summary.get("safety_policy_used"):
+        execution_note += (
+            f"; safety planned {outcome.safety_summary.get('planned_action_count', 0)} "
+            "tool actions"
+        )
     return (
         f"Grona selected {selected}, prepared {len(context_items)} context items "
         f"({counts.get('stub', 0)} stub, {counts.get('memory', 0)} memory), "
