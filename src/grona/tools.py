@@ -231,9 +231,17 @@ class SafeToolRunner:
         policy = self.policy.with_dry_run(True) if self.force_dry_run else self.policy
         decision = policy.evaluate(action)
         if not decision.allowed:
-            return policy_tool_result(request, decision, "Safety policy blocked mock tool execution.")
+            return policy_tool_result(
+                request,
+                decision,
+                "Safety policy blocked mock tool execution.",
+            )
         if decision.dry_run:
-            return policy_tool_result(request, decision, "Safety policy returned a dry-run tool plan.")
+            return policy_tool_result(
+                request,
+                decision,
+                "Safety policy returned a dry-run tool plan.",
+            )
 
         result = adapter.execute(request)
         return ToolResult(

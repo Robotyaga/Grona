@@ -3,7 +3,6 @@ from grona import (
     Orchestrator,
     Router,
     SafeToolRunner,
-    SafetyPolicy,
     ToolAdapter,
     ToolRegistry,
     ToolRequest,
@@ -183,9 +182,13 @@ def test_orchestrator_includes_demo_tool_results() -> None:
         tool_runner=runner,
     ).run("Review this Python package for tests and exposed secrets")
 
+    tool_details = (
+        detail for item in result.expert_results for detail in item.details
+    )
+
     assert result.metadata["tool_results_used"] is True
     assert result.metadata["tool_result_count"] > 0
-    assert any("Tool result from" in detail for item in result.expert_results for detail in item.details)
+    assert any("Tool result from" in detail for detail in tool_details)
 
 
 def test_cli_use_demo_tools(capsys) -> None:
