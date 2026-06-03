@@ -8,25 +8,26 @@ See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Archit
 
 ```text
 src/grona/
-|-- adaptive.py       Feedback-informed score adjustment helpers
-|-- adapters.py       ExecutionRequest, adapters, and adapter registry
-|-- cli.py            Routing, workspace, memory, ingestion, execution, safety, and tool CLI
-|-- context.py        ContextItem and ContextBuilder
-|-- decision.py       Routing decision data structures
-|-- defaults.py       Default module registry
-|-- documents.py      DocumentSource, TextChunker, DocumentIngestor
-|-- executor.py       ExpertResult, ExecutableExpert, demo executors
-|-- feedback.py       Feedback records and route history stores
-|-- growth.py         KnowledgeSource, KnowledgeSeed, KnowledgeValidator
-|-- growth_review.py  KnowledgeSeed deduplication, conflict checks, and review decisions
-|-- memory.py         MemoryRecord and deterministic keyword memory
-|-- module.py         ExpertModule routing metadata
-|-- orchestrator.py   Orchestrator and OrchestrationResult
-|-- registry.py       ModuleRegistry
-|-- router.py         Keyword/domain router
-|-- safety.py         ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
-|-- tools.py          ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
-`-- workspace.py      WorkspaceProfile, WorkspaceConfig, built-in profiles
+|-- adaptive.py         Feedback-informed score adjustment helpers
+|-- adapters.py         ExecutionRequest, adapters, and adapter registry
+|-- cli.py              Routing, workspace, memory, ingestion, execution, safety, and tool CLI
+|-- context.py          ContextItem and ContextBuilder
+|-- decision.py         Routing decision data structures
+|-- defaults.py         Default module registry
+|-- documents.py        DocumentSource, TextChunker, DocumentIngestor
+|-- executor.py         ExpertResult, ExecutableExpert, demo executors
+|-- feedback.py         Feedback records and route history stores
+|-- growth.py           KnowledgeSource, KnowledgeSeed, KnowledgeValidator
+|-- growth_clusters.py  GrapeNode, GrapeCluster, assignments, and memory bridge
+|-- growth_review.py    KnowledgeSeed deduplication, conflict checks, and review decisions
+|-- memory.py           MemoryRecord and deterministic keyword memory
+|-- module.py           ExpertModule routing metadata
+|-- orchestrator.py     Orchestrator and OrchestrationResult
+|-- registry.py         ModuleRegistry
+|-- router.py           Keyword/domain router
+|-- safety.py           ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
+|-- tools.py            ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
+`-- workspace.py        WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
 
 ## Metadata vs Workspace vs Ingestion vs Growth vs Execution
@@ -41,6 +42,7 @@ Keep concerns separate:
 - deduplication marks repeated seeds as merge candidates without deleting provenance
 - conflict detection marks potential contradictions without resolving truth
 - review decisions recommend next steps before future memory or cluster promotion
+- grape clustering groups only promote-candidate reviewed seeds into candidate structures
 - memory modules retrieve route-relevant context
 - direct executors produce `ExpertResult` values from a task and context
 - adapters normalize backend integration through `ExecutionRequest`
@@ -127,6 +129,19 @@ decisions = pipeline.review([seed])
 
 Review decisions are recommendations only. They do not mutate modules, memory, clusters, tools, or model weights.
 
+## Build Grape Clusters
+
+Use `GrapeClusterer` after review decisions when promote-candidate seeds should become visible candidate clusters:
+
+```python
+from grona import GrapeClusterer, memory_records_from_grape_clusters
+
+clusters, assignments = GrapeClusterer().cluster([seed], decisions)
+records = memory_records_from_grape_clusters(clusters)
+```
+
+The clusterer is deterministic domain and keyword-overlap grouping. It is not embeddings, semantic clustering, autonomous growth, or training. Keep assignment reasons visible so skipped seeds remain auditable.
+
 ## Run Demo Execution
 
 ```bash
@@ -136,9 +151,11 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Diagnose engine overheating" --orchestrate --ingest-demo-docs
 python -m grona --growth-demo
 python -m grona --growth-review-demo
+python -m grona --grape-demo
 python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
+python examples/grape_cluster_demo.py
 ```
 
 ## Run Tests
@@ -166,6 +183,7 @@ Do not add these until the workspace, ingestion, growth, execution, and safety i
 
 - persisted workspace directories
 - persisted seed stores
+- persisted cluster stores
 - external config files loaded from disk
 - secrets or credential handling
 - production config management
@@ -188,6 +206,7 @@ Do not add these until the workspace, ingestion, growth, execution, and safety i
 - real filesystem tool execution
 - network tool execution
 - sandboxing claims
+- automatic expert growth
 - automatic model training
 
 The current workspace, ingestion, growth, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, or config management.

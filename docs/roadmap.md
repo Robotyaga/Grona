@@ -26,6 +26,7 @@ The repository already has the first deterministic foundation:
 - mock tool adapters and safe mock runner
 - workspace profiles and workspace-aware CLI
 - Growth Lab seed validation and deterministic review primitives
+- Growth Lab grape node, grape cluster, assignment, and memory bridge primitives
 - public README polish and project documentation
 - examples, tests, and CI
 
@@ -77,6 +78,25 @@ Current foundation:
 
 This layer detects exact duplicates, simple near duplicates, and conservative potential conflicts. It does not perform semantic embedding search, LLM contradiction detection, web fact-checking, external evidence lookup, or automatic truth resolution.
 
+## Growth Lab: GrapeCluster Foundation
+
+Goal: represent candidate groupings after reviewed seeds become safe enough to organize.
+
+Current foundation:
+
+- `GrapeNode`
+- `GrapeCluster`
+- `GrapeAssignment`
+- `GrapeClusterer`
+- deterministic cluster confidence
+- explicit assignment and skip reasons
+- `memory_records_from_grape_clusters()` bridge
+- CLI `--grape-demo`
+- `examples/grape_cluster_demo.py`
+- deterministic tests
+
+This layer is deterministic keyword/domain grouping only. It does not add embeddings, vector search, autonomous expert growth, persisted clusters, training, or model weights.
+
 ## KnowledgeSeed Next Steps
 
 Goal: represent external structured knowledge before it becomes training data or durable expert behavior.
@@ -103,13 +123,20 @@ Possible next checks:
 - benchmark impact
 - human review status
 
-## GrapeCluster
+## GrapeCluster Next Steps
 
-Goal: group related expert modules, memory sources, tool profiles, safety defaults, and routing behavior into a coherent cluster.
+Goal: connect candidate clusters to richer modular arrangements while preserving review traces.
 
-This would extend workspace profiles into richer modular arrangements while keeping the current deterministic profile layer as the simple foundation.
+Possible next work:
 
-Reviewed seeds can later become candidates for cluster nutrients, but the current review pipeline only recommends next steps.
+- persisted cluster stores
+- cluster versioning
+- manual cluster review status
+- workspace relevance scoring for clusters
+- benchmark impact checks before promotion
+- controlled promotion from cluster summaries into durable memory candidates
+
+Reviewed seeds can later become candidates for cluster nutrients, but the current review and cluster layers only recommend and organize next steps.
 
 ## GrowthEngine
 
@@ -127,6 +154,7 @@ Potential benchmark types:
 - workspace profile comparison tests
 - seed validation tests
 - seed deduplication and potential conflict tests
+- grape cluster assignment tests
 - context assembly relevance tests
 - safety policy edge cases
 - mock tool planning tests
@@ -136,7 +164,7 @@ Potential benchmark types:
 
 Goal: optionally use model outputs as proposal sources.
 
-A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated and reviewed before they become durable knowledge or training data.
+A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated, reviewed, and optionally assigned to candidate clusters before they become durable knowledge or training data.
 
 ## TrainingDataExporter
 
@@ -146,7 +174,7 @@ This should preserve provenance and validation metadata instead of flattening ev
 
 ## Future Local LLM Integration
 
-Goal: add optional local LLM-backed modules only after routing, safety, context, validation, review, and evaluation contracts are strong enough.
+Goal: add optional local LLM-backed modules only after routing, safety, context, validation, review, clustering, and evaluation contracts are strong enough.
 
 Near-term boundaries:
 
@@ -163,6 +191,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - active workspace profile
 - selected modules and scores
 - knowledge seed validation and review status
+- grape cluster assignment status
 - context sources
 - expert results
 - mock tool results

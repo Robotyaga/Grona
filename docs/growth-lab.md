@@ -6,11 +6,11 @@ The long-term idea is:
 
 ```text
 raw knowledge -> KnowledgeSeed -> validation -> deduplication/conflict checks
--> grape cluster assignment -> memory/expert growth -> feedback -> benchmarks
--> optional training data export
+-> review decision -> grape cluster assignment -> memory/expert growth
+-> feedback -> benchmarks -> optional training data export
 ```
 
-The current implementation adds deterministic local-first foundations for `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, `KnowledgeValidator`, `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, and `KnowledgeReviewPipeline`.
+The current implementation adds deterministic local-first foundations for `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, `KnowledgeValidator`, `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, `KnowledgeReviewPipeline`, `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, and `GrapeClusterer`.
 
 ## What Is a KnowledgeSeed?
 
@@ -136,6 +136,26 @@ Potential conflicts are represented as `ConflictCheckResult` with severity:
 
 The pipeline does not promote anything into real memory, clusters, tools, or training data. It only recommends the next review step.
 
+## GrapeNode, GrapeCluster, and GrapeAssignment
+
+`GrapeClusterer` is the first deterministic clustering layer after review decisions. It only assigns seeds whose review decision is `promote_candidate`.
+
+Current structures:
+
+- `GrapeNode`: a small organized candidate unit created from one reviewed seed.
+- `GrapeCluster`: a deterministic group of related nodes inside one primary domain.
+- `GrapeAssignment`: an explicit trace showing whether a seed was assigned, skipped, and why.
+
+The current clusterer groups seeds by primary domain and deterministic keyword overlap. It calculates confidence from seed confidence, source reliability, cluster size, and simple penalties. This is explainable local scoring, not semantic clustering, model training, or expert creation.
+
+Seeds with duplicate, weak, conflict, rejected, or manual-review decisions are not silently absorbed. They receive unassigned `GrapeAssignment` traces with a reason.
+
+## Memory Bridge
+
+`memory_records_from_grape_clusters(clusters)` converts candidate or active clusters into `MemoryRecord` values.
+
+This bridge lets the existing deterministic memory and context path see reviewed cluster summaries without introducing embeddings, vector search, or persistent memory. It is a prototype bridge, not a claim that clusters have become trusted expert behavior.
+
 ## Conversions
 
 The current layer can convert existing prototype outputs into raw seeds:
@@ -159,22 +179,33 @@ Review pipeline demo:
 python -m grona --growth-review-demo
 ```
 
+Grape cluster demo:
+
+```bash
+python -m grona --grape-demo
+```
+
 The review demo prints validation results, duplicate checks, potential conflict checks, review decisions, and counts by decision.
+
+The grape demo prints deterministic cluster counts, nodes, assignments, and memory-record bridge counts.
 
 ## Examples
 
 ```bash
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
+python examples/grape_cluster_demo.py
 ```
 
 The review example shows why some seeds become promote candidates while others are merge candidates, quarantined conflicts, weak quarantines, or rejected broken seeds.
 
-## How This Prepares GrapeCluster and GrowthEngine
+The grape cluster example shows how promote-candidate seeds become `GrapeCluster` and `GrapeNode` values, then bridge into deterministic memory records.
 
-Future `GrapeCluster` work can group validated and reviewed seeds by domain, workspace, module, or tool profile.
+## How This Prepares GrowthEngine
 
-Future `GrowthEngine` work can propose changes based on reviewed seeds and feedback, but it should remain auditable. The GrowthEngine should not silently mutate modules, memory, or training data.
+`GrapeCluster` now gives future GrowthEngine experiments a structured candidate layer between reviewed seeds and any future memory, routing, expert, or training-data changes.
+
+Future `GrowthEngine` work can propose changes based on reviewed seeds, clusters, and feedback, but it should remain auditable. The GrowthEngine should not silently mutate modules, memory, or training data.
 
 Deduplication matters because clusters should not over-weight repeated copies of the same claim. Conflict detection matters because a cluster should not blindly absorb two opposite claims as equal nutrients.
 
@@ -182,11 +213,11 @@ Deduplication matters because clusters should not over-weight repeated copies of
 
 A donor model may later suggest summaries, labels, examples, or candidate facts. Grona can store those outputs as `KnowledgeSeed` values with `source_type="donor_model"` and a source reliability score.
 
-That output should be validated, deduplicated, and reviewed for potential conflicts before it becomes memory, benchmark material, or training data.
+That output should be validated, deduplicated, reviewed, and optionally assigned to candidate clusters before it becomes memory, benchmark material, or training data.
 
 ## Why Raw Data Can Be Messier Than Monolithic Training Data
 
-A monolithic training pipeline often needs cleaner input before training because bad data can become hard to inspect later. Grona can tolerate rougher raw input at the seed stage because it can label, weight, deduplicate, quarantine, validate, and reject knowledge before promotion.
+A monolithic training pipeline often needs cleaner input before training because bad data can become hard to inspect later. Grona can tolerate rougher raw input at the seed stage because it can label, weight, deduplicate, quarantine, validate, reject, and assign knowledge before promotion.
 
 This does not make bad data good. It makes uncertainty explicit.
 
@@ -199,10 +230,13 @@ This does not make bad data good. It makes uncertainty explicit.
 - No LLM-based contradiction detection.
 - No external evidence lookup.
 - No automatic truth resolution.
-- No automatic cluster growth.
+- No automatic expert growth.
 - No training or model-weight changes.
 - No real donor model integration.
 - No persisted seed store.
+- No persisted cluster store.
+- No semantic clustering.
+- No automatic promotion from cluster to trusted memory or expert behavior.
 - No production knowledge-quality claims.
 
 The current Growth Lab layer is a deterministic heuristic prototype for future experiments.

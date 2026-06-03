@@ -33,6 +33,9 @@ flowchart TD
     S --> U[KnowledgeDeduplicator]
     U --> V[KnowledgeConflictDetector]
     V --> W[KnowledgeReviewPipeline]
+    W --> X[GrapeClusterer]
+    X --> Y[GrapeCluster / GrapeNode]
+    Y --> H
     W --> T[Promote / Merge / Quarantine / Reject / Review]
     G --> I
     I --> K[Orchestrator]
@@ -56,14 +59,16 @@ flowchart TD
 6. `KnowledgeDeduplicator` marks exact or deterministic near duplicates as merge candidates.
 7. `KnowledgeConflictDetector` marks conservative potential conflicts without resolving truth.
 8. `KnowledgeReviewPipeline` recommends promote, merge, quarantine, reject, or review decisions.
-9. A user task enters the system.
-10. `Router` selects relevant modules from the workspace registry.
-11. Adaptive routing may adjust scores from feedback history.
-12. `ContextBuilder` prepares stub and memory context for selected modules.
-13. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
-14. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
-15. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
-16. Feedback can be written later and used to influence future adaptive routing.
+9. `GrapeClusterer` can group promote-candidate seeds into deterministic cluster candidates.
+10. Grape clusters can be bridged into deterministic `MemoryRecord` values for context demos.
+11. A user task enters the system.
+12. `Router` selects relevant modules from the workspace registry.
+13. Adaptive routing may adjust scores from feedback history.
+14. `ContextBuilder` prepares stub and memory context for selected modules.
+15. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
+16. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
+17. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
+18. Feedback can be written later and used to influence future adaptive routing.
 
 ## Workspace Layer
 
@@ -77,7 +82,7 @@ Profiles affect routing by narrowing the module registry before `Router` scores 
 
 This is not production config management. No workspace directories, disk-loaded config files, secrets, or external config services are implemented.
 
-## Growth Lab Seed Layer
+## Growth Lab Seed and Cluster Layers
 
 Growth Lab begins with raw knowledge candidates, not trusted memory.
 
@@ -89,8 +94,14 @@ Growth Lab begins with raw knowledge candidates, not trusted memory.
 - `KnowledgeDeduplicator` marks exact and simple near duplicates as merge candidates.
 - `KnowledgeConflictDetector` marks potential conflicts from conservative polarity patterns.
 - `KnowledgeReviewPipeline` combines checks into `SeedReviewDecision` recommendations.
+- `GrapeNode` represents one organized candidate node from a reviewed seed.
+- `GrapeCluster` groups related grape nodes inside one primary domain.
+- `GrapeAssignment` keeps an explicit assignment or skip trace.
+- `GrapeClusterer` performs deterministic domain and keyword-overlap grouping.
 
 The current seed layer can convert existing `DocumentChunk` values and mock `ToolResult` values into seeds. That connects existing ingestion and tool contracts to future growth experiments without automatically promoting raw data.
+
+The current cluster layer only groups promote-candidate seeds. It does not create experts, mutate routing, train models, perform semantic clustering, or persist clusters.
 
 ## Router and Registry
 
@@ -113,7 +124,7 @@ This is not a filesystem crawler, PDF parser, OCR pipeline, embedding model, or 
 
 `MemoryRecord` stores small knowledge items with domains, keywords, source, and metadata. `InMemoryKeywordMemory` searches these records by deterministic keyword/domain overlap.
 
-`ContextBuilder` combines route-specific stub context with memory context from relevant memory modules. Ingested document chunks become memory records, so they flow through the same context path as other memory.
+`ContextBuilder` combines route-specific stub context with memory context from relevant memory modules. Ingested document chunks and grape-cluster memory records flow through the same context path as other deterministic memory.
 
 ## Execution, Tools, and Safety
 
@@ -136,6 +147,8 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 - Profile is how the cluster is arranged for a specific use case.
 - Enabled modules are active grapes.
 - Knowledge seeds are raw nutrients that still need validation and review.
+- Grape nodes are organized candidate nutrients after review.
+- Grape clusters are deterministic groupings of related candidate nodes.
 - Memory sources are knowledge nutrients that have entered the context path.
 - Safety policy is the protective layer.
 - Routing config is the growth/activation rule set.
@@ -143,4 +156,4 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 
 ## Prototype Boundaries
 
-The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, seed validation, seed review, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, or production configuration management.
+The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, seed validation, seed review, grape cluster candidates, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, automatic expert growth, or production configuration management.

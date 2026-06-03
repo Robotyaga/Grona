@@ -52,6 +52,16 @@ from .growth import (
     knowledge_seed_from_document_chunk,
     knowledge_seed_from_tool_result,
 )
+from .growth_clusters import (
+    GrapeAssignment,
+    GrapeCluster,
+    GrapeClusterer,
+    GrapeNode,
+    create_demo_grape_clusters,
+    create_demo_grape_knowledge_seeds,
+    create_demo_grape_nodes,
+    memory_records_from_grape_clusters,
+)
 from .growth_review import (
     ConflictCheckResult,
     DuplicateCheckResult,
@@ -129,6 +139,10 @@ __all__ = [
     "FeedbackStore",
     "FeedbackSummary",
     "GeneralReasoningExpertExecutor",
+    "GrapeAssignment",
+    "GrapeCluster",
+    "GrapeClusterer",
+    "GrapeNode",
     "InMemoryFeedbackStore",
     "InMemoryKeywordMemory",
     "JsonlFeedbackStore",
@@ -182,6 +196,9 @@ __all__ = [
     "create_default_tool_registry",
     "create_default_workspace_profile",
     "create_demo_document_sources",
+    "create_demo_grape_clusters",
+    "create_demo_grape_knowledge_seeds",
+    "create_demo_grape_nodes",
     "create_demo_knowledge_seeds",
     "create_demo_knowledge_sources",
     "create_demo_review_knowledge_seeds",
@@ -192,5 +209,6 @@ __all__ = [
     "get_builtin_workspace_profile",
     "knowledge_seed_from_document_chunk",
     "knowledge_seed_from_tool_result",
+    "memory_records_from_grape_clusters",
     "summarize_feedback",
 ]

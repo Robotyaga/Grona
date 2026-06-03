@@ -10,7 +10,7 @@ The long-term goal is a system that can grow specialized capabilities in a contr
 
 - start with explicit modules and routing metadata
 - attach structured knowledge sources and deterministic memory
-- collect route traces, feedback, validation signals, review decisions, and seed outcomes
+- collect route traces, feedback, validation signals, review decisions, cluster assignments, and seed outcomes
 - use donor models and local models as optional sources of proposals, not unquestioned authorities
 - export validated traces or knowledge packs for future specialized expert training
 - keep routing, context, safety, provenance, and limitations visible
@@ -21,7 +21,7 @@ A RAG wrapper usually centers on retrieval plus prompt assembly around one model
 
 Retrieval can become one nutrient source inside Grona, but it should not be the entire system. A workspace profile may activate document search, code review, media workflow, automotive diagnostics, or security modules differently even for similar task text.
 
-Growth Lab adds another distinction: raw knowledge is not automatically trusted just because it was retrieved or generated. It can first become a `KnowledgeSeed`, receive deterministic validation and review, and stay weak, duplicated, conflicted, quarantined, or rejected until later review.
+Growth Lab adds another distinction: raw knowledge is not automatically trusted just because it was retrieved or generated. It can first become a `KnowledgeSeed`, receive deterministic validation and review, stay weak, duplicated, conflicted, quarantined, or rejected, and only then become eligible for candidate `GrapeCluster` grouping.
 
 ## Why Knowledge Should Not Always Be Baked Into Weights
 
@@ -34,6 +34,7 @@ Model weights are powerful, but they are not always the best place for project-s
 - cited or excluded from a route
 - deduplicated before weighting
 - quarantined before promotion
+- grouped into candidate clusters before durable use
 - used to generate future training examples only after quality checks
 
 Grona should be able to grow useful external knowledge before deciding whether any of it belongs in a specialized model.
@@ -42,11 +43,11 @@ Grona should be able to grow useful external knowledge before deciding whether a
 
 ### Growth Lab
 
-A controlled experimental environment for testing how modules, memory, feedback, tools, and validation loops evolve together. The current foundation is deterministic `KnowledgeSeed` validation and review.
+A controlled experimental environment for testing how modules, memory, feedback, tools, and validation loops evolve together. The current foundation is deterministic `KnowledgeSeed` validation, review, and grape cluster candidate grouping.
 
 ### KnowledgeSeed
 
-A structured unit of external knowledge with source, domain, metadata, confidence, and validation status. A seed is not automatically trusted; it is material for routing, retrieval, validation, review, or training data preparation.
+A structured unit of external knowledge with source, domain, metadata, confidence, and validation status. A seed is not automatically trusted; it is material for routing, retrieval, validation, review, clustering, or training data preparation.
 
 ### KnowledgeValidator
 
@@ -58,15 +59,17 @@ A deterministic layer for normalizing seeds, detecting duplicate candidates, mar
 
 ### GrapeCluster
 
-A group of related modules, memory sources, safety defaults, and tool profiles arranged for one domain or project profile.
+A deterministic candidate group of related `GrapeNode` values formed from promote-candidate reviewed seeds. The current implementation groups by primary domain and keyword overlap, keeps assignment traces, and can bridge cluster summaries into memory records.
+
+A `GrapeCluster` is not yet an autonomous expert, a training unit, or a semantic embedding cluster.
 
 ### GrowthEngine
 
-A future controller that proposes additions or adjustments to modules, knowledge seeds, routing metadata, feedback rules, or training data. It should be auditable and conservative.
+A future controller that proposes additions or adjustments to modules, knowledge seeds, routing metadata, feedback rules, clusters, or training data. It should be auditable and conservative.
 
 ### DonorModelAdapter and LMStudioAdapter
 
-Future optional model interfaces. A donor model may suggest summaries, labels, examples, or candidate knowledge, but Grona should validate, deduplicate, review, and trace those outputs before using them as durable project knowledge.
+Future optional model interfaces. A donor model may suggest summaries, labels, examples, or candidate knowledge, but Grona should validate, deduplicate, review, cluster, and trace those outputs before using them as durable project knowledge.
 
 ### TrainingDataExporter
 
@@ -80,7 +83,7 @@ Grona should stay honest:
 - no sandboxing claims before real isolation exists
 - no learning claims before learning is measurable
 - no tool-use claims before real tool boundaries are implemented and tested
-- no knowledge-quality claims without validation, review, and provenance
+- no knowledge-quality claims without validation, review, clustering traces, and provenance
 - no training claims before training data and evaluation are explicit
 
-The current repository is the foundation: deterministic routing, memory, orchestration, workspaces, seed validation, seed review, mock execution, safety planning, tests, and docs.
+The current repository is the foundation: deterministic routing, memory, orchestration, workspaces, seed validation, seed review, candidate grape clustering, mock execution, safety planning, tests, and docs.
