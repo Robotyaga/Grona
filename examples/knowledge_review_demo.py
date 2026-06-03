@@ -22,7 +22,8 @@ def main() -> None:
         conflict_detector=conflict_detector,
     )
 
-    validations = {result.seed_id: result for result in (validator.validate(seed) for seed in seeds)}
+    validation_results = (validator.validate(seed) for seed in seeds)
+    validations = {result.seed_id: result for result in validation_results}
     duplicates = {result.seed_id: result for result in deduplicator.find_duplicates(seeds)}
     conflicts = {result.seed_id: result for result in conflict_detector.find_conflicts(seeds)}
     decisions = pipeline.review(seeds)
