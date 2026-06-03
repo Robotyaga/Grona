@@ -6,9 +6,11 @@ from argparse import ArgumentParser
 from collections.abc import Sequence
 
 from .adaptive import AdaptiveRoutingConfig
+from .context import ContextBuilder
 from .decision import RoutingDecision
 from .defaults import create_default_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
+from .memory import create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator
 from .router import Router
 
@@ -62,8 +64,12 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
     lines.extend(["", "Context items:"])
     if result.context_items:
         for item in result.context_items:
-            lines.append(f"- {item.source} (relevance {item.relevance:.2f})")
+            kind = item.metadata.get("context_kind", "context")
+            lines.append(f"- {item.source} ({kind}, relevance {item.relevance:.2f})")
             lines.append(f"  content: {item.content}")
+            reasons = item.metadata.get("reasons")
+            if reasons:
+                lines.append(f"  reason: {'; '.join(str(reason) for reason in reasons)}")
     else:
         lines.append("- none")
 
@@ -95,7 +101,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
 
     if args.orchestrate:
-        result = Orchestrator(router).run(task)
+        context_builder = ContextBuilder(
+            memory_modules=create_default_memory_modules() if args.use_demo_memory else (),
+        )
+        result = Orchestrator(router, context_builder=context_builder).run(task)
         print(format_orchestration_result(result))
         decision = result.routing_decision
     else:
@@ -105,6 +114,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("\nActivated outputs:")
         for match, output in router.run(task):
             print(f"- {match.module.name}: {output}")
+        if args.use_demo_memory:
+            print("\nMemory note: --use-demo-memory is only used with --orchestrate.")
 
     if feedback_file:
         record = FeedbackRecord.from_decision(
@@ -133,6 +144,11 @@ def build_parser() -> ArgumentParser:
         "--orchestrate",
         action="store_true",
         help="Build route-scoped context and prepare an orchestration handoff.",
+    )
+    parser.add_argument(
+        "--use-demo-memory",
+        action="store_true",
+        help="Use built-in deterministic demo memory during orchestration.",
     )
     parser.add_argument(
         "--save-feedback",
