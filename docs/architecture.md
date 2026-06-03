@@ -1,23 +1,55 @@
 # Architecture
 
-Grona is a modular sparse AI architecture. Its core design goal is to route each task to the smallest useful set of modules instead of activating every model, memory region, tool, and context source for every request.
+Grona is a modular sparse AI architecture prototype. Its core design goal is to route each task to the smallest useful set of modules instead of activating every model, memory region, tool, and context source for every request.
+
+This document describes the current deterministic prototype, not a production AI system.
+
+## Documentation Map
+
+- [Project vision](project-vision.md)
+- [Workspace profiles](workspaces.md)
+- [Development notes](development.md)
+- [Research notes](research-notes.md)
+- [Roadmap](roadmap.md)
+- [v0.1.0 prototype release notes](release-notes-v0.1.0-prototype.md)
 
 ## System Diagram
 
-```text
-WorkspaceProfile -> filtered ModuleRegistry -> Router
-        |                                      |
-        v                                      v
-WorkspaceConfig                         RoutingDecision
-        |                                      |
-        v                                      v
-Raw text -> DocumentSource -> DocumentChunk -> MemoryRecord -> Memory Module
-                                                              |
-User task ---------------------------------> ContextBuilder --+-> Orchestrator
-                                                                 |
-                                                                 v
-                                                            Expert Results
+```mermaid
+flowchart TD
+    A[User Task] --> B[Workspace Profile]
+    B --> C[Filtered ModuleRegistry]
+    C --> D[Router]
+    F[Feedback Store] --> E[Adaptive Scoring]
+    D --> E
+    E --> G[RoutingDecision]
+    H[Memory Modules] --> I[ContextBuilder]
+    J[Document Ingestion] --> H
+    G --> I
+    I --> K[Orchestrator]
+    K --> L[Expert Executors]
+    K --> M[Execution Adapters]
+    K --> N[Mock Tools]
+    M --> O[Safety Policy]
+    N --> O
+    O --> P[Result]
+    L --> P
+    P --> F
 ```
+
+## Current Request Lifecycle
+
+1. CLI or caller selects a `WorkspaceProfile`.
+2. Grona filters the `ModuleRegistry` for the workspace.
+3. Raw demo document text may be converted into memory records.
+4. A user task enters the system.
+5. `Router` selects relevant modules from the workspace registry.
+6. Adaptive routing may adjust scores from feedback history.
+7. `ContextBuilder` prepares stub and memory context for selected modules.
+8. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
+9. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
+10. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
+11. Feedback can be written later and used to influence future adaptive routing.
 
 ## Workspace Layer
 
@@ -30,6 +62,12 @@ A workspace is a configured vineyard for one use case.
 Profiles affect routing by narrowing the module registry before `Router` scores modules. If a profile filters modules, Grona preserves `general-reasoning` as a fallback when available.
 
 This is not production config management. No workspace directories, disk-loaded config files, secrets, or external config services are implemented.
+
+## Router and Registry
+
+`ExpertModule` is routing metadata: name, domain, capabilities, keywords, cost, and demo handler. `ModuleRegistry` stores available modules. `Router` scores modules using deterministic keyword/domain signals, then returns a `RoutingDecision` with selected modules, skipped modules, scores, and reasons.
+
+Adaptive routing is opt-in or workspace-enabled. It applies small bounded adjustments from prior `FeedbackRecord` values. It is not neural learning.
 
 ## Document Ingestion Stub
 
@@ -63,20 +101,6 @@ The safety layer evaluates planned actions before any future adapter can run a r
 
 This is not a real sandbox. It does not isolate processes, execute commands, run subprocesses, scan networks, read files, write files, or call external APIs.
 
-## Request Lifecycle
-
-1. CLI or caller selects a `WorkspaceProfile`.
-2. Grona filters the module registry for the workspace.
-3. Raw demo document text may be converted into memory records.
-4. User task enters the system.
-5. Router selects relevant modules from the workspace registry.
-6. Adaptive routing may adjust scores from feedback history.
-7. ContextBuilder prepares stub and memory context for selected modules.
-8. Orchestrator can hand off, run deterministic experts, or use deterministic adapters.
-9. If safety is enabled, adapter actions are planned and evaluated before any adapter result is returned.
-10. If demo tools are enabled, selected adapter modules can request deterministic mock tool results.
-11. Expert results, tool summaries, and safety metadata are collected into `OrchestrationResult`.
-
 ## Grape-Cluster Metaphor
 
 - Workspace is the vineyard/environment.
@@ -85,3 +109,8 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 - Memory sources are knowledge nutrients.
 - Safety policy is the protective layer.
 - Routing config is the growth/activation rule set.
+- Feedback is the trace of which routes worked.
+
+## Prototype Boundaries
+
+The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, or production configuration management.
