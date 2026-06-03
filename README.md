@@ -1,130 +1,88 @@
 # Grona
 
-Grona is a research/prototype project for a modular sparse AI architecture inspired by the structure of a grape cluster.
+Grona is a lightweight research prototype for a modular sparse AI architecture inspired by grape-cluster-like expert activation.
 
-The project explores a simple question: what if an AI system did not activate its whole "brain" for every task? Instead of routing every request through one monolithic model or one dense execution path, Grona routes a task to only the modules that appear relevant: expert modules, memory modules, tools, local models, databases, search indexes, or APIs.
+The core idea is simple: do not activate every capability for every task. Route a task to a small relevant set of expert modules, build only route-scoped context, run the selected modules, and keep the decision trace visible.
 
-## The Grape-Cluster Metaphor
-
-The grape cluster is a practical architecture metaphor:
+## Architecture Metaphor
 
 - The vine or stem is the coordination layer.
 - Branches are high-level domains or task families.
 - Grapes are specialized modules that can be activated independently.
 - New grapes can be attached without rebuilding the whole cluster.
-- Bad, outdated, or expensive grapes can be replaced without retraining everything.
+- Weak or expensive grapes can be replaced without disturbing the whole system.
 
-The metaphor matters because it pushes the design away from a single all-purpose component. Grona should grow as a cluster of replaceable parts, with routing logic deciding which parts should wake up for a specific task.
+Grona explores sparse activation across heterogeneous components: mock expert modules today, and eventually local tools, scripts, memories, models, search indexes, or APIs.
 
-## Why Not a Monolithic AI Model?
+## Current Prototype
 
-Many AI systems behave like monolithic brains: a single large model receives the whole task, all available context, and every tool description. That can work, but it often wastes compute, hides decisions, and makes it hard to replace one weak capability without disturbing the rest of the system.
+The current prototype includes:
 
-Grona explores the opposite direction:
+- `ExpertModule`: metadata and a callable mock expert.
+- `ModuleRegistry`: a simple catalog of available modules.
+- `Router`: keyword/domain/capability routing.
+- `RoutingDecision`: selected/skipped modules, scores, reasons, and feedback metadata.
+- `FeedbackRecord`: route history records with optional rating and success/failure outcome.
+- `InMemoryFeedbackStore` and `JsonlFeedbackStore`: simple route history stores.
+- `AdaptiveRoutingConfig`: opt-in feedback-informed score adjustments.
+- `ContextItem` and `ContextBuilder`: route-scoped synthetic context for selected modules.
+- `Orchestrator` and `OrchestrationResult`: visible routing, context building, and selected module execution.
+- CLI, examples, tests, and GitHub Actions CI.
 
-1. Route first, think second.
-2. Activate only relevant modules.
-3. Keep routing decisions explainable.
-4. Let modules have their own scope, cost, and memory.
-5. Make modules easy to add, remove, or replace.
-6. Remember which routes worked so future routing can improve.
+The default demo registry includes modules for code, car diagnostics, cybersecurity, media/video, document search, and general reasoning.
 
-## Relationship to MoE and Sparse Activation
-
-Grona is related to Mixture of Experts, sparse activation, routing networks, modular agents, retrieval-augmented generation, tool-using AI, and local AI orchestration. It should not be described as just another MoE system.
-
-Classic MoE usually refers to learned expert layers inside a neural network. Grona is broader: an expert can be a local LLM, a script, a database query layer, a vector index, a code analyzer, a cybersecurity scanner, a media tool, a domain-specific memory module, or an API wrapper.
-
-The shared idea is sparsity. The broader Grona idea is heterogeneous modular activation across models, tools, memory, feedback, and orchestration.
-
-## First Prototype
-
-The first prototype is intentionally small and dependency-free at runtime. It includes:
-
-- `ExpertModule`: metadata and a callable mock module.
-- `ModuleRegistry`: a simple registry for available modules.
-- `Router`: keyword/domain matching over task text.
-- `RoutingDecision`: selected modules, skipped modules, scores, and reasons.
-- `FeedbackRecord`: a lightweight route history record.
-- `InMemoryFeedbackStore` and `JsonlFeedbackStore`: simple feedback storage options.
-- `AdaptiveRoutingConfig`: opt-in feedback-informed score adjustment settings.
-- `ModuleFeedbackStats`: per-module feedback statistics for transparent adaptive routing.
-- A default demo registry for code, car diagnostics, cybersecurity, media/video, document search, and general reasoning.
-- A CLI and tests so the project is easier to run and extend.
-
-This is not a production router, not a trained model, and not a complete agent framework. It is a readable starting point for exploring sparse modular AI behavior.
-
-## Install From the Repository
+## Install
 
 ```bash
 pip install -e .
 ```
 
-For development tools:
+For tests and linting:
 
 ```bash
 pip install -e .[dev]
 ```
 
-## Run the Demo
+## Run Demos
 
 ```bash
 python examples/basic_routing_demo.py
-```
-
-Feedback history demo:
-
-```bash
 python examples/feedback_demo.py
-```
-
-Adaptive routing demo:
-
-```bash
 python examples/adaptive_routing_demo.py
+python examples/orchestration_demo.py
 ```
 
-Or use the console script installed by the package:
+Or use the console script:
 
 ```bash
 grona-demo "Analyze engine overheating symptoms"
 ```
 
-You can also run the package as a module:
+## Run the CLI
+
+Route a task:
 
 ```bash
 python -m grona "Review firewall logs for suspicious port scans"
 ```
 
-The demo prints selected modules, skipped modules, reasons, scores, and mock outputs from activated modules.
-
-## Save Route Feedback
-
-The CLI can optionally save one feedback record per run to a JSONL file:
+Enable adaptive routing from feedback history:
 
 ```bash
-python -m grona "Review this Python script for security issues" --feedback-file feedback.jsonl
+python -m grona "Analyze engine overheating symptoms" --feedback-file feedback.jsonl --adaptive
 ```
 
-Optional feedback fields:
+Build route-scoped context and run selected demo modules through the orchestrator:
+
+```bash
+python -m grona "Review this Python script for security issues" --orchestrate
+```
+
+Save route feedback:
 
 ```bash
 python -m grona "Analyze engine overheating symptoms" --feedback-file feedback.jsonl --rating 5 --success true --notes "Good route"
 ```
-
-If no feedback file is provided, the CLI behaves as before and does not write route history.
-
-## Use Adaptive Routing
-
-Adaptive routing is opt-in. It loads feedback history from JSONL and applies small, bounded score adjustments to modules that already have base relevance for the task:
-
-```bash
-python -m grona "Review this Python script for security issues" --feedback-file feedback.jsonl --adaptive
-```
-
-If the feedback file is missing or empty, Grona routes normally and explains that no feedback history was available. Adaptive routing does not select irrelevant modules purely from history.
-
-This is not neural learning. It is a transparent feedback-informed scoring adjustment.
 
 ## Run Tests
 
@@ -142,54 +100,57 @@ ruff check .
 
 ```text
 .
-├── .github/workflows/tests.yml
-├── docs/
-│   ├── architecture.md
-│   ├── development.md
-│   ├── research-notes.md
-│   └── roadmap.md
-├── examples/
-│   ├── adaptive_routing_demo.py
-│   ├── basic_routing_demo.py
-│   └── feedback_demo.py
-├── src/
-│   └── grona/
-│       ├── __init__.py
-│       ├── __main__.py
-│       ├── adaptive.py
-│       ├── cli.py
-│       ├── decision.py
-│       ├── defaults.py
-│       ├── feedback.py
-│       ├── module.py
-│       ├── registry.py
-│       └── router.py
-├── tests/
-├── pyproject.toml
-└── README.md
+|-- .github/workflows/tests.yml
+|-- docs/
+|   |-- architecture.md
+|   |-- development.md
+|   |-- orchestration.md
+|   |-- research-notes.md
+|   `-- roadmap.md
+|-- examples/
+|   |-- adaptive_routing_demo.py
+|   |-- basic_routing_demo.py
+|   |-- feedback_demo.py
+|   `-- orchestration_demo.py
+|-- src/grona/
+|   |-- __init__.py
+|   |-- __main__.py
+|   |-- adaptive.py
+|   |-- cli.py
+|   |-- context.py
+|   |-- decision.py
+|   |-- defaults.py
+|   |-- feedback.py
+|   |-- module.py
+|   |-- orchestrator.py
+|   |-- registry.py
+|   `-- router.py
+|-- tests/
+|-- pyproject.toml
+`-- README.md
 ```
 
 ## Development Philosophy
 
 - Keep routing decisions visible.
 - Keep modules small, replaceable, and metadata-driven.
-- Prefer local-first building blocks where possible.
-- Store feedback as route history before attempting adaptive routing.
-- Keep adaptive scoring opt-in, bounded, and explainable.
+- Keep context route-scoped instead of loading everything for every task.
+- Keep adaptive routing opt-in, bounded, deterministic, and explainable.
 - Add heavier infrastructure only after the simple prototype proves what it needs.
-- Treat tests as a guardrail for explainable behavior, not as a claim that routing is solved.
+- Treat tests as a guardrail for explainable behavior, not as proof that routing is solved.
 
 ## Current Limitations
 
 - The router is keyword-based.
-- Adaptive routing is a transparent score adjustment, not machine learning.
-- Feedback can influence scores only when adaptive routing is explicitly enabled.
-- Adaptive routing does not select modules with no base relevance.
+- Context building is synthetic demo context, not retrieval.
+- The orchestrator is sequential and simple.
+- Adaptive routing is deterministic score adjustment, not machine learning.
 - There is no real LLM integration yet.
 - There is no neural learning yet.
 - There is no memory graph yet.
 - There is no vector database or retrieval engine yet.
-- There is no production orchestration yet.
+- There is no web server.
+- There is no production orchestration.
 - Expert modules are mock/demo modules, not real AI tools.
 
 These limits are intentional. Grona is currently a research/prototype foundation for sparse modular AI architecture.
