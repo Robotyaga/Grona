@@ -47,6 +47,8 @@ The first prototype is intentionally small and dependency-free at runtime. It in
 - `RoutingDecision`: selected modules, skipped modules, scores, and reasons.
 - `FeedbackRecord`: a lightweight route history record.
 - `InMemoryFeedbackStore` and `JsonlFeedbackStore`: simple feedback storage options.
+- `AdaptiveRoutingConfig`: opt-in feedback-informed score adjustment settings.
+- `ModuleFeedbackStats`: per-module feedback statistics for transparent adaptive routing.
 - A default demo registry for code, car diagnostics, cybersecurity, media/video, document search, and general reasoning.
 - A CLI and tests so the project is easier to run and extend.
 
@@ -74,6 +76,12 @@ Feedback history demo:
 
 ```bash
 python examples/feedback_demo.py
+```
+
+Adaptive routing demo:
+
+```bash
+python examples/adaptive_routing_demo.py
 ```
 
 Or use the console script installed by the package:
@@ -106,6 +114,18 @@ python -m grona "Analyze engine overheating symptoms" --feedback-file feedback.j
 
 If no feedback file is provided, the CLI behaves as before and does not write route history.
 
+## Use Adaptive Routing
+
+Adaptive routing is opt-in. It loads feedback history from JSONL and applies small, bounded score adjustments to modules that already have base relevance for the task:
+
+```bash
+python -m grona "Review this Python script for security issues" --feedback-file feedback.jsonl --adaptive
+```
+
+If the feedback file is missing or empty, Grona routes normally and explains that no feedback history was available. Adaptive routing does not select irrelevant modules purely from history.
+
+This is not neural learning. It is a transparent feedback-informed scoring adjustment.
+
 ## Run Tests
 
 ```bash
@@ -129,12 +149,14 @@ ruff check .
 │   ├── research-notes.md
 │   └── roadmap.md
 ├── examples/
+│   ├── adaptive_routing_demo.py
 │   ├── basic_routing_demo.py
 │   └── feedback_demo.py
 ├── src/
 │   └── grona/
 │       ├── __init__.py
 │       ├── __main__.py
+│       ├── adaptive.py
 │       ├── cli.py
 │       ├── decision.py
 │       ├── defaults.py
@@ -153,15 +175,18 @@ ruff check .
 - Keep modules small, replaceable, and metadata-driven.
 - Prefer local-first building blocks where possible.
 - Store feedback as route history before attempting adaptive routing.
+- Keep adaptive scoring opt-in, bounded, and explainable.
 - Add heavier infrastructure only after the simple prototype proves what it needs.
 - Treat tests as a guardrail for explainable behavior, not as a claim that routing is solved.
 
 ## Current Limitations
 
 - The router is keyword-based.
-- Feedback is recorded and summarized, but it does not change routing yet.
+- Adaptive routing is a transparent score adjustment, not machine learning.
+- Feedback can influence scores only when adaptive routing is explicitly enabled.
+- Adaptive routing does not select modules with no base relevance.
 - There is no real LLM integration yet.
-- There is no learning or adaptive routing yet.
+- There is no neural learning yet.
 - There is no memory graph yet.
 - There is no vector database or retrieval engine yet.
 - There is no production orchestration yet.

@@ -1,4 +1,4 @@
-from grona import JsonlFeedbackStore, Router, create_default_registry
+from grona import FeedbackRecord, JsonlFeedbackStore, Router, create_default_registry
 from grona.cli import format_decision, main
 
 
@@ -49,3 +49,47 @@ def test_cli_writes_feedback_when_feedback_file_is_provided(tmp_path, capsys) ->
     assert records[0].rating == 5
     assert records[0].success is True
     assert records[0].notes == "Good route"
+
+
+def test_cli_adaptive_mode_handles_missing_feedback_file(tmp_path, capsys) -> None:
+    feedback_file = tmp_path / "missing.jsonl"
+
+    assert main(
+        [
+            "Analyze",
+            "engine",
+            "overheating",
+            "--adaptive",
+            "--feedback-file",
+            str(feedback_file),
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "Adaptive routing: enabled (no feedback history)" in output
+    assert feedback_file.exists()
+
+
+def test_cli_adaptive_mode_loads_feedback_history(tmp_path, capsys) -> None:
+    feedback_file = tmp_path / "feedback.jsonl"
+    decision = Router(create_default_registry(), top_k=3).route(
+        "Analyze engine overheating symptoms"
+    )
+    JsonlFeedbackStore(feedback_file).add(
+        FeedbackRecord.from_decision(decision, success=True, rating=5)
+    )
+
+    assert main(
+        [
+            "Analyze",
+            "engine",
+            "overheating",
+            "--adaptive",
+            "--feedback-file",
+            str(feedback_file),
+        ]
+    ) == 0
+
+    output = capsys.readouterr().out
+    assert "Adaptive routing: enabled (feedback history loaded)" in output
+    assert "adaptive boost" in output

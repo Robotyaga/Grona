@@ -8,6 +8,7 @@ Grona is currently an early research prototype. The code should stay small, read
 src/grona/
 ├── __init__.py      Public package exports
 ├── __main__.py      Enables `python -m grona`
+├── adaptive.py      Feedback-informed score adjustment helpers
 ├── cli.py           Small routing CLI and output formatting
 ├── decision.py      Routing result data structures
 ├── defaults.py      Default mock/demo modules
@@ -21,7 +22,8 @@ Supporting files:
 
 - `examples/basic_routing_demo.py` shows multiple task routes.
 - `examples/feedback_demo.py` shows route history without persistent storage.
-- `tests/` covers core routing and feedback behavior.
+- `examples/adaptive_routing_demo.py` shows feedback-informed score adjustments.
+- `tests/` covers core routing, feedback, and adaptive behavior.
 - `pyproject.toml` defines packaging, test, and lint settings.
 - `.github/workflows/tests.yml` runs the test suite in CI.
 
@@ -78,6 +80,28 @@ store.add(record)
 
 Use `InMemoryFeedbackStore` for tests and demos. Use `JsonlFeedbackStore` when you explicitly want a local JSONL route history file. The JSONL store writes one JSON object per line and does not require a database.
 
+## Use Adaptive Routing
+
+Adaptive routing is opt-in. It uses feedback records to slightly adjust module scores after the base keyword/domain score is computed:
+
+```python
+from grona import AdaptiveRoutingConfig, Router, create_default_registry
+
+router = Router(
+    create_default_registry(),
+    adaptive_config=AdaptiveRoutingConfig(enabled=True),
+    feedback_records=store.list(),
+)
+decision = router.route("Analyze engine overheating symptoms")
+```
+
+Keep adaptive scoring conservative:
+
+- Do not let history select modules with no base relevance.
+- Keep `max_adjustment` small.
+- Include adjustment explanations in route decisions.
+- Treat this as deterministic scoring, not machine learning.
+
 ## Run Tests
 
 ```bash
@@ -93,7 +117,8 @@ ruff check .
 - Prefer route traces over hidden behavior.
 - Let modules be added, disabled, or replaced through the registry.
 - Keep scoring deterministic while the router is rule-based.
-- Keep feedback passive until adaptive routing is designed and tested.
+- Keep feedback passive unless adaptive routing is explicitly enabled.
+- Keep adaptive routing bounded, explainable, and tested.
 
 ## What Not to Add Yet
 
@@ -105,7 +130,8 @@ Do not add these until the routing prototype justifies them:
 - external LLM dependencies
 - heavy agent frameworks
 - hidden global memory
+- opaque learned routing
 - automatic route adaptation without tests and route traces
-- claims that Grona has learned routing or production orchestration
+- claims that Grona has neural learning or production orchestration
 
-The current goal is a clean foundation for research, tests, route history, and extension.
+The current goal is a clean foundation for research, tests, route history, adaptive scoring experiments, and extension.

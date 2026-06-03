@@ -14,6 +14,15 @@ class ModuleMatch:
     module: ExpertModule
     score: float
     reasons: tuple[str, ...] = field(default_factory=tuple)
+    base_score: float | None = None
+    adaptive_adjustment: float = 0.0
+    adaptive_enabled: bool = False
+    feedback_summary: str | None = None
+
+    @property
+    def final_score(self) -> float:
+        """Return the score used for route ordering."""
+        return self.score
 
 
 @dataclass(frozen=True)
@@ -23,6 +32,8 @@ class RoutingDecision:
     task: str
     selected_modules: tuple[ModuleMatch, ...]
     skipped_modules: tuple[ModuleMatch, ...]
+    adaptive_enabled: bool = False
+    feedback_available: bool = False
 
     @property
     def selected_names(self) -> tuple[str, ...]:
