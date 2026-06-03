@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Iterable, Protocol
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from json import dumps, loads
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from .decision import RoutingDecision
 
