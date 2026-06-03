@@ -74,32 +74,41 @@ Grona should stay readable before adding heavier infrastructure.
 - Add CLI `--ingest-demo-docs` and a document ingestion example.
 - Keep this in-memory only: no filesystem crawling, PDF parsing, OCR, embeddings, vector database, or external APIs.
 
-## Phase 11: Real Local Tools and Modules
+## Phase 11: Workspace / Project Profile Layer
+
+- Add `WorkspaceProfile` and `WorkspaceConfig`.
+- Add deterministic dict/JSON serialization.
+- Add built-in profiles for default, code, cybersecurity, media, automotive, and documents.
+- Add registry filtering by enabled modules or enabled domains while preserving general fallback.
+- Add CLI `--workspace` and workspace demo/docs.
+- Keep this in-memory only: no persisted workspace directory, disk config loading, secrets, or production config management.
+
+## Phase 12: Real Local Tools and Modules
 
 - Replace selected mock/demo modules with simple local tools only after safety design matures.
 - Add scripts for code inspection, file search, document parsing, or media metadata extraction only with explicit boundaries.
 - Keep tool interfaces small and explicit.
 - Add real sandboxing and safety design before any shell or subprocess backend.
 
-## Phase 12: Memory and Feedback Integration
+## Phase 13: Memory and Feedback Integration
 
 - Introduce module-specific local memory stores.
 - Experiment with local text indexes or structured notes.
-- Use feedback to evaluate routes, execution results, tool results, ingestion results, and safety decisions.
+- Use feedback to evaluate routes, execution results, tool results, ingestion results, workspace profiles, and safety decisions.
 
-## Phase 13: Local LLM Integration
+## Phase 14: Local LLM Integration
 
 - Add optional local LLM modules through adapter contracts.
 - Route only selected tasks to LLM-backed experts.
 - Keep prompts scoped to route-relevant context.
 
-## Phase 14: Learned Routing Experiments
+## Phase 15: Learned Routing Experiments
 
 - Experiment with learned routing only after deterministic baselines are understood.
 - Add route confidence calibration.
 - Explore hierarchical routing: branch first, grape second.
 
-## Phase 15: UI and API Layer
+## Phase 16: UI and API Layer
 
-- Add UI/API only after routing, context, memory, ingestion, execution, adapter, tool, and safety contracts are stable.
-- Show route traces, context sources, expert results, adapter backends, mock tool results, safety plans, and feedback signals.
+- Add UI/API only after routing, workspaces, context, memory, ingestion, execution, adapter, tool, and safety contracts are stable.
+- Show workspace profile, route traces, context sources, expert results, adapter backends, mock tool results, safety plans, and feedback signals.
