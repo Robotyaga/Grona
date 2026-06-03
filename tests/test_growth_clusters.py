@@ -132,7 +132,9 @@ def test_clusterer_ignores_non_promote_review_decisions() -> None:
 
     clusters, assignments = GrapeClusterer().cluster(seeds, decisions)
 
-    weak_assignment = next(assignment for assignment in assignments if assignment.seed_id == "seed:weak")
+    weak_assignment = next(
+        assignment for assignment in assignments if assignment.seed_id == "seed:weak"
+    )
     assert len(clusters) == 1
     assert weak_assignment.assigned is False
     assert weak_assignment.cluster_id is None
