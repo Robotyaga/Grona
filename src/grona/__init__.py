@@ -4,6 +4,18 @@ from .adaptive import AdaptiveRoutingConfig, ModuleFeedbackStats, build_module_f
 from .context import ContextBuilder, ContextItem
 from .decision import ModuleMatch, RoutingDecision
 from .defaults import create_default_registry
+from .executor import (
+    AutomotiveDiagnosticsExpertExecutor,
+    CodeExpertExecutor,
+    CybersecurityExpertExecutor,
+    DocumentSearchExpertExecutor,
+    ExecutableExpert,
+    ExpertExecutorRegistry,
+    ExpertResult,
+    GeneralReasoningExpertExecutor,
+    MediaWorkflowExpertExecutor,
+    create_default_executor_registry,
+)
 from .feedback import (
     FeedbackRecord,
     FeedbackStore,
@@ -26,16 +38,25 @@ from .router import Router
 
 __all__ = [
     "AdaptiveRoutingConfig",
+    "AutomotiveDiagnosticsExpertExecutor",
+    "CodeExpertExecutor",
     "ContextBuilder",
     "ContextItem",
+    "CybersecurityExpertExecutor",
+    "DocumentSearchExpertExecutor",
+    "ExecutableExpert",
+    "ExpertExecutorRegistry",
     "ExpertModule",
+    "ExpertResult",
     "FeedbackRecord",
     "FeedbackStore",
     "FeedbackSummary",
+    "GeneralReasoningExpertExecutor",
     "InMemoryFeedbackStore",
     "InMemoryKeywordMemory",
     "JsonlFeedbackStore",
     "JsonlMemoryStore",
+    "MediaWorkflowExpertExecutor",
     "MemoryModule",
     "MemoryRecord",
     "ModuleFeedbackStats",
@@ -46,6 +67,7 @@ __all__ = [
     "Router",
     "RoutingDecision",
     "build_module_feedback_stats",
+    "create_default_executor_registry",
     "create_default_memory_modules",
     "create_default_registry",
     "summarize_feedback",

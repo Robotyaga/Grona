@@ -1,74 +1,60 @@
 # Development Notes
 
-Grona is currently an early research prototype. The code should stay small, readable, and easy to inspect while the architecture is still being explored.
+Grona is an early research prototype. Keep the code small, readable, deterministic, and honest about what it does.
 
 ## Repository Structure
 
 ```text
 src/grona/
-|-- __init__.py      Public package exports
-|-- __main__.py      Enables `python -m grona`
 |-- adaptive.py      Feedback-informed score adjustment helpers
-|-- cli.py           Small routing CLI and output formatting
-|-- context.py       ContextItem and route-scoped ContextBuilder
-|-- decision.py      Routing result data structures
-|-- defaults.py      Default mock/demo modules
+|-- cli.py           Routing, orchestration, memory, and execution CLI
+|-- context.py       ContextItem and ContextBuilder
+|-- decision.py      Routing decision data structures
+|-- executor.py      ExpertResult, ExecutableExpert, demo executors
 |-- feedback.py      Feedback records and route history stores
 |-- memory.py        MemoryRecord and deterministic keyword memory
-|-- module.py        ExpertModule definition
+|-- module.py        ExpertModule routing metadata
 |-- orchestrator.py  Orchestrator and OrchestrationResult
-|-- registry.py      ModuleRegistry definition
+|-- registry.py      ModuleRegistry
 `-- router.py        Keyword/domain router
 ```
 
-Supporting files:
+## Metadata vs Execution
 
-- `examples/basic_routing_demo.py` shows multiple task routes.
-- `examples/feedback_demo.py` shows route history without persistent storage.
-- `examples/adaptive_routing_demo.py` shows feedback-informed score adjustments.
-- `examples/orchestration_demo.py` shows route-scoped context and handoff summaries.
-- `examples/memory_demo.py` shows deterministic memory context retrieval.
-- `tests/` covers routing, feedback, adaptive routing, context, memory, and orchestration.
+`ExpertModule` is metadata for routing. `ExecutableExpert` is a runnable adapter contract.
 
-## Add Memory Records
+Keep them separate:
 
-Use `MemoryRecord` for small knowledge items:
+- metadata helps the router select modules
+- executors produce `ExpertResult` values from a task and context
+- real tools or models can be added later without changing routing metadata
 
-```python
-from grona import InMemoryKeywordMemory, MemoryRecord
-
-records = [
-    MemoryRecord(
-        id="cooling-checklist",
-        content="Check coolant level, thermostat operation, radiator flow, and fan activation.",
-        domains=("automotive",),
-        keywords=("coolant", "thermostat", "radiator", "fan"),
-        source="local_stub",
-    )
-]
-
-memory = InMemoryKeywordMemory(records, name="automotive-memory")
-```
-
-Memory records should stay small, domain-specific, and deterministic. Do not claim semantic search when the matching is keyword/domain overlap.
-
-## Use Memory During Orchestration
+## Add a Demo Executor
 
 ```python
-from grona import ContextBuilder, Orchestrator, Router, create_default_memory_modules, create_default_registry
+from grona import ExpertResult
 
-router = Router(create_default_registry())
-builder = ContextBuilder(memory_modules=create_default_memory_modules())
-result = Orchestrator(router, context_builder=builder).run("Analyze engine overheating")
-print(result.to_text())
+class MyExecutor:
+    module_name = "my-module"
+
+    def execute(self, task, context_items):
+        return ExpertResult(
+            module_name=self.module_name,
+            task=task,
+            summary="Prepared a deterministic demo outline.",
+            details=("Inspect the focused context.",),
+            confidence=0.7,
+            metadata={"executor_kind": "deterministic_demo"},
+        )
 ```
 
-## Feedback Store vs Memory Module
+Register it with `ExpertExecutorRegistry` and pass the registry to `Orchestrator`.
 
-- Feedback stores record route outcomes, ratings, success flags, and notes.
-- Memory modules provide knowledge records to the context builder.
+## Run Demo Execution
 
-They solve different problems and should remain separate.
+```bash
+python -m grona "Diagnose engine overheating" --orchestrate --use-demo-memory --execute-demo-experts
+```
 
 ## Run Tests
 
@@ -78,32 +64,20 @@ pytest
 ruff check .
 ```
 
-## Keep the System Modular
-
-- Put module metadata near the module definition.
-- Keep handlers small and explicit.
-- Prefer route traces over hidden behavior.
-- Keep scoring deterministic while the router is rule-based.
-- Keep memory retrieval deterministic until a stronger baseline is needed.
-- Keep feedback passive unless adaptive routing is explicitly enabled.
-- Keep context building separate from routing.
-- Keep orchestration separate from real execution.
-
 ## What Not to Add Yet
 
-Do not add these until the routing, context, and memory prototype justifies them:
+Do not add these until the execution interface has stronger tests and real requirements:
 
+- OpenAI API calls
+- Ollama integration
+- external APIs
 - web servers
 - vector databases
 - SQL databases
 - production task queues
-- external LLM dependencies
-- embeddings
-- semantic search claims
-- heavy agent frameworks
+- shell execution
+- real cybersecurity scanning
 - hidden global memory
-- fake AI execution
-- automatic route adaptation without tests and route traces
-- claims that Grona has neural learning or production orchestration
+- claims that deterministic demo executors are real AI reasoning
 
-The current goal is a clean foundation for research, tests, route history, adaptive scoring, route-scoped context, deterministic memory stubs, and future orchestration experiments.
+The current execution layer is a proof of contract, not production execution.

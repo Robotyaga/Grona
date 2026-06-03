@@ -9,6 +9,7 @@ from .adaptive import AdaptiveRoutingConfig
 from .context import ContextBuilder
 from .decision import RoutingDecision
 from .defaults import create_default_registry
+from .executor import create_default_executor_registry
 from .feedback import FeedbackRecord, JsonlFeedbackStore
 from .memory import create_default_memory_modules
 from .orchestrator import OrchestrationResult, Orchestrator
@@ -73,10 +74,23 @@ def format_orchestration_result(result: OrchestrationResult) -> str:
     else:
         lines.append("- none")
 
+    lines.extend(["", "Expert results:"])
+    if result.expert_results:
+        for expert_result in result.expert_results:
+            lines.append(expert_result.to_text())
+    else:
+        lines.append("- not run")
+
+    missing = result.metadata.get("missing_executors") or ()
+    if missing:
+        lines.append(f"Missing executors: {', '.join(str(name) for name in missing)}")
+
     lines.extend(
         [
             "",
-            "Execution: not run; this prototype only prepares a structured handoff.",
+            "Execution: deterministic demo executors only; no real AI or tools were called."
+            if result.expert_results
+            else "Execution: not run; this prototype only prepares a structured handoff.",
             f"Orchestration summary: {result.summary}",
         ]
     )
@@ -100,11 +114,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         feedback_records=feedback_records,
     )
 
-    if args.orchestrate:
+    should_orchestrate = args.orchestrate or args.execute_demo_experts
+    if should_orchestrate:
         context_builder = ContextBuilder(
             memory_modules=create_default_memory_modules() if args.use_demo_memory else (),
         )
-        result = Orchestrator(router, context_builder=context_builder).run(task)
+        executor_registry = (
+            create_default_executor_registry() if args.execute_demo_experts else None
+        )
+        result = Orchestrator(
+            router,
+            context_builder=context_builder,
+            executor_registry=executor_registry,
+        ).run(task)
+        if args.execute_demo_experts and not args.orchestrate:
+            print("Execution note: --execute-demo-experts implies --orchestrate.\n")
         print(format_orchestration_result(result))
         decision = result.routing_decision
     else:
@@ -149,6 +173,11 @@ def build_parser() -> ArgumentParser:
         "--use-demo-memory",
         action="store_true",
         help="Use built-in deterministic demo memory during orchestration.",
+    )
+    parser.add_argument(
+        "--execute-demo-experts",
+        action="store_true",
+        help="Run deterministic demo experts during orchestration.",
     )
     parser.add_argument(
         "--save-feedback",
