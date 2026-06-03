@@ -2,6 +2,8 @@
 
 Grona is an early research prototype. Keep the code small, readable, deterministic, and honest about what it does.
 
+See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
+
 ## Repository Structure
 
 ```text
@@ -101,6 +103,17 @@ pip install -e .[dev]
 pytest
 ruff check .
 ```
+
+## Public Project Hygiene
+
+Before opening a PR, check that the change:
+
+- keeps prototype claims honest
+- does not add heavy dependencies without discussion
+- does not introduce real tool execution by accident
+- keeps examples deterministic
+- updates docs when public behavior changes
+- includes tests for code changes
 
 ## What Not to Add Yet
 

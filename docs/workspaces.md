@@ -4,6 +4,8 @@ A Grona workspace is a lightweight in-memory profile for a project or use case. 
 
 The workspace layer is intentionally small. It uses dataclasses and the Python standard library only.
 
+See also [Architecture](architecture.md), [Project vision](project-vision.md), [Development notes](development.md), and [Roadmap](roadmap.md).
+
 ## Core Types
 
 ### WorkspaceProfile
