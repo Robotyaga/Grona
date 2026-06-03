@@ -14,6 +14,7 @@ from grona import (
     memory_records_from_grape_clusters,
 )
 from grona.cli import main
+from grona.growth_review import SeedReviewDecision
 
 
 def make_seed(
@@ -39,6 +40,18 @@ def make_seed(
         domains=(domain,),
         keywords=keywords,
         confidence=confidence,
+    )
+
+
+def promote_decisions(seeds: tuple[KnowledgeSeed, ...]) -> tuple[SeedReviewDecision, ...]:
+    return tuple(
+        SeedReviewDecision(
+            seed.id,
+            "promote_candidate",
+            reasons=("test decision",),
+            recommended_status="validated",
+        )
+        for seed in seeds
     )
 
 
@@ -101,7 +114,7 @@ def test_clusterer_groups_seeds_by_domain_and_keyword_overlap() -> None:
         ),
         make_seed("seed:security", "cybersecurity", ("security", "validation", "secrets")),
     )
-    decisions = KnowledgeReviewPipeline().review(seeds)
+    decisions = promote_decisions(seeds)
 
     clusters, assignments = GrapeClusterer(keyword_overlap_threshold=0.3).cluster(
         seeds,
