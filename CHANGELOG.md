@@ -4,6 +4,13 @@
 
 ### Added
 
+- Growth Lab KnowledgeSeed validation foundation.
+- `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, and `KnowledgeValidator`.
+- Deterministic demo knowledge sources and seeds.
+- Conversion helpers from `DocumentChunk` and `ToolResult` into raw knowledge seeds.
+- CLI `--growth-demo` for deterministic seed validation output.
+- `examples/knowledge_seed_demo.py`.
+- Growth Lab documentation.
 - Public project polish for the v0.1.0 prototype preparation pass.
 - README landing-page structure with badges, architecture diagram, quickstart, feature map, and documentation links.
 - Project vision document for Growth Lab, KnowledgeSeed, GrapeCluster, and related research directions.
