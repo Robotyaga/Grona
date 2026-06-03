@@ -4,6 +4,11 @@
 
 ### Added
 
+- Growth Lab deterministic KnowledgeSeed review pipeline.
+- `NormalizedKnowledge`, `DuplicateCheckResult`, `ConflictCheckResult`, and `SeedReviewDecision`.
+- `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, and `KnowledgeReviewPipeline`.
+- CLI `--growth-review-demo` for deterministic validation, duplicate, conflict, and review output.
+- `examples/knowledge_review_demo.py`.
 - Growth Lab KnowledgeSeed validation foundation.
 - `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, and `KnowledgeValidator`.
 - Deterministic demo knowledge sources and seeds.
