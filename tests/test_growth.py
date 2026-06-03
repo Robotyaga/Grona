@@ -33,7 +33,10 @@ def test_knowledge_seed_creation() -> None:
     source = KnowledgeSource("source:test", "document", "Test source", 0.8)
     seed = KnowledgeSeed(
         id="seed:test",
-        content="Document chunk notes about code review, tests, linting, and public API boundaries.",
+        content=(
+            "Document chunk notes about code review, tests, linting, "
+            "and public API boundaries."
+        ),
         source=source,
         domains=("code",),
         keywords=("code", "tests", "lint"),
