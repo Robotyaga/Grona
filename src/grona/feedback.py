@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from json import dumps, loads
 from pathlib import Path
 from typing import Any, Protocol
@@ -232,4 +232,4 @@ def summarize_decision(decision: RoutingDecision) -> str:
 
 def utc_timestamp() -> str:
     """Return an ISO-8601 UTC timestamp."""
-    return datetime.now(UTC).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
