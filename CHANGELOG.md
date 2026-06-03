@@ -4,6 +4,11 @@
 
 ### Added
 
+- Growth Lab deterministic GrapeNode and GrapeCluster structures.
+- `GrapeAssignment` traces and deterministic `GrapeClusterer` confidence scoring.
+- `memory_records_from_grape_clusters()` bridge from reviewed clusters into memory records.
+- CLI `--grape-demo` for deterministic Growth Lab cluster creation output.
+- `examples/grape_cluster_demo.py`.
 - Growth Lab deterministic KnowledgeSeed review pipeline.
 - `NormalizedKnowledge`, `DuplicateCheckResult`, `ConflictCheckResult`, and `SeedReviewDecision`.
 - `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, and `KnowledgeReviewPipeline`.
