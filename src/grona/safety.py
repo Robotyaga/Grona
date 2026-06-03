@@ -125,7 +125,10 @@ class SafetyPolicy:
 
         if action.action_type in self.denied_action_types:
             blocked_by.append(f"denied action type: {action.action_type}")
-        if self.allowed_action_types is not None and action.action_type not in self.allowed_action_types:
+        if (
+            self.allowed_action_types is not None
+            and action.action_type not in self.allowed_action_types
+        ):
             blocked_by.append(f"action type not allowlisted: {action.action_type}")
         if action.action_type == "unknown" and not self.allow_unknown:
             blocked_by.append("unknown actions are blocked by default")
@@ -136,7 +139,9 @@ class SafetyPolicy:
             if denied_keywords:
                 blocked_by.append("denied command keyword: " + ", ".join(denied_keywords))
             if self.allowed_command_keywords is not None:
-                allowed_keywords = [word for word in self.allowed_command_keywords if word in command]
+                allowed_keywords = [
+                    word for word in self.allowed_command_keywords if word in command
+                ]
                 if not allowed_keywords:
                     blocked_by.append("command keyword not allowlisted")
 
@@ -149,7 +154,9 @@ class SafetyPolicy:
         if action.risk_level == "high" and not self.allow_high_risk:
             blocked_by.append("high-risk actions are blocked by default")
 
-        required_confirmation = action.requires_confirmation or action.risk_level in {"medium", "high"}
+        required_confirmation = (
+            action.requires_confirmation or action.risk_level in {"medium", "high"}
+        )
         dry_run = self.dry_run or action.risk_level == "medium" or required_confirmation
         allowed = not blocked_by
 

@@ -6,7 +6,6 @@ from grona import (
     Router,
     SafeExecutionAdapter,
     SafetyPolicy,
-    StaticExecutionAdapter,
     ToolAction,
     create_default_adapter_registry,
     create_default_registry,
