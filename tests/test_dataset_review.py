@@ -140,7 +140,14 @@ def test_dataset_quality_reviewer_rejects_license_when_manifest_disallows_seed()
 
 def test_dataset_review_report_counts() -> None:
     samples = (
-        dataset_sample("sample-a", "A detailed sample about preserving source metadata."),
+        dataset_sample(
+            "sample-a",
+            (
+                "Reviewed dataset samples should preserve source metadata, license "
+                "boundaries, review reasons, provenance, and candidate status before "
+                "any later validation or training export step."
+            ),
+        ),
         dataset_sample("sample-b", "short"),
     )
     reviewer = DatasetQualityReviewer(DatasetReviewConfig(min_text_length=20))
