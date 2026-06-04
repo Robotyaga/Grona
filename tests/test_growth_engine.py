@@ -173,7 +173,11 @@ def test_growth_engine_suggests_expert_candidate_for_strong_cluster() -> None:
 
     plan = GrowthEngine().plan_growth([], [], [cluster], [])
 
-    expert = next(decision for decision in plan.decisions if decision.action == "suggest_expert_candidate")
+    expert = next(
+        decision
+        for decision in plan.decisions
+        if decision.action == "suggest_expert_candidate"
+    )
     assert expert.target_type == "expert_proposal"
     assert expert.metadata["domain_consistency"] == 1.0
 
