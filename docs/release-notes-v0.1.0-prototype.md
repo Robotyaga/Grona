@@ -9,6 +9,9 @@ These notes describe the intended first public prototype milestone. They do not 
 - Feedback records and feedback-informed adaptive routing.
 - Memory modules and deterministic keyword memory.
 - In-memory document ingestion into chunks and memory records.
+- Dataset ingestion foundation with `DatasetSource`, `DatasetSample`, `InstructionDatasetSample`, and `ConversationDatasetSample`.
+- Alpaca-like and ShareGPT-like in-memory demo adapters.
+- Conversion helpers from dataset samples into raw knowledge seeds while preserving license metadata.
 - Growth Lab seed validation foundation with `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, and `KnowledgeValidator`.
 - Growth Lab seed review foundation with deterministic normalization, duplicate checks, potential conflict checks, and review decisions.
 - Growth Lab grape cluster foundation with `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, and `GrapeClusterer`.
@@ -28,6 +31,9 @@ These notes describe the intended first public prototype milestone. They do not 
 
 - Real LLM integration.
 - Real donor model integration.
+- Real dataset downloads.
+- Hugging Face integration or `datasets` dependency.
+- JSONL loader, Parquet reader, or large dataset files.
 - Real tool execution.
 - Shell commands, subprocesses, filesystem tools, network tools, or external APIs.
 - Real sandboxing or process isolation.
@@ -37,7 +43,7 @@ These notes describe the intended first public prototype milestone. They do not 
 - LLM-based contradiction detection or external evidence lookup.
 - Autonomous self-training, automatic expert growth, training, model weights, or training-data export.
 - Automatic mutation from GrowthEngine decisions into memory, modules, clusters, routing, or tools.
-- Persisted workspace directories, seed stores, cluster stores, growth plan stores, or external config files.
+- Persisted workspace directories, dataset stores, seed stores, cluster stores, growth plan stores, or external config files.
 - Production orchestration, production config management, or deployment guidance.
 
 ## Try the CLI
@@ -52,6 +58,7 @@ python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
+python -m grona --dataset-demo
 ```
 
 Run tests:
@@ -66,6 +73,7 @@ ruff check .
 
 - Routing and memory retrieval are deterministic keyword/domain prototypes.
 - Demo executors and adapters are not real AI.
+- Dataset ingestion is in-memory normalization only.
 - Safety policy is a planning layer, not a sandbox.
 - Mock tools return deterministic mock output only.
 - Workspaces are built in and in memory.
@@ -77,11 +85,12 @@ ruff check .
 
 ## Next Planned Areas
 
+- Dataset manifest, sample filtering, and license policy design.
 - Growth Lab seed storage and review trace persistence.
 - KnowledgeSeed promotion rules into memory candidates.
 - GrapeCluster persistence and manual cluster review status.
 - GrowthEngine plan persistence and human approval status.
 - KnowledgeValidator freshness and workspace relevance checks.
-- BenchmarkSuite for repeatable routing, seed validation, seed review, cluster assignment, growth decision, and orchestration evaluation.
+- BenchmarkSuite for repeatable routing, dataset ingestion, seed validation, seed review, cluster assignment, growth decision, and orchestration evaluation.
 - Optional DonorModelAdapter and LMStudioAdapter experiments.
 - TrainingDataExporter for validated traces and specialized expert data.

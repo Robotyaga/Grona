@@ -5,17 +5,38 @@ Growth Lab is the research foundation for future self-growing modular intelligen
 The long-term idea is:
 
 ```text
-raw knowledge -> KnowledgeSeed -> validation -> deduplication/conflict checks
--> review decision -> grape cluster assignment -> GrowthEngine recommendations
--> memory bridge / expert proposal review -> feedback -> benchmarks
--> optional training data export
+DatasetSource -> DatasetSample -> KnowledgeSeed -> validation
+-> deduplication/conflict checks -> review decision -> grape cluster assignment
+-> GrowthEngine recommendations -> memory bridge / expert proposal review
+-> feedback -> benchmarks -> optional training data export
 ```
 
-The current implementation adds deterministic local-first foundations for `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, `KnowledgeValidator`, `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, `KnowledgeReviewPipeline`, `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, `GrapeClusterer`, `GrowthDecision`, `GrowthPlan`, and `GrowthEngine`.
+The current implementation adds deterministic local-first foundations for `DatasetSource`, `DatasetSample`, `InstructionDatasetSample`, `ConversationDatasetSample`, `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, `KnowledgeValidator`, `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, `KnowledgeReviewPipeline`, `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, `GrapeClusterer`, `GrowthDecision`, `GrowthPlan`, and `GrowthEngine`.
+
+## Dataset Ingestion Foundation
+
+Dataset ingestion is a normalization layer before Growth Lab seed review.
+
+Current dataset structures:
+
+- `DatasetSource`: provenance, source type, format, license, language, reliability, and metadata.
+- `DatasetSample`: normalized content, sample type, domains, keywords, and metadata.
+- `InstructionDatasetSample`: Alpaca-like instruction/input/output records.
+- `ConversationDatasetSample`: ShareGPT/LMSYS-like role/content conversations.
+- `AlpacaFormatAdapter`: deterministic in-memory adapter for Alpaca-like dictionaries.
+- `ShareGPTFormatAdapter`: deterministic in-memory adapter for conversation dictionaries.
+
+The adapters work only with small in-memory dictionaries. They do not download datasets, read files, call Hugging Face, parse Parquet, call external APIs, train models, or create artifacts.
+
+Dataset samples become `KnowledgeSeed` values through `knowledge_seed_from_dataset_sample()` or `knowledge_seeds_from_dataset_samples()`. This preserves dataset format, license, language, source type, and sample type in metadata.
+
+This matters because a dataset row may be an instruction, conversation, writing sample, or synthetic answer rather than factual knowledge. Grona should review it before it influences memory, benchmarks, expert behavior, or future training data.
+
+See [Dataset ingestion](dataset-ingestion.md) for the dedicated design note.
 
 ## What Is a KnowledgeSeed?
 
-A `KnowledgeSeed` is a raw piece of knowledge that Grona may ingest from a user note, document chunk, donor model output, tool result, feedback record, benchmark observation, or unknown source.
+A `KnowledgeSeed` is a raw piece of knowledge that Grona may ingest from a dataset sample, user note, document chunk, donor model output, tool result, feedback record, benchmark observation, or unknown source.
 
 It is not trusted memory yet.
 
@@ -32,13 +53,13 @@ Suggested statuses are:
 
 ## What Is a KnowledgeSource?
 
-A `KnowledgeSource` describes where a seed came from: user note, document, donor model, tool result, feedback, benchmark, or unknown source.
+A `KnowledgeSource` describes where a seed came from: dataset source, user note, document, donor model, tool result, feedback, benchmark, or unknown source.
 
 Each source has a simple reliability score from `0.0` to `1.0`. This is a local heuristic, not a proof of truth.
 
 ## Why Seeds Are Not Trusted Memory Yet
 
-Raw knowledge can be incomplete, stale, contradictory, generic, low-confidence, duplicated, or from a weak source. Grona should not automatically promote raw input into durable memory or expert behavior.
+Raw knowledge can be incomplete, stale, contradictory, generic, low-confidence, duplicated, synthetic, license-sensitive, or from a weak source. Grona should not automatically promote raw input into durable memory or expert behavior.
 
 The seed layer makes raw knowledge visible before promotion. It lets Grona quarantine, merge, or reject weak inputs instead of silently mixing them into a model prompt or training set.
 
@@ -140,10 +161,12 @@ This is not automatic expert creation. It is an auditable proposal for future re
 
 The current layer can convert existing prototype outputs into raw seeds:
 
+- `knowledge_seed_from_dataset_sample(sample)`
+- `knowledge_seeds_from_dataset_samples(samples)`
 - `knowledge_seed_from_document_chunk(chunk, source)`
 - `knowledge_seed_from_tool_result(result, source)`
 
-This connects document ingestion and mock tool output to the future Growth Lab without making them trusted memory automatically.
+This connects dataset ingestion, document ingestion, and mock tool output to the future Growth Lab without making them trusted memory automatically.
 
 ## CLI Demos
 
@@ -152,9 +175,10 @@ python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
+python -m grona --dataset-demo
 ```
 
-The GrowthEngine demo prints review counts, cluster counts, growth decisions, action counts, and memory records prepared from the plan.
+The dataset demo prints dataset sample counts, generated seed counts, validation statuses, clusters, assignments, and GrowthEngine decisions.
 
 ## Examples
 
@@ -163,9 +187,10 @@ python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
 python examples/growth_engine_demo.py
+python examples/dataset_ingestion_demo.py
 ```
 
-The GrowthEngine example shows raw demo seeds, review pipeline output, grape clustering, growth planning, memory-record preparation, and expert-candidate suggestion when a cluster is strong enough.
+The dataset ingestion example shows `DatasetSource` creation, Alpaca-like and ShareGPT-like adapters, conversion into `KnowledgeSeed` values, validation, review, clustering, and GrowthEngine planning.
 
 ## How This Prepares Future Growth
 
@@ -174,6 +199,12 @@ The GrowthEngine example shows raw demo seeds, review pipeline output, grape clu
 The important boundary is that recommendations stay explicit and reviewable. Humans can still review important structural changes before they affect durable memory, modules, or training data.
 
 Deduplication matters because clusters should not over-weight repeated copies of the same claim. Conflict detection matters because a cluster should not blindly absorb two opposite claims as equal nutrients. Growth decisions make the next step visible instead of automatic.
+
+## Why Dataset Samples Could Become Seeds
+
+Future sources such as `yahma/alpaca-cleaned`, UA-Alpaca, OpenHermes, LMSYS / ShareGPT, Loghub, C4 slices, and Wikipedia-derived samples may contain useful examples, claims, formats, or task traces.
+
+They should enter Grona as `DatasetSample` values and then `KnowledgeSeed` values with license and provenance metadata. That keeps dataset material inspectable before it becomes memory, benchmark material, expert behavior, or future training data.
 
 ## Why Donor Model Outputs Could Become Seeds
 
@@ -186,6 +217,10 @@ That output should be validated, deduplicated, reviewed, optionally assigned to 
 - No autonomous self-training.
 - No automatic expert creation.
 - No model weights.
+- No real dataset downloads.
+- No Hugging Face integration or `datasets` dependency.
+- No JSONL file loader or Parquet reader.
+- No large dataset files or generated dataset artifacts.
 - No web fact-checking.
 - No temporal freshness checks.
 - No semantic embeddings.

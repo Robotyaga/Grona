@@ -8,6 +8,7 @@ This document describes the current deterministic prototype, not a production AI
 
 - [Project vision](project-vision.md)
 - [Growth Lab](growth-lab.md)
+- [Dataset ingestion](dataset-ingestion.md)
 - [Workspace profiles](workspaces.md)
 - [Development notes](development.md)
 - [Research notes](research-notes.md)
@@ -26,7 +27,8 @@ flowchart TD
     E --> G[RoutingDecision]
     H[Memory Modules] --> I[ContextBuilder]
     J[Document Ingestion] --> H
-    J --> Q[KnowledgeSeed]
+    DS[DatasetSource / DatasetSample] --> Q[KnowledgeSeed]
+    J --> Q
     R[Tool Result] --> Q
     F --> Q
     Q --> S[KnowledgeValidator]
@@ -57,22 +59,23 @@ flowchart TD
 1. CLI or caller selects a `WorkspaceProfile`.
 2. Grona filters the `ModuleRegistry` for the workspace.
 3. Raw demo document text may be converted into memory records.
-4. Document chunks, tool results, feedback, or notes may be represented as raw `KnowledgeSeed` values.
-5. `KnowledgeValidator` scores seeds as validated, weak, quarantined, or rejected.
-6. `KnowledgeDeduplicator` marks exact or deterministic near duplicates as merge candidates.
-7. `KnowledgeConflictDetector` marks conservative potential conflicts without resolving truth.
-8. `KnowledgeReviewPipeline` recommends promote, merge, quarantine, reject, or review decisions.
-9. `GrapeClusterer` can group promote-candidate seeds into deterministic cluster candidates.
-10. `GrowthEngine` recommends what should happen next without mutating inputs.
-11. Growth plans can prepare memory-record bridges or expert candidate proposals for review.
-12. A user task enters the system.
-13. `Router` selects relevant modules from the workspace registry.
-14. Adaptive routing may adjust scores from feedback history.
-15. `ContextBuilder` prepares stub and memory context for selected modules.
-16. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
-17. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
-18. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
-19. Feedback can be written later and used to influence future adaptive routing.
+4. Small in-memory dataset samples may be normalized into raw `KnowledgeSeed` values.
+5. Document chunks, dataset samples, tool results, feedback, or notes may be represented as raw `KnowledgeSeed` values.
+6. `KnowledgeValidator` scores seeds as validated, weak, quarantined, or rejected.
+7. `KnowledgeDeduplicator` marks exact or deterministic near duplicates as merge candidates.
+8. `KnowledgeConflictDetector` marks conservative potential conflicts without resolving truth.
+9. `KnowledgeReviewPipeline` recommends promote, merge, quarantine, reject, or review decisions.
+10. `GrapeClusterer` can group promote-candidate seeds into deterministic cluster candidates.
+11. `GrowthEngine` recommends what should happen next without mutating inputs.
+12. Growth plans can prepare memory-record bridges or expert candidate proposals for review.
+13. A user task enters the system.
+14. `Router` selects relevant modules from the workspace registry.
+15. Adaptive routing may adjust scores from feedback history.
+16. `ContextBuilder` prepares stub and memory context for selected modules.
+17. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
+18. If safety is enabled, adapter or mock-tool actions are planned and evaluated.
+19. `OrchestrationResult` collects route decisions, context, expert results, tool summaries, and safety metadata.
+20. Feedback can be written later and used to influence future adaptive routing.
 
 ## Workspace Layer
 
@@ -85,6 +88,19 @@ A workspace is a configured vineyard for one use case.
 Profiles affect routing by narrowing the module registry before `Router` scores modules. If a profile filters modules, Grona preserves `general-reasoning` as a fallback when available.
 
 This is not production config management. No workspace directories, disk-loaded config files, secrets, or external config services are implemented.
+
+## Dataset Ingestion Layer
+
+Dataset ingestion is a normalization layer for tiny in-memory structured samples.
+
+- `DatasetSource` stores dataset provenance, type, format, license, language, reliability, and metadata.
+- `DatasetSample` stores normalized content, sample type, domains, keywords, and metadata.
+- `InstructionDatasetSample` models Alpaca-like instruction/input/output records.
+- `ConversationDatasetSample` models ShareGPT/LMSYS-like role/content conversations.
+- `AlpacaFormatAdapter` and `ShareGPTFormatAdapter` normalize in-memory dictionaries only.
+- `knowledge_seed_from_dataset_sample()` converts samples into raw Growth Lab seeds.
+
+This layer preserves license and sample-type metadata because dataset rows are not automatically factual knowledge. It does not download datasets, read dataset files, call Hugging Face, parse Parquet, train models, build embeddings, or create large artifacts.
 
 ## Growth Lab Seed, Cluster, and Engine Layers
 
@@ -106,7 +122,7 @@ Growth Lab begins with raw knowledge candidates, not trusted memory.
 - `GrowthPlan` groups recommendations with summary metadata.
 - `GrowthEngine` recommends promotion, merge, quarantine, reject, cluster strengthening, memory bridge, and expert-candidate actions.
 
-The current seed layer can convert existing `DocumentChunk` values and mock `ToolResult` values into seeds. That connects existing ingestion and tool contracts to future growth experiments without automatically promoting raw data.
+The current seed layer can convert existing `DatasetSample`, `DocumentChunk`, and mock `ToolResult` values into seeds. That connects existing ingestion and tool contracts to future growth experiments without automatically promoting raw data.
 
 The current cluster layer only groups promote-candidate seeds. The current engine only recommends actions. It does not create experts, mutate routing, train models, perform semantic clustering, persist growth plans, or resolve truth.
 
@@ -153,6 +169,7 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 - Workspace is the vineyard/environment.
 - Profile is how the cluster is arranged for a specific use case.
 - Enabled modules are active grapes.
+- Dataset samples are structured nutrients that must keep provenance and license metadata.
 - Knowledge seeds are raw nutrients that still need validation and review.
 - Grape nodes are organized candidate nutrients after review.
 - Grape clusters are deterministic groupings of related candidate nodes.
@@ -164,4 +181,4 @@ This is not a real sandbox. It does not isolate processes, execute commands, run
 
 ## Prototype Boundaries
 
-The current prototype is intentionally deterministic. It provides inspectable contracts for routing, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype is intentionally deterministic. It provides inspectable contracts for routing, dataset ingestion, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, automatic expert growth, or production configuration management.

@@ -2,7 +2,7 @@
 
 Grona is an early research prototype. Keep the code small, readable, deterministic, and honest about what it does.
 
-See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
+See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Dataset ingestion](dataset-ingestion.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
 
 ## Repository Structure
 
@@ -12,6 +12,7 @@ src/grona/
 |-- adapters.py         ExecutionRequest, adapters, and adapter registry
 |-- cli.py              Routing, workspace, memory, ingestion, execution, safety, tool, and growth CLI
 |-- context.py          ContextItem and ContextBuilder
+|-- datasets.py         DatasetSource, DatasetSample, adapters, seed conversion
 |-- decision.py         Routing decision data structures
 |-- defaults.py         Default module registry
 |-- documents.py        DocumentSource, TextChunker, DocumentIngestor
@@ -37,7 +38,8 @@ Keep concerns separate:
 
 - workspace profiles choose active modules/domains and default behavior
 - metadata helps the router select modules
-- ingestion turns raw text into deterministic chunks and memory records
+- document ingestion turns raw text into deterministic chunks and memory records
+- dataset ingestion normalizes tiny structured samples into Growth Lab seed material
 - growth seeds represent raw knowledge before trust or promotion
 - validation scores seeds without fact-checking, web access, or model calls
 - deduplication marks repeated seeds as merge candidates without deleting provenance
@@ -96,6 +98,43 @@ records = ingestor.chunks_to_memory_records(ingestor.ingest(source))
 ```
 
 This does not read paths, crawl folders, parse PDFs, run OCR, build embeddings, or call a vector database.
+
+## Add Dataset Samples
+
+Use `DatasetSource` and format adapters when tiny structured dataset samples should enter Growth Lab:
+
+```python
+from grona import AlpacaFormatAdapter, DatasetSource
+
+source = DatasetSource(
+    "dataset:demo-alpaca",
+    "Demo Alpaca",
+    source_type="instruction_dataset",
+    format="alpaca",
+    license="cc-by-4.0",
+    language="en",
+    reliability=0.8,
+)
+records = [
+    {
+        "instruction": "Explain how to review a Python function.",
+        "input": "A helper changed without tests.",
+        "output": "Check behavior, edge cases, imports, and add focused tests.",
+    }
+]
+samples = AlpacaFormatAdapter().parse(records, source)
+```
+
+Convert normalized samples into seeds before validation:
+
+```python
+from grona import knowledge_seeds_from_dataset_samples
+
+normalized = [sample.to_dataset_sample() for sample in samples]
+seeds = knowledge_seeds_from_dataset_samples(normalized)
+```
+
+Keep dataset ingestion in memory and deterministic. Do not add downloads, Hugging Face dependencies, large files, generated artifacts, training, embeddings, or vector databases at this layer.
 
 ## Add Knowledge Seeds
 
@@ -170,11 +209,13 @@ python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
+python -m grona --dataset-demo
 python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
 python examples/growth_engine_demo.py
+python examples/dataset_ingestion_demo.py
 ```
 
 ## Run Tests
@@ -200,6 +241,11 @@ Before opening a PR, check that the change:
 
 Do not add these until the workspace, ingestion, growth, execution, and safety interfaces have stronger tests and real requirements:
 
+- dataset downloads
+- Hugging Face `datasets` dependency
+- real Alpaca, ShareGPT, OpenHermes, C4, Wikipedia, LMSYS, or Loghub downloads
+- large dataset files or generated dataset artifacts
+- JSONL or Parquet readers without a scoped design
 - persisted workspace directories
 - persisted seed stores
 - persisted cluster stores
