@@ -11,6 +11,19 @@ from .adapters import (
 )
 from .adaptive import AdaptiveRoutingConfig, ModuleFeedbackStats, build_module_feedback_stats
 from .context import ContextBuilder, ContextItem
+from .datasets import (
+    AlpacaFormatAdapter,
+    ConversationDatasetSample,
+    DatasetSample,
+    DatasetSource,
+    InstructionDatasetSample,
+    ShareGPTFormatAdapter,
+    create_demo_alpaca_samples,
+    create_demo_dataset_sources,
+    create_demo_sharegpt_samples,
+    knowledge_seed_from_dataset_sample,
+    knowledge_seeds_from_dataset_samples,
+)
 from .decision import ModuleMatch, RoutingDecision
 from .defaults import create_default_registry
 from .documents import (
@@ -125,12 +138,16 @@ from .workspace import (
 
 __all__ = [
     "AdaptiveRoutingConfig",
+    "AlpacaFormatAdapter",
     "AutomotiveDiagnosticsExpertExecutor",
     "CodeExpertExecutor",
     "ConflictCheckResult",
     "ContextBuilder",
     "ContextItem",
+    "ConversationDatasetSample",
     "CybersecurityExpertExecutor",
+    "DatasetSample",
+    "DatasetSource",
     "DocumentChunk",
     "DocumentIngestor",
     "DocumentSearchExpertExecutor",
@@ -158,6 +175,7 @@ __all__ = [
     "GrowthPlan",
     "InMemoryFeedbackStore",
     "InMemoryKeywordMemory",
+    "InstructionDatasetSample",
     "JsonlFeedbackStore",
     "JsonlMemoryStore",
     "KnowledgeConflictDetector",
@@ -185,6 +203,7 @@ __all__ = [
     "SafeToolRunner",
     "SafetyPolicy",
     "SeedReviewDecision",
+    "ShareGPTFormatAdapter",
     "StaticExecutionAdapter",
     "TextChunker",
     "ToolAction",
@@ -208,6 +227,8 @@ __all__ = [
     "create_default_safety_policy",
     "create_default_tool_registry",
     "create_default_workspace_profile",
+    "create_demo_alpaca_samples",
+    "create_demo_dataset_sources",
     "create_demo_document_sources",
     "create_demo_grape_clusters",
     "create_demo_grape_knowledge_seeds",
@@ -216,14 +237,17 @@ __all__ = [
     "create_demo_knowledge_seeds",
     "create_demo_knowledge_sources",
     "create_demo_review_knowledge_seeds",
+    "create_demo_sharegpt_samples",
     "create_document_research_workspace_profile",
     "create_growth_engine_demo_seeds",
     "create_media_workflow_workspace_profile",
     "extract_keywords",
     "filter_modules_for_workspace",
     "get_builtin_workspace_profile",
+    "knowledge_seed_from_dataset_sample",
     "knowledge_seed_from_document_chunk",
     "knowledge_seed_from_tool_result",
+    "knowledge_seeds_from_dataset_samples",
     "memory_records_from_grape_clusters",
     "memory_records_from_growth_plan",
     "summarize_feedback",
