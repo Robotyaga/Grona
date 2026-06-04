@@ -10,6 +10,7 @@ The long-term goal is a system that can grow specialized capabilities in a contr
 
 - start with explicit modules and routing metadata
 - attach structured knowledge sources and deterministic memory
+- normalize dataset samples while preserving provenance, license, language, and sample type
 - collect route traces, feedback, validation signals, review decisions, cluster assignments, growth decisions, and seed outcomes
 - use donor models and local models as optional sources of proposals, not unquestioned authorities
 - export validated traces or knowledge packs for future specialized expert training
@@ -21,11 +22,11 @@ A RAG wrapper usually centers on retrieval plus prompt assembly around one model
 
 Retrieval can become one nutrient source inside Grona, but it should not be the entire system. A workspace profile may activate document search, code review, media workflow, automotive diagnostics, or security modules differently even for similar task text.
 
-Growth Lab adds another distinction: raw knowledge is not automatically trusted just because it was retrieved or generated. It can first become a `KnowledgeSeed`, receive deterministic validation and review, stay weak, duplicated, conflicted, quarantined, or rejected, become eligible for candidate `GrapeCluster` grouping, and then receive a `GrowthEngine` recommendation before durable use.
+Growth Lab adds another distinction: raw knowledge is not automatically trusted just because it was retrieved, downloaded, normalized from a dataset, or generated. It can first become a `KnowledgeSeed`, receive deterministic validation and review, stay weak, duplicated, conflicted, quarantined, or rejected, become eligible for candidate `GrapeCluster` grouping, and then receive a `GrowthEngine` recommendation before durable use.
 
 ## Why Knowledge Should Not Always Be Baked Into Weights
 
-Model weights are powerful, but they are not always the best place for project-specific, changing, auditable, or source-sensitive knowledge. External structured knowledge can be:
+Model weights are powerful, but they are not always the best place for project-specific, changing, auditable, source-sensitive, or license-sensitive knowledge. External structured knowledge can be:
 
 - inspected before use
 - corrected without retraining
@@ -44,7 +45,15 @@ Grona should be able to grow useful external knowledge before deciding whether a
 
 ### Growth Lab
 
-A controlled experimental environment for testing how modules, memory, feedback, tools, and validation loops evolve together. The current foundation is deterministic `KnowledgeSeed` validation, review, grape cluster candidate grouping, and GrowthEngine recommendations.
+A controlled experimental environment for testing how modules, memory, feedback, tools, datasets, and validation loops evolve together. The current foundation is deterministic dataset ingestion, `KnowledgeSeed` validation, review, grape cluster candidate grouping, and GrowthEngine recommendations.
+
+### DatasetSource and DatasetSample
+
+`DatasetSource` records dataset provenance, source type, format, license, language, reliability, and metadata. `DatasetSample` is the normalized internal sample that can become a raw Growth Lab seed.
+
+Instruction and conversation dataset samples are represented explicitly before normalization. Alpaca-like and ShareGPT-like adapters currently work with tiny in-memory dictionaries only.
+
+Dataset ingestion does not download real datasets, call Hugging Face, train models, or add model weights. It preserves provenance so future decisions can remain inspectable.
 
 ### KnowledgeSeed
 
@@ -85,8 +94,9 @@ Grona should stay honest:
 - no production claims before production capabilities exist
 - no sandboxing claims before real isolation exists
 - no learning claims before learning is measurable
+- no dataset claims before downloads, licenses, and provenance policies are explicit
 - no tool-use claims before real tool boundaries are implemented and tested
 - no knowledge-quality claims without validation, review, clustering traces, growth decisions, and provenance
 - no training claims before training data and evaluation are explicit
 
-The current repository is the foundation: deterministic routing, memory, orchestration, workspaces, seed validation, seed review, candidate grape clustering, GrowthEngine recommendations, mock execution, safety planning, tests, and docs.
+The current repository is the foundation: deterministic routing, dataset ingestion, memory, orchestration, workspaces, seed validation, seed review, candidate grape clustering, GrowthEngine recommendations, mock execution, safety planning, tests, and docs.
