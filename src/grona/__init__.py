@@ -150,6 +150,12 @@ from .tools import (
     ToolSpec,
     create_default_tool_registry,
 )
+from .training import (
+    TrainingDataExporter,
+    TrainingDataset,
+    TrainingExample,
+    TrainingExportConfig,
+)
 from .workspace import (
     WorkspaceConfig,
     WorkspaceProfile,
