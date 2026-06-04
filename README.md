@@ -6,11 +6,11 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing. Instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules and keeps the route trace visible.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset samples and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset samples, donor proposals, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, and safety policy is the protective layer around future tool use.
 
 ## Current Status
 
-Grona is deterministic and local-first. It does not call an LLM, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, train models, download datasets, or run real tools.
+Grona is deterministic and local-first. It does not call an LLM by default, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, train models, download datasets, or run real tools.
 
 What it does today:
 
@@ -21,6 +21,9 @@ What it does today:
 - ingests in-memory demo documents into memory records
 - normalizes tiny Alpaca-like and ShareGPT-like in-memory dataset samples
 - converts normalized dataset samples into raw `KnowledgeSeed` values with license metadata
+- collects deterministic donor model proposals through a static offline adapter
+- defines an optional LM Studio adapter foundation behind explicit user configuration
+- converts donor `knowledge_seed` proposals into raw untrusted `KnowledgeSeed` candidates
 - validates and reviews raw `KnowledgeSeed` values before future promotion
 - groups promote-candidate seeds into deterministic `GrapeCluster` and `GrapeNode` structures
 - produces deterministic `GrowthDecision` and `GrowthPlan` recommendations
@@ -62,6 +65,7 @@ python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
 python -m grona --dataset-demo
+python -m grona --donor-demo
 python -m grona --benchmark-demo
 ```
 
@@ -93,8 +97,15 @@ python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
 python examples/growth_engine_demo.py
 python examples/dataset_ingestion_demo.py
+python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 ```
+
+## Donor Model Adapter Foundation
+
+A donor model is a proposal source, not Grona's brain and not a trusted authority. The deterministic `StaticDonorModelAdapter` is used for tests and demos. `LMStudioAdapter` is an optional local-model adapter foundation that uses the Python standard library and only runs when explicitly configured by a caller.
+
+Donor proposals can suggest summaries, route hints, context hints, benchmark answers, module suggestions, or raw `knowledge_seed` candidates. Donor `knowledge_seed` proposals can be converted into `KnowledgeSeed` values, but they still require validation, review, benchmarking, and human judgment before durable use.
 
 ## BenchmarkSuite MVP
 
@@ -129,11 +140,13 @@ This is not a model judge and does not claim real answer accuracy. See [Benchmar
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, clustering, growth, and benchmarking are deterministic heuristics.
+- Routing, memory retrieval, clustering, growth, donor proposals, and benchmarking are deterministic or explicitly configured prototype layers.
+- Donor model output is untrusted proposal material, not validated truth.
+- LM Studio support is optional and not used by default or by CI.
 - BenchmarkSuite is a deterministic rubric only; it does not evaluate real LLM answers.
 - Dataset ingestion is in-memory normalization only; it does not download or read real datasets.
 - No Hugging Face integration, `datasets` dependency, JSONL loader, or Parquet reader yet.
-- No real LLM integration, donor model adapter, LM Studio adapter, or external judge model yet.
+- No real LLM integration, trusted donor model workflow, external judge model, or automatic answer generation yet.
 - No embeddings, semantic clustering, vector database, SQL database, or web server.
 - No autonomous self-training, model weights, training-data export, or automatic expert creation yet.
 - No real tool execution, shell execution, subprocesses, filesystem tools, or network tools.
