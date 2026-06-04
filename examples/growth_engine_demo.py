@@ -23,7 +23,10 @@ def main() -> None:
     records = memory_records_from_growth_plan(plan, clusters)
 
     print("GrowthEngine MVP demo")
-    print("Execution: deterministic recommendations only; no LLM, embeddings, web, APIs, or training.")
+    print(
+        "Execution: deterministic recommendations only; "
+        "no LLM, embeddings, web, APIs, or training."
+    )
     print()
     print(f"Raw demo seeds: {len(seeds)}")
     print(f"Review decisions: {len(review_decisions)}")
