@@ -8,6 +8,7 @@ import sys
 from .benchmark_cli import main as benchmark_main
 from .cli import main as cli_main
 from .donor_cli import main as donor_main
+from .jsonl_dataset_cli import main as jsonl_dataset_main
 from .training_cli import main as training_main
 
 
@@ -20,4 +21,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return donor_main(args)
     if "--training-export-demo" in args:
         return training_main(args)
+    if "--jsonl-dataset-demo" in args:
+        return jsonl_dataset_main(args)
     return cli_main(args)
