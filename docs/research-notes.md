@@ -6,7 +6,7 @@ For the longer direction, see [Project vision](project-vision.md). For implement
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, raw knowledge validation, seed review, candidate cluster grouping, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, raw knowledge validation, seed review, candidate cluster grouping, growth recommendations, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -18,6 +18,7 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which context was attached
 - which raw knowledge seeds were validated, weakened, quarantined, rejected, merged, or flagged
 - which reviewed seeds were assigned or skipped by the grape clusterer
+- which GrowthEngine decisions were recommended and why
 - which safety policy decisions were made
 - which feedback might alter future routing
 
@@ -33,61 +34,34 @@ A workspace profile describes a configured vineyard for a specific use case.
 - Knowledge seeds are raw nutrients.
 - Grape nodes are organized candidate nutrients.
 - Grape clusters are deterministic candidate groupings.
+- GrowthEngine is the recommendation layer for what should grow next.
 - Memory sources are knowledge nutrients that entered the context path.
 - Safety policy is the protective layer.
 - Routing mode is the activation rule set.
 
-`WorkspaceProfile` and `WorkspaceConfig` are intentionally small dataclass-based structures. They are serializable to dict/JSON so a profile can be reproduced in tests and examples. Built-in profiles cover default, code, cybersecurity, media, automotive, and document research workflows.
-
-The current layer filters the module registry before routing. This helps test whether the same task routes differently under different project assumptions.
+`WorkspaceProfile` and `WorkspaceConfig` are intentionally small dataclass-based structures. Built-in profiles cover default, code, cybersecurity, media, automotive, and document research workflows.
 
 This is not production config management. There is no persisted workspace directory, no disk-loaded config file, no secrets handling, no external API, and no database-backed profile system.
-
-## Document Ingestion Stub
-
-Document ingestion explores a simple path from raw text to route-scoped memory:
-
-```text
-Raw document text -> DocumentSource -> DocumentChunk -> MemoryRecord -> InMemoryKeywordMemory -> ContextBuilder
-```
-
-The current implementation is deliberately not RAG. It has no embeddings, semantic search, vector database, PDF parsing, OCR, filesystem crawler, file watcher, or external API.
 
 ## Knowledge Before Weights
 
 Grona assumes that some knowledge should remain external, structured, source-aware, and validated before it ever becomes training data or expert behavior.
 
-`KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, and `GrapeClusterer` now provide the first deterministic version of this idea: collect knowledge with provenance, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, and only then decide whether it might influence routing, memory, prompts, benchmarks, or training exports later.
+`KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, and `GrowthEngine` now provide the first deterministic version of this idea: collect knowledge with provenance, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, and recommend a next step before anything becomes durable.
 
 This does not prove factual truth. It makes uncertainty explicit.
 
-## Knowledge Validation and Review Questions
+## GrowthEngine Questions
 
-The current validator is intentionally small. It asks:
+The current GrowthEngine MVP asks conservative questions:
 
-- Is the content empty or too short?
-- Is the source known?
-- Is source reliability low?
-- Is seed confidence low?
-- Are domains or keywords missing?
-- Does the content look suspiciously generic?
+- Should this reviewed seed be promoted, merged, quarantined, or rejected?
+- Is this cluster strong enough to prepare a memory bridge?
+- Does this cluster need review before memory or expert growth?
+- Does this cluster have enough reviewed seeds and domain consistency to suggest a future expert candidate?
+- Which reasons and metadata should be visible to a human reviewer?
 
-The current review layer asks:
-
-- Is this seed an exact normalized duplicate?
-- Is this seed a simple near duplicate within the same domain?
-- Does this seed potentially conflict with another seed using conservative polarity markers?
-- Should this seed be a promote candidate, merge candidate, weak quarantine, conflict quarantine, rejection, or manual review candidate?
-
-The current cluster layer asks:
-
-- Is this seed a promote candidate?
-- What is its primary domain?
-- Does it overlap an existing cluster by deterministic keyword signals?
-- Should it become a new node in an existing cluster or start a new candidate cluster?
-- If it is skipped, is the reason explicit?
-
-Future validation can add persisted seed stores, temporal freshness checks, workspace relevance, benchmark impact, human review workflow, and persisted cluster review traces.
+GrowthEngine is a recommendation engine. It is not autonomous self-training, automatic truth resolution, or automatic expert creation.
 
 ## Execution and Tool Boundaries
 
@@ -114,15 +88,16 @@ The safety layer asks policy questions before future tools exist:
 - Can feedback improve routing without turning into opaque learning?
 - Can external knowledge seeds improve modules without being baked into weights too early?
 - Can deterministic grape clusters organize reviewed seeds without hiding provenance?
+- Can GrowthEngine proposals stay useful while preserving human review?
 - Can donor model outputs be validated and reviewed before becoming durable knowledge?
-- Can benchmark traces expose regressions in routing, context, seed validation, seed review, cluster assignment, and safety behavior?
-- Can a GrowthEngine propose useful changes while staying auditable?
+- Can benchmark traces expose regressions in routing, context, seed validation, seed review, cluster assignment, growth planning, and safety behavior?
 
 ## Current Limits
 
 - No persisted workspace directory yet.
 - No persisted seed store yet.
 - No persisted cluster store yet.
+- No persisted growth plan store yet.
 - No external config files loaded from disk.
 - No secrets or user-specific private settings.
 - No production config management.
@@ -132,6 +107,7 @@ The safety layer asks policy questions before future tools exist:
 - No semantic clustering yet.
 - No web fact-checking or temporal freshness checks yet.
 - No LLM-based contradiction detection or automatic truth resolution yet.
+- No autonomous self-training, model weights, or automatic expert creation yet.
 - No shell execution, subprocess usage, network calls, or sandboxing yet.
 - No process isolation or filesystem isolation.
 - No OpenAI API, donor model adapter, or Ollama integration.
@@ -140,10 +116,8 @@ The safety layer asks policy questions before future tools exist:
 
 ## Future Work
 
-Before adding persisted workspace support, Grona needs explicit designs for profile file format, migration/versioning, local path boundaries, secrets policy, and user confirmation.
-
 Before adding real document workflows, Grona needs explicit designs for file selection, parser dependencies, citation tracking, content updates, embeddings, vector search, privacy boundaries, and deletion semantics.
 
 Before adding real execution, Grona needs explicit designs for subprocess control, sandboxing, file access boundaries, network access boundaries, secrets handling, audit logs, user confirmation flows, and rollback or recovery expectations.
 
-Before adding model-backed growth, Grona needs explicit designs for donor model reliability, validation, review decisions, cluster assignment, provenance, benchmark impact, training data export, and human review.
+Before adding model-backed growth, Grona needs explicit designs for donor model reliability, validation, review decisions, cluster assignment, GrowthEngine approval, provenance, benchmark impact, training data export, and human review.
