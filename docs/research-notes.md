@@ -6,7 +6,7 @@ For the longer direction, see [Project vision](project-vision.md). For implement
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset provenance, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -16,7 +16,8 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which modules were skipped
 - which scores and reasons mattered
 - which context was attached
-- which dataset source, license, language, and sample type produced a seed
+- which dataset manifest, source, license, language, allowed use, and sample type produced a seed
+- which dataset rows were accepted, rejected, or marked for review
 - which donor proposals were collected, which failed, and which became untrusted seed candidates
 - which raw knowledge seeds were validated, weakened, quarantined, rejected, merged, or flagged
 - which reviewed seeds were assigned or skipped by the grape clusterer
@@ -44,7 +45,9 @@ This is not answer grading. It is a deterministic rubric for trace behavior.
 
 Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, validated, reviewed, clustered, benchmarked, and exported with provenance before it ever becomes training data or expert behavior.
 
-`DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, and `TrainingDataExporter` now provide the first deterministic version of this idea: collect material with provenance, normalize it into proposals or seeds, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, and export only conservative training example candidates.
+`DatasetManifest`, `DatasetLicensePolicy`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, and export only conservative training example candidates.
+
+The dataset manifest layer is intentionally conservative. JSONL rows can be parsed and normalized, but a row is still only a candidate. Unknown or restricted licenses block training export candidate use by default. Review requirements remain visible.
 
 The static donor adapter is intentionally offline and deterministic. The optional LM Studio adapter is only a standard-library integration point for explicitly configured local experiments. Donor output is not treated as trusted knowledge by default and raw donor proposals are not exported as training data by default.
 
@@ -58,6 +61,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 - Can feedback improve routing without turning into opaque learning?
 - Can external knowledge seeds improve modules without being baked into weights too early?
 - Can dataset material remain source-aware and license-aware before future training use?
+- Can manifest license policy prevent unsafe dataset use without blocking useful review workflows?
 - Can donor model outputs be reviewed, benchmarked, and rejected before becoming durable knowledge?
 - Can deterministic grape clusters organize reviewed seeds without hiding provenance?
 - Can GrowthEngine proposals stay useful while preserving human review?
@@ -69,6 +73,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 
 - No persisted workspace directory yet.
 - No persisted dataset store yet.
+- No persisted dataset manifest files yet.
 - No persisted donor proposal store yet.
 - No persisted seed store yet.
 - No persisted cluster store yet.
@@ -76,7 +81,8 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No persisted benchmark store yet.
 - No persisted training dataset store yet.
 - No dataset downloads, Hugging Face integration, or `datasets` dependency yet.
-- No JSONL loader, Parquet reader, or large dataset artifact handling yet.
+- No Parquet reader or large dataset artifact handling yet.
+- No large JSONL streaming design yet.
 - No JSONL file writing by default.
 - No external config files loaded from disk.
 - No secrets or user-specific private settings.
@@ -97,4 +103,4 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No vector database, SQL database, web server, or external API.
 - No production orchestration.
 
-Before adding model-backed evaluation, donor-backed growth, or training workflows, Grona needs explicit designs for judge reliability, task outputs, human review, benchmark provenance, adapter comparison, score interpretation, failure analysis, donor proposal trust boundaries, license policy, and training export quality review.
+Before adding model-backed evaluation, donor-backed growth, or training workflows, Grona needs explicit designs for judge reliability, task outputs, human review, benchmark provenance, adapter comparison, score interpretation, failure analysis, donor proposal trust boundaries, license policy, dataset manifest persistence, and training export quality review.
