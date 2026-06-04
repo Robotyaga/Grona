@@ -5,14 +5,15 @@ Growth Lab is the research foundation for future self-growing modular intelligen
 The long-term idea is:
 
 ```text
-DatasetManifest -> DatasetLicensePolicy -> DatasetSample -> KnowledgeSeed -> validation
+DatasetManifest -> DatasetLicensePolicy -> DatasetSample -> DatasetQualityReviewer
+-> accepted reviewed sample -> KnowledgeSeed -> validation
 DonorModelProposal -> KnowledgeSeed -> validation
 -> deduplication/conflict checks -> review decision -> grape cluster assignment
 -> GrowthEngine recommendations -> memory bridge / expert proposal review
 -> feedback -> benchmarks -> TrainingDataExporter -> optional future training review
 ```
 
-The current implementation adds deterministic local-first foundations for dataset manifests, JSONL ingestion, donor proposals, knowledge seeds, validation, review, grape clustering, GrowthEngine recommendations, BenchmarkSuite measurement, and conservative training example export.
+The current implementation adds deterministic local-first foundations for dataset manifests, JSONL ingestion, dataset quality review, donor proposals, knowledge seeds, validation, review, grape clustering, GrowthEngine recommendations, BenchmarkSuite measurement, and conservative training example export.
 
 ## Current Structures
 
@@ -32,6 +33,13 @@ Dataset ingestion:
 - `ConversationDatasetSample`
 - `AlpacaFormatAdapter`
 - `ShareGPTFormatAdapter`
+
+Dataset quality review:
+
+- `DatasetSampleReview`
+- `DatasetReviewConfig`
+- `DatasetQualityReviewer`
+- `DatasetReviewReport`
 
 Donor proposals:
 
@@ -89,6 +97,14 @@ Training export:
 
 `DatasetIngestor` parses tiny JSONL records, normalizes Alpaca-like, ShareGPT-like, and generic text rows, attaches manifest metadata, and returns a `DatasetIngestionReport`. It does not promote rows into durable memory or training data.
 
+## Dataset Quality Review In Growth Lab
+
+`DatasetQualityReviewer` sits after normalization and before raw `KnowledgeSeed` creation. It applies deterministic checks for empty content, short content, duplicate normalized text, missing output or assistant answers, suspicious prompt markers, unsupported sample types, license restrictions, optional domain mismatch, and low information density.
+
+Accepted samples can become raw `KnowledgeSeed` candidates through `accepted_reviewed_samples_to_knowledge_seeds()`. The created seeds preserve manifest, license, sample, and review metadata and remain `new` candidates. They still need later validation, review, benchmarks, and human judgment.
+
+This is deliberately not an LLM judge. It does not use embeddings, semantic similarity, web evidence, legal analysis, or training feedback. Its purpose is to stop obvious bad rows from flowing forward silently.
+
 ## Donor Model Proposals In Growth Lab
 
 Donor adapters are proposal sources, not trusted knowledge engines. A donor adapter may suggest a route hint, summary, context hint, module suggestion, benchmark answer, or raw knowledge seed candidate. The output keeps its source, proposal type, confidence, and metadata so review layers can decide what to do with it.
@@ -125,8 +141,9 @@ This helps answer local prototype questions:
 - Did Grona select the expected modules?
 - Did route-scoped context contain expected keywords?
 - Did GrowthEngine produce relevant traces?
-- Did dataset ingestion and grape clusters improve available context?
+- Did dataset ingestion, review, and grape clusters improve available context?
 - Can dataset manifests preserve license and provenance before rows influence knowledge?
+- Can dataset review stop obvious bad rows before seed creation?
 - Can donor-derived proposals be measured before they influence durable knowledge?
 - Can training export candidates preserve validation and provenance before future use?
 - Can a change be compared against baseline routing?
@@ -142,6 +159,7 @@ python -m grona --grape-demo
 python -m grona --growth-engine-demo
 python -m grona --dataset-demo
 python -m grona --jsonl-dataset-demo
+python -m grona --dataset-review-demo
 python -m grona --benchmark-demo
 python -m grona "Summarize modular routing" --donor-demo
 python -m grona --training-export-demo
@@ -156,6 +174,7 @@ python examples/grape_cluster_demo.py
 python examples/growth_engine_demo.py
 python examples/dataset_ingestion_demo.py
 python examples/jsonl_dataset_ingestion_demo.py
+python examples/dataset_review_demo.py
 python examples/benchmark_demo.py
 python examples/donor_model_demo.py
 python examples/training_export_demo.py
@@ -172,6 +191,9 @@ python examples/training_export_demo.py
 - No large dataset streaming.
 - No large dataset files or generated dataset artifacts.
 - No JSONL file writing by default.
+- No semantic deduplication.
+- No LLM dataset judging.
+- No guarantee that accepted dataset samples are good enough for real training.
 - No web fact-checking.
 - No temporal freshness checks.
 - No semantic embeddings.

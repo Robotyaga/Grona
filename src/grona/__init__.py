@@ -37,6 +37,14 @@ from .dataset_manifest import (
     read_jsonl_records,
     read_jsonl_stream,
 )
+from .dataset_review import (
+    DatasetQualityReviewer,
+    DatasetReviewConfig,
+    DatasetReviewReport,
+    DatasetSampleReview,
+    accepted_reviewed_samples_to_knowledge_seeds,
+    review_ingested_samples,
+)
 from .datasets import (
     AlpacaFormatAdapter,
     ConversationDatasetSample,

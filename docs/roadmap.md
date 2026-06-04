@@ -29,6 +29,7 @@ The repository already has the first deterministic foundation:
 - workspace profiles and workspace-aware CLI
 - Growth Lab dataset ingestion foundation for tiny in-memory samples
 - dataset manifest and JSONL ingestion foundation with conservative license policy
+- dataset quality review foundation for deterministic filtering before seed use
 - Growth Lab seed validation and deterministic review primitives
 - Growth Lab grape node, grape cluster, assignment, and memory bridge primitives
 - Growth Lab deterministic `GrowthEngine` recommendation MVP
@@ -38,9 +39,9 @@ The repository already has the first deterministic foundation:
 - public README polish and project documentation
 - examples, tests, and CI
 
-## Dataset Manifest And JSONL Foundation
+## Dataset Manifest, JSONL, And Quality Review Foundation
 
-Goal: describe small local dataset sources explicitly and normalize supported JSONL records without hiding provenance, license, or review boundaries.
+Goal: describe small local dataset sources explicitly, normalize supported JSONL records, and filter normalized samples without hiding provenance, license, or review boundaries.
 
 Current foundation:
 
@@ -50,11 +51,17 @@ Current foundation:
 - `JsonlDatasetRecord`
 - `DatasetIngestor`
 - `DatasetIngestionReport`
+- `DatasetSampleReview`
+- `DatasetReviewConfig`
+- `DatasetQualityReviewer`
+- `DatasetReviewReport`
 - JSONL text, stream, and explicit file parser helpers
 - manifest-aware Alpaca-like, ShareGPT-like, and generic text normalization
 - policy decisions for knowledge seed candidates and training export candidates
-- CLI `--jsonl-dataset-demo`
-- `examples/jsonl_dataset_ingestion_demo.py`
+- deterministic review checks for empty, short, duplicate, missing-answer, suspicious-marker, license-blocked, unsupported, low-information, and optional domain-mismatch samples
+- bridge from accepted reviewed samples into raw `KnowledgeSeed` candidates
+- CLI `--jsonl-dataset-demo` and `--dataset-review-demo`
+- `examples/jsonl_dataset_ingestion_demo.py` and `examples/dataset_review_demo.py`
 - offline tests
 
 Boundaries:
@@ -65,8 +72,11 @@ Boundaries:
 - no pandas, pyarrow, fastparquet, or heavy dependencies
 - no Parquet support yet
 - no large dataset streaming
+- no embeddings or semantic deduplication
+- no LLM judging
 - no automatic training
 - no automatic promotion to durable knowledge
+- no guarantee that accepted samples are good enough for real training
 - no trust in donor/model-generated data without review
 
 Possible next work:
@@ -77,6 +87,8 @@ Possible next work:
 - Parquet reader design after storage requirements are clearer
 - dataset manifest validation reports
 - license policy presets and review workflows
+- stronger human review metadata
+- benchmark impact checks for accepted dataset-derived context
 
 ## TrainingDataExporter Foundation
 
@@ -181,7 +193,7 @@ Goal: prepare future dataset sources without losing provenance, license, or qual
 Possible next work:
 
 - persisted dataset manifests
-- sample filtering and review traces
+- richer sample filtering and human review traces
 - license policy checks before export or training use
 - workspace relevance scoring for dataset samples
 - deterministic dataset split metadata
@@ -213,7 +225,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 
 - active workspace profile
 - selected modules and scores
-- dataset manifest, policy, source, and sample provenance
+- dataset manifest, policy, source, sample provenance, and quality review decision
 - donor proposal source, type, validation status, and error status
 - benchmark case and report summaries
 - training export candidate counts, validation statuses, and provenance

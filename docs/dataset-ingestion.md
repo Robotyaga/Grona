@@ -6,8 +6,9 @@ The current flow is:
 
 ```text
 DatasetManifest -> DatasetLicensePolicy -> JsonlDatasetRecord -> DatasetSample
--> KnowledgeSeed candidate -> KnowledgeValidator -> KnowledgeReviewPipeline
--> GrapeClusterer -> GrowthEngine -> BenchmarkSuite -> TrainingDataExporter candidate
+-> DatasetQualityReviewer -> accepted reviewed sample -> KnowledgeSeed candidate
+-> KnowledgeValidator -> KnowledgeReviewPipeline -> GrapeClusterer
+-> GrowthEngine -> BenchmarkSuite -> TrainingDataExporter candidate
 ```
 
 ## DatasetManifest
@@ -62,17 +63,47 @@ Supported MVP shapes:
 
 Existing `AlpacaFormatAdapter` and `ShareGPTFormatAdapter` are reused for instruction and conversation shapes.
 
+## Dataset Quality Review
+
+`DatasetQualityReviewer` reviews normalized `DatasetSample` values before they can become raw `KnowledgeSeed` candidates or future training export material. It is a deterministic quality gate, not an LLM judge.
+
+The reviewer can flag or reject samples for:
+
+- empty content
+- content below minimum length
+- duplicate normalized text
+- missing output or assistant answer where an answer is expected
+- suspicious prompt or secret markers
+- unsupported sample type
+- license policy rejection
+- optional domain mismatch
+- low information density
+
+`DatasetReviewConfig` controls minimum instruction, output, and text lengths; duplicate detection; output requirements; suspicious marker checks; license checks; human review threshold; and optional expected domains.
+
+`DatasetSampleReview` records the sample id, accepted flag, decision, reasons, quality score, domains, and metadata. Possible decisions include:
+
+- `accepted`
+- `rejected_empty`
+- `rejected_too_short`
+- `rejected_duplicate`
+- `rejected_license`
+- `rejected_unsupported`
+- `needs_human_review`
+
+`DatasetReviewReport` summarizes total samples, accepted count, rejected count, human-review count, decision counts, average score, duplicate count, and reason counts.
+
 ## DatasetSource And DatasetSample
 
 `DatasetSource` describes where a normalized sample came from before Grona trusts or promotes it. It carries id, name, source type, format, license, language, reliability, and metadata.
 
 `DatasetSample` is the normalized internal representation. It carries content, sample type, domains, keywords, source metadata, and provenance.
 
-A dataset sample is not trusted memory. It may be an instruction, a conversation, a synthetic answer, a log snippet, or a writing example. That is why `sample_type` and manifest metadata are preserved when the sample becomes a `KnowledgeSeed` candidate.
+A dataset sample is not trusted memory. It may be an instruction, a conversation, a synthetic answer, a log snippet, or a writing example. That is why `sample_type`, manifest metadata, and review metadata are preserved when the accepted sample becomes a `KnowledgeSeed` candidate.
 
 ## KnowledgeSeed Conversion
 
-`knowledge_seed_from_dataset_sample(sample)` converts a normalized sample into a Growth Lab `KnowledgeSeed`.
+`accepted_reviewed_samples_to_knowledge_seeds(samples, reviews)` converts only accepted reviewed samples into raw Growth Lab `KnowledgeSeed` candidates.
 
 The seed metadata preserves:
 
@@ -84,28 +115,26 @@ The seed metadata preserves:
 - manifest name and source when available
 - allowed uses when available
 - sample type
+- dataset review decision
+- dataset review score
+- dataset review reasons
+- raw candidate status
 
 This is intentionally cautious. A dataset row is not automatically factual knowledge, trusted memory, model weights, or expert behavior.
 
 ## TrainingDataExporter Relationship
 
-Manifest-aware ingestion can mark whether a dataset is allowed to become a `training_export_candidate`, but that does not export it directly. Records still need validation/review policy before `TrainingDataExporter` should emit future training example candidates.
+Manifest-aware ingestion can mark whether a dataset is allowed to become a `training_export_candidate`, and dataset quality review can mark whether a normalized sample is accepted. Neither step exports data directly. Records still need validation/review policy before `TrainingDataExporter` should emit future training example candidates.
 
 Datasets are not assumed to be training-safe. Unknown or restricted licenses are rejected by the conservative policy for training export candidate use.
 
-## DatasetIngestionReport
+## Reports
 
-`DatasetIngestionReport` records:
+`DatasetIngestionReport` records parsed row counts, normalization counts, policy decisions, and ingestion rejection reasons.
 
-- manifest name
-- records read
-- records accepted
-- records rejected
-- rejection reasons
-- normalized sample count
-- policy decision summary
+`DatasetReviewReport` records quality review counts, decision distribution, duplicate count, average quality score, and reason summary.
 
-The report is deterministic and printable for debugging.
+Both reports are deterministic and printable for debugging.
 
 ## Benchmark Measurement
 
@@ -120,13 +149,15 @@ See [Benchmarking](benchmarking.md).
 ```bash
 python -m grona --dataset-demo
 python -m grona --jsonl-dataset-demo
+python -m grona --dataset-review-demo
 python -m grona --benchmark-demo
 python examples/dataset_ingestion_demo.py
 python examples/jsonl_dataset_ingestion_demo.py
+python examples/dataset_review_demo.py
 python examples/benchmark_demo.py
 ```
 
-The JSONL dataset demo uses a tiny in-memory JSONL string, a demo manifest, and the conservative policy. It prints policy decisions, report counts, rejection reasons, and normalized sample ids. It does not read or write external files.
+The dataset review demo uses a tiny in-memory JSONL string, a demo manifest, and the conservative policy. It prints ingestion report counts, review decisions, accepted/rejected totals, and a preview of accepted raw `KnowledgeSeed` candidates. It does not read or write external files.
 
 ## Current Limitations
 
@@ -140,6 +171,10 @@ The JSONL dataset demo uses a tiny in-memory JSONL string, a demo manifest, and 
 - No large dataset files.
 - No generated dataset or benchmark artifacts.
 - No embeddings or vector database.
+- No semantic deduplication.
+- No LLM judging.
+- No legal review.
+- No guarantee that accepted samples are good enough for real training.
 - No model training.
 - No automatic training export.
 - No automatic promotion from dataset sample to trusted memory.

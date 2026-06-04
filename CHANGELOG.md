@@ -4,6 +4,12 @@
 
 ### Added
 
+- Dataset quality review foundation for deterministic filtering before knowledge seed or training export use.
+- `DatasetSampleReview`, `DatasetReviewConfig`, `DatasetQualityReviewer`, and `DatasetReviewReport`.
+- Deterministic review checks for empty content, short samples, duplicates, missing answers, suspicious markers, unsupported shapes, license restrictions, low information density, and optional domain mismatch.
+- Bridge from accepted reviewed dataset samples into raw `KnowledgeSeed` candidates with review metadata preserved.
+- CLI `--dataset-review-demo` support through `python -m grona` using tiny in-memory JSONL only.
+- `examples/dataset_review_demo.py` and deterministic offline dataset review tests.
 - Dataset manifest and JSONL ingestion foundation for explicit local dataset provenance.
 - `DatasetManifest`, `DatasetLicensePolicy`, `JsonlDatasetRecord`, `DatasetIngestor`, and `DatasetIngestionReport`.
 - Deterministic JSONL text, stream, and explicit file parser helpers with line numbers.
