@@ -4,6 +4,13 @@
 
 ### Added
 
+- Dataset manifest and JSONL ingestion foundation for explicit local dataset provenance.
+- `DatasetManifest`, `DatasetLicensePolicy`, `JsonlDatasetRecord`, `DatasetIngestor`, and `DatasetIngestionReport`.
+- Deterministic JSONL text, stream, and explicit file parser helpers with line numbers.
+- Manifest-aware normalization for Alpaca-like, ShareGPT-like, and generic text JSONL records.
+- Conservative dataset license policy for knowledge seed and training export candidate uses.
+- CLI `--jsonl-dataset-demo` support through `python -m grona` using tiny in-memory JSONL only.
+- `examples/jsonl_dataset_ingestion_demo.py` and deterministic offline manifest/JSONL ingestion tests.
 - TrainingDataExporter foundation for conservative in-memory training example candidates.
 - `TrainingExample`, `TrainingDataset`, `TrainingExportConfig`, and `TrainingDataExporter`.
 - Deterministic Grona-native JSONL and Alpaca-like JSONL string export helpers.
