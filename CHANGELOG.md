@@ -4,6 +4,14 @@
 
 ### Added
 
+- Deterministic Dataset Ingestion Foundation for Growth Lab.
+- `DatasetSource`, `DatasetSample`, `InstructionDatasetSample`, and `ConversationDatasetSample`.
+- `AlpacaFormatAdapter` and `ShareGPTFormatAdapter` for tiny in-memory demo samples.
+- `knowledge_seed_from_dataset_sample()` and `knowledge_seeds_from_dataset_samples()`.
+- Demo dataset source and sample helpers for Alpaca-like, ShareGPT-like, and UA-Alpaca-like data.
+- CLI `--dataset-demo` for dataset sample normalization into Growth Lab seeds.
+- `examples/dataset_ingestion_demo.py`.
+- Dataset ingestion documentation and deterministic tests.
 - Deterministic GrowthEngine MVP for Growth Lab recommendations.
 - `GrowthDecision`, `GrowthPlan`, `GrowthEngineConfig`, and `GrowthEngine`.
 - `memory_records_from_growth_plan()` bridge from GrowthPlan decisions into memory records.
