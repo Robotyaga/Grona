@@ -32,7 +32,7 @@ dev = [
 ]
 
 [project.scripts]
-grona-demo = "grona.cli:main"
+grona-demo = "grona.entrypoint:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
