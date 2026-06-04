@@ -423,7 +423,10 @@ def format_growth_engine_demo() -> str:
     action_counts = Counter(decision.action for decision in plan.decisions)
     lines = [
         "Growth Lab demo: GrowthEngine MVP",
-        "Execution: deterministic recommendations only; no LLM, embeddings, web, APIs, or training.",
+        (
+            "Execution: deterministic recommendations only; "
+            "no LLM, embeddings, web, APIs, or training."
+        ),
         "",
         f"Seeds: {len(seeds)}",
         f"Review decisions: {len(review_decisions)}",
