@@ -1,7 +1,6 @@
 from collections import Counter
 
 from grona import (
-    GrapeAssignment,
     GrapeCluster,
     GrapeNode,
     GrowthDecision,
