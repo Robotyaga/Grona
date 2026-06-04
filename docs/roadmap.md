@@ -28,6 +28,7 @@ The repository already has the first deterministic foundation:
 - mock tool adapters and safe mock runner
 - workspace profiles and workspace-aware CLI
 - Growth Lab dataset ingestion foundation for tiny in-memory samples
+- dataset manifest and JSONL ingestion foundation with conservative license policy
 - Growth Lab seed validation and deterministic review primitives
 - Growth Lab grape node, grape cluster, assignment, and memory bridge primitives
 - Growth Lab deterministic `GrowthEngine` recommendation MVP
@@ -36,6 +37,46 @@ The repository already has the first deterministic foundation:
 - conservative `TrainingDataExporter` foundation for in-memory reviewed example candidates
 - public README polish and project documentation
 - examples, tests, and CI
+
+## Dataset Manifest And JSONL Foundation
+
+Goal: describe small local dataset sources explicitly and normalize supported JSONL records without hiding provenance, license, or review boundaries.
+
+Current foundation:
+
+- `DatasetManifest`
+- `DatasetLicensePolicy`
+- `DatasetPolicyDecision`
+- `JsonlDatasetRecord`
+- `DatasetIngestor`
+- `DatasetIngestionReport`
+- JSONL text, stream, and explicit file parser helpers
+- manifest-aware Alpaca-like, ShareGPT-like, and generic text normalization
+- policy decisions for knowledge seed candidates and training export candidates
+- CLI `--jsonl-dataset-demo`
+- `examples/jsonl_dataset_ingestion_demo.py`
+- offline tests
+
+Boundaries:
+
+- no dataset downloads
+- no Hugging Face integration
+- no `datasets` dependency
+- no pandas, pyarrow, fastparquet, or heavy dependencies
+- no Parquet support yet
+- no large dataset streaming
+- no automatic training
+- no automatic promotion to durable knowledge
+- no trust in donor/model-generated data without review
+
+Possible next work:
+
+- persisted manifest files
+- explicit safe file-writing/export paths
+- larger JSONL streaming design
+- Parquet reader design after storage requirements are clearer
+- dataset manifest validation reports
+- license policy presets and review workflows
 
 ## TrainingDataExporter Foundation
 
@@ -139,14 +180,13 @@ Goal: prepare future dataset sources without losing provenance, license, or qual
 
 Possible next work:
 
-- explicit JSONL reader design
-- explicit Parquet reader design
-- dataset manifest format
+- persisted dataset manifests
 - sample filtering and review traces
 - license policy checks before export or training use
 - workspace relevance scoring for dataset samples
 - deterministic dataset split metadata
 - benchmark impact checks for dataset-derived context
+- explicit Parquet reader design
 
 Any future support for `yahma/alpaca-cleaned`, UA-Alpaca, OpenHermes, LMSYS / ShareGPT, Loghub, C4 slices, or Wikipedia-derived samples should keep downloads optional, provenance explicit, and tests small.
 
@@ -173,7 +213,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 
 - active workspace profile
 - selected modules and scores
-- dataset source and sample provenance
+- dataset manifest, policy, source, and sample provenance
 - donor proposal source, type, validation status, and error status
 - benchmark case and report summaries
 - training export candidate counts, validation statuses, and provenance
