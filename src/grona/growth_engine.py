@@ -7,7 +7,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
 from .feedback import Metadata
-from .growth import KnowledgeSeed
+from .growth import KnowledgeSeed, KnowledgeSource
 from .growth_clusters import (
     GrapeAssignment,
     GrapeCluster,
@@ -110,8 +110,7 @@ class GrowthPlan:
                 f"{decision.target_type}:{decision.target_id} "
                 f"(confidence={decision.confidence:.2f})"
             )
-            for reason in decision.reasons:
-                lines.append(f"  reason: {reason}")
+            lines.extend(f"  reason: {reason}" for reason in decision.reasons)
         return "\n".join(lines)
 
 
@@ -156,9 +155,12 @@ class GrowthEngine:
         decisions: list[GrowthDecision] = []
 
         for index, review in enumerate(review_decisions, start=1):
-            seed = seed_map.get(review.seed_id)
-            assignment = assignment_map.get(review.seed_id)
-            decision = self._decision_from_review(index, review, seed, assignment)
+            decision = self._decision_from_review(
+                index,
+                review,
+                seed_map.get(review.seed_id),
+                assignment_map.get(review.seed_id),
+            )
             if decision is not None:
                 decisions.append(decision)
 
@@ -188,33 +190,15 @@ class GrowthEngine:
         assignment: GrapeAssignment | None,
     ) -> GrowthDecision | None:
         seed_confidence = seed.confidence if seed is not None else 0.0
-        metadata = {
-            "review_decision": review.decision,
-            "recommended_status": review.recommended_status,
-            "duplicate_of": review.duplicate_of,
-            "conflicts_with": list(review.conflicts_with),
-            **review.metadata,
-        }
-        if assignment is not None:
-            metadata.update(
-                {
-                    "assigned": assignment.assigned,
-                    "cluster_id": assignment.cluster_id,
-                    "node_id": assignment.node_id,
-                }
-            )
-
+        metadata = seed_growth_metadata(review, assignment)
         if review.decision in SEED_DECISION_ACTIONS:
-            action = SEED_DECISION_ACTIONS[review.decision]
-            reasons = review.reasons or (f"review decision is {review.decision}",)
-            confidence = confidence_from_review(review, seed_confidence)
             return GrowthDecision(
                 id=f"growth:seed:{index:04d}",
                 target_type="seed",
                 target_id=review.seed_id,
-                action=action,
-                confidence=confidence,
-                reasons=reasons,
+                action=SEED_DECISION_ACTIONS[review.decision],
+                confidence=confidence_from_review(review, seed_confidence),
+                reasons=review.reasons or (f"review decision is {review.decision}",),
                 metadata=metadata,
             )
 
@@ -232,29 +216,19 @@ class GrowthEngine:
                     ),
                     metadata=metadata,
                 )
-            if self.config.promote_weak_seeds:
-                return GrowthDecision(
-                    id=f"growth:seed:{index:04d}",
-                    target_type="seed",
-                    target_id=review.seed_id,
-                    action="promote_seed",
-                    confidence=seed_confidence,
-                    reasons=(
-                        "weak seed promotion is explicitly enabled",
-                        "review decision promotes seed candidate",
-                    ),
-                    metadata=metadata,
-                )
+            action = "promote_seed" if self.config.promote_weak_seeds else "quarantine_seed"
+            reason = (
+                "weak seed promotion is explicitly enabled"
+                if self.config.promote_weak_seeds
+                else "seed confidence is below promotion threshold"
+            )
             return GrowthDecision(
                 id=f"growth:seed:{index:04d}",
                 target_type="seed",
                 target_id=review.seed_id,
-                action="quarantine_seed",
+                action=action,
                 confidence=max(seed_confidence, 0.5),
-                reasons=(
-                    "review decision promotes seed candidate",
-                    "seed confidence is below promotion threshold",
-                ),
+                reasons=("review decision promotes seed candidate", reason),
                 metadata=metadata,
             )
 
@@ -275,35 +249,21 @@ class GrowthEngine:
         index: int,
         cluster: GrapeCluster,
     ) -> list[GrowthDecision]:
-        decisions: list[GrowthDecision] = []
-        metadata = {
-            "domain": cluster.domain,
-            "cluster_status": cluster.status,
-            "seed_ids": list(cluster.seed_ids),
-            "node_ids": [node.id for node in cluster.nodes],
-            "keyword_count": len(cluster.keywords),
-        }
-        has_weak_evidence = cluster.confidence < self.config.min_cluster_confidence_for_memory
-        has_conflict_metadata = bool(cluster.metadata.get("conflicts_with"))
-        if has_weak_evidence or has_conflict_metadata or cluster.status in {"needs_review", "quarantined"}:
-            reasons = ["cluster needs review before memory or expert growth"]
-            if has_weak_evidence:
-                reasons.append("cluster confidence is below memory threshold")
-            if has_conflict_metadata:
-                reasons.append("cluster metadata includes potential conflicts")
-            decisions.append(
+        metadata = cluster_growth_metadata(cluster)
+        if cluster_needs_review(cluster, self.config):
+            return [
                 GrowthDecision(
                     id=f"growth:cluster:{index:04d}:review",
                     target_type="cluster",
                     target_id=cluster.id,
                     action="mark_cluster_needs_review",
                     confidence=max(cluster.confidence, 0.5),
-                    reasons=reasons,
+                    reasons=cluster_review_reasons(cluster, self.config),
                     metadata=metadata,
                 )
-            )
-            return decisions
+            ]
 
+        decisions: list[GrowthDecision] = []
         if cluster.status == "candidate":
             decisions.append(
                 GrowthDecision(
@@ -331,23 +291,18 @@ class GrowthEngine:
                     metadata=metadata,
                 )
             )
-        if cluster.confidence >= self.config.min_cluster_confidence_for_memory:
-            decisions.append(
-                GrowthDecision(
-                    id=f"growth:cluster:{index:04d}:memory",
-                    target_type="memory",
-                    target_id=cluster.id,
-                    action="create_memory_record",
-                    confidence=cluster.confidence,
-                    reasons=("cluster is strong enough to prepare a memory bridge",),
-                    metadata=metadata,
-                )
+        decisions.append(
+            GrowthDecision(
+                id=f"growth:cluster:{index:04d}:memory",
+                target_type="memory",
+                target_id=cluster.id,
+                action="create_memory_record",
+                confidence=cluster.confidence,
+                reasons=("cluster is strong enough to prepare a memory bridge",),
+                metadata=metadata,
             )
-        if (
-            len(cluster.seed_ids) >= self.config.min_seeds_for_expert_candidate
-            and cluster.confidence >= self.config.min_cluster_confidence_for_memory
-            and domain_consistency(cluster) >= 0.8
-        ):
+        )
+        if should_suggest_expert(cluster, self.config):
             decisions.append(
                 GrowthDecision(
                     id=f"growth:cluster:{index:04d}:expert",
@@ -371,17 +326,81 @@ class GrowthEngine:
         return decision_tuple[: self.config.max_decisions]
 
 
+def seed_growth_metadata(
+    review: SeedReviewDecision,
+    assignment: GrapeAssignment | None,
+) -> Metadata:
+    """Build metadata for seed-level growth recommendations."""
+    metadata = {
+        "review_decision": review.decision,
+        "recommended_status": review.recommended_status,
+        "duplicate_of": review.duplicate_of,
+        "conflicts_with": list(review.conflicts_with),
+        **review.metadata,
+    }
+    if assignment is not None:
+        metadata.update(
+            {
+                "assigned": assignment.assigned,
+                "cluster_id": assignment.cluster_id,
+                "node_id": assignment.node_id,
+            }
+        )
+    return metadata
+
+
+def cluster_growth_metadata(cluster: GrapeCluster) -> Metadata:
+    """Build metadata for cluster-level growth recommendations."""
+    return {
+        "domain": cluster.domain,
+        "cluster_status": cluster.status,
+        "seed_ids": list(cluster.seed_ids),
+        "node_ids": [node.id for node in cluster.nodes],
+        "keyword_count": len(cluster.keywords),
+    }
+
+
 def confidence_from_review(review: SeedReviewDecision, seed_confidence: float) -> float:
     """Return a deterministic confidence for review-driven actions."""
     validation_score = review.metadata.get("validation_score")
-    if isinstance(validation_score, int | float):
+    if isinstance(validation_score, (int, float)):
         return round(max(seed_confidence, float(validation_score)), 3)
     duplicate_score = review.metadata.get("duplicate_score")
-    if isinstance(duplicate_score, int | float) and duplicate_score > 0:
+    if isinstance(duplicate_score, (int, float)) and duplicate_score > 0:
         return round(float(duplicate_score), 3)
     if review.conflicts_with:
         return max(seed_confidence, 0.7)
     return seed_confidence
+
+
+def cluster_needs_review(cluster: GrapeCluster, config: GrowthEngineConfig) -> bool:
+    """Return whether a cluster is too weak or conflicted for growth actions."""
+    return bool(
+        cluster.confidence < config.min_cluster_confidence_for_memory
+        or cluster.metadata.get("conflicts_with")
+        or cluster.status in {"needs_review", "quarantined"}
+    )
+
+
+def cluster_review_reasons(cluster: GrapeCluster, config: GrowthEngineConfig) -> tuple[str, ...]:
+    """Return explicit reasons for a cluster review recommendation."""
+    reasons = ["cluster needs review before memory or expert growth"]
+    if cluster.confidence < config.min_cluster_confidence_for_memory:
+        reasons.append("cluster confidence is below memory threshold")
+    if cluster.metadata.get("conflicts_with"):
+        reasons.append("cluster metadata includes potential conflicts")
+    if cluster.status in {"needs_review", "quarantined"}:
+        reasons.append(f"cluster status is {cluster.status}")
+    return tuple(reasons)
+
+
+def should_suggest_expert(cluster: GrapeCluster, config: GrowthEngineConfig) -> bool:
+    """Return whether a cluster is strong enough for a future expert proposal."""
+    return bool(
+        len(cluster.seed_ids) >= config.min_seeds_for_expert_candidate
+        and cluster.confidence >= config.min_cluster_confidence_for_memory
+        and domain_consistency(cluster) >= 0.8
+    )
 
 
 def domain_consistency(cluster: GrapeCluster) -> float:
@@ -428,8 +447,6 @@ def create_demo_growth_plan() -> GrowthPlan:
 
 def create_growth_engine_demo_seeds() -> tuple[KnowledgeSeed, ...]:
     """Create deterministic seeds that exercise GrowthEngine recommendations."""
-    from .growth import KnowledgeSource
-
     source = KnowledgeSource("source:growth-engine", "user_note", "GrowthEngine demo", 0.9)
     donor = KnowledgeSource("source:growth-engine-donor", "donor_model", "Weak donor", 0.35)
     unknown = KnowledgeSource("source:growth-engine-unknown", "unknown", "Unknown", 0.2)
@@ -467,11 +484,19 @@ def create_growth_engine_demo_seeds() -> tuple[KnowledgeSeed, ...]:
             confidence=0.88,
         ),
         KnowledgeSeed(
-            "seed:growth-auto-conflict",
-            "Engine overheating triage does not support coolant, radiator, fan, or leak checks.",
+            "seed:growth-security-positive",
+            "Security review supports checking authentication, permissions, secrets, and logs.",
             source,
-            domains=("automotive",),
-            keywords=("engine", "coolant", "radiator", "fan"),
+            domains=("cybersecurity",),
+            keywords=("security", "authentication", "secrets", "logs"),
+            confidence=0.82,
+        ),
+        KnowledgeSeed(
+            "seed:growth-security-conflict",
+            "Security review does not support checking authentication, permissions, secrets, or logs.",
+            source,
+            domains=("cybersecurity",),
+            keywords=("security", "authentication", "secrets", "logs"),
             confidence=0.8,
         ),
         KnowledgeSeed(
