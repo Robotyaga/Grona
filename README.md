@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing: instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, memory sources are nutrients, routing rules decide which grapes wake up, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, and safety policy is the protective layer around future tool use.
 
 ## Why This Exists
 
@@ -17,9 +17,10 @@ Grona explores a different shape:
 - describe capabilities as small modules with metadata
 - route each task to a focused subset
 - keep context scoped to the selected route
-- preserve a visible trace of scores, reasons, context, safety decisions, and feedback
+- preserve a visible trace of scores, reasons, context, safety decisions, growth decisions, and feedback
 - validate, deduplicate, and review raw knowledge before it becomes memory, training data, or expert behavior
 - group reviewed Growth Lab seeds into deterministic `GrapeCluster` and `GrapeNode` candidates
+- recommend conservative growth actions from reviewed seeds and clusters without mutating the system automatically
 - grow toward specialized local experts without pretending the prototype is production AI
 
 ## Current Prototype Status
@@ -37,6 +38,8 @@ What it does today:
 - detects deterministic duplicate and potential conflict candidates between seeds
 - recommends whether seeds should be promoted, merged, quarantined, rejected, or reviewed
 - groups promote-candidate seeds into deterministic `GrapeCluster` and `GrapeNode` structures
+- produces deterministic `GrowthDecision` and `GrowthPlan` recommendations from reviewed seeds and clusters
+- recommends memory-record bridges and future expert candidates without creating them automatically
 - bridges candidate grape clusters into deterministic `MemoryRecord` values
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors and execution adapters
@@ -66,6 +69,9 @@ flowchart TD
     V --> W[KnowledgeReviewPipeline]
     W --> X[GrapeClusterer]
     X --> Y[GrapeCluster / GrapeNode]
+    Y --> Z[GrowthEngine]
+    Z --> AA[GrowthPlan]
+    AA --> H
     Y --> H
     W --> T[Promote / Merge / Quarantine / Reject / Review]
     G --> I
@@ -89,6 +95,7 @@ flowchart TD
 - KnowledgeSeed, KnowledgeSource, and deterministic KnowledgeValidator
 - KnowledgeSeed normalization, deduplication, potential conflict detection, and review decisions
 - GrapeNode, GrapeCluster, assignment traces, and memory-record bridge helpers
+- GrowthDecision, GrowthPlan, and deterministic GrowthEngine recommendations
 - Orchestration and structured result handoff
 - Deterministic expert execution
 - Execution adapter contracts
@@ -129,22 +136,13 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Find document indexing notes" --workspace documents
 ```
 
-Run the deterministic Growth Lab seed validation demo:
+Run deterministic Growth Lab demos:
 
 ```bash
 python -m grona --growth-demo
-```
-
-Run the deterministic Growth Lab seed review demo:
-
-```bash
 python -m grona --growth-review-demo
-```
-
-Run the deterministic Growth Lab grape cluster demo:
-
-```bash
 python -m grona --grape-demo
+python -m grona --growth-engine-demo
 ```
 
 Build context from demo memory or deterministic in-memory documents:
@@ -182,6 +180,7 @@ python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
+python examples/growth_engine_demo.py
 ```
 
 ## Documentation
@@ -200,7 +199,7 @@ python examples/grape_cluster_demo.py
 
 ## Roadmap Toward Growth Lab
 
-The next research direction is a Growth Lab: a controlled environment for experimenting with how modular AI systems can grow from structured knowledge, feedback, donor model outputs, validation loops, and local tools.
+Growth Lab is a controlled environment for experimenting with how modular AI systems can grow from structured knowledge, feedback, donor model outputs, validation loops, and local tools.
 
 Current Growth Lab foundation:
 
@@ -213,12 +212,14 @@ Current Growth Lab foundation:
 - `GrapeNode`: a small organized unit created from one reviewed seed
 - `GrapeCluster`: deterministic group of related grape nodes in one primary domain
 - `GrapeAssignment`: trace of seed-to-cluster assignment decisions
+- `GrowthDecision`: one explainable recommended growth action
+- `GrowthPlan`: a deterministic bundle of growth recommendations
+- `GrowthEngine`: conservative recommendations from reviewed seeds, clusters, and assignments
 - conversions from document chunks and mock tool results into raw seeds
-- conversion from grape clusters into memory records
+- conversion from grape clusters and growth plans into memory records
 
 Planned concepts include:
 
-- `GrowthEngine`: controlled expansion from validated knowledge and feedback
 - `BenchmarkSuite`: repeatable tests for routing and expert behavior
 - `DonorModelAdapter` and `LMStudioAdapter`: future optional model interfaces
 - `TrainingDataExporter`: future export of validated traces for specialized experts
@@ -228,6 +229,8 @@ See [Growth Lab](docs/growth-lab.md), [Project vision](docs/project-vision.md), 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
+- GrowthEngine recommends actions only; it does not mutate modules, memory, clusters, or models automatically.
+- No autonomous self-training, model weights, training-data export, or automatic expert creation yet.
 - No real LLM integration yet.
 - No real donor model integration yet.
 - No real tool execution, shell execution, subprocesses, filesystem tools, or network tools.
@@ -236,6 +239,7 @@ See [Growth Lab](docs/growth-lab.md), [Project vision](docs/project-vision.md), 
 - Document ingestion is deterministic in-memory text only.
 - KnowledgeSeed validation and review are deterministic heuristics, not web fact-checking or truth verification.
 - GrapeCluster creation is deterministic keyword/domain grouping, not semantic clustering or training.
+- GrowthEngine decisions are deterministic recommendations, not automatic truth resolution.
 - Conflict detection marks potential conflicts only; it does not resolve factual truth.
 - No PDF parsing, OCR, semantic embeddings, vector search, or filesystem crawler.
 - Workspace profiles are built-in/in-memory only; no persisted workspace directory or external config loader exists yet.

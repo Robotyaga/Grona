@@ -27,6 +27,7 @@ The repository already has the first deterministic foundation:
 - workspace profiles and workspace-aware CLI
 - Growth Lab seed validation and deterministic review primitives
 - Growth Lab grape node, grape cluster, assignment, and memory bridge primitives
+- Growth Lab deterministic `GrowthEngine` recommendation MVP
 - public README polish and project documentation
 - examples, tests, and CI
 
@@ -35,12 +36,6 @@ The repository already has the first deterministic foundation:
 Goal: make the public repository coherent, inspectable, and easy to evaluate.
 
 Status: complete as public project preparation.
-
-- Polish README as a public landing page.
-- Add architecture diagrams and documentation navigation.
-- Add project vision and future release notes.
-- Add contribution, security, changelog, issue template, and PR template files.
-- Keep the prototype honest about what is not implemented.
 
 ## Growth Lab: KnowledgeSeed Validation Foundation
 
@@ -97,6 +92,25 @@ Current foundation:
 
 This layer is deterministic keyword/domain grouping only. It does not add embeddings, vector search, autonomous expert growth, persisted clusters, training, or model weights.
 
+## Growth Lab: GrowthEngine MVP
+
+Goal: recommend controlled next actions after seed review and grape clustering.
+
+Current foundation:
+
+- `GrowthDecision`
+- `GrowthPlan`
+- `GrowthEngineConfig`
+- `GrowthEngine`
+- `memory_records_from_growth_plan()` bridge
+- CLI `--growth-engine-demo`
+- `examples/growth_engine_demo.py`
+- deterministic tests
+
+The MVP recommends actions such as seed promotion, duplicate merge, quarantine, rejection, candidate cluster creation, cluster strengthening, cluster review, memory-record preparation, and expert-candidate suggestion.
+
+It does not mutate inputs, persist plans, train models, create experts, resolve truth, use embeddings, call LLMs, call the web, or change model weights.
+
 ## KnowledgeSeed Next Steps
 
 Goal: represent external structured knowledge before it becomes training data or durable expert behavior.
@@ -136,13 +150,20 @@ Possible next work:
 - benchmark impact checks before promotion
 - controlled promotion from cluster summaries into durable memory candidates
 
-Reviewed seeds can later become candidates for cluster nutrients, but the current review and cluster layers only recommend and organize next steps.
+## GrowthEngine Next Steps
 
-## GrowthEngine
+Goal: make growth proposals more reviewable and measurable while keeping the engine conservative.
 
-Goal: propose controlled changes to modules, seeds, routing metadata, or feedback rules.
+Possible next work:
 
-The GrowthEngine should be conservative and auditable. It should produce proposals and traces, not silently mutate core behavior.
+- persisted growth plan traces
+- manual approval status for growth decisions
+- workspace-scoped growth plans
+- benchmark impact checks before accepting recommendations
+- stricter policy gates for expert-candidate proposals
+- export of approved decisions into future training-data candidates
+
+GrowthEngine should keep producing proposals and traces, not silently mutate core behavior.
 
 ## BenchmarkSuite
 
@@ -155,6 +176,7 @@ Potential benchmark types:
 - seed validation tests
 - seed deduplication and potential conflict tests
 - grape cluster assignment tests
+- GrowthEngine decision tests
 - context assembly relevance tests
 - safety policy edge cases
 - mock tool planning tests
@@ -164,7 +186,7 @@ Potential benchmark types:
 
 Goal: optionally use model outputs as proposal sources.
 
-A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated, reviewed, and optionally assigned to candidate clusters before they become durable knowledge or training data.
+A donor model or local LM Studio model could suggest labels, summaries, seeds, or examples. Those outputs should be validated, reviewed, optionally assigned to candidate clusters, and evaluated by GrowthEngine before they become durable knowledge or training data.
 
 ## TrainingDataExporter
 
@@ -174,7 +196,7 @@ This should preserve provenance and validation metadata instead of flattening ev
 
 ## Future Local LLM Integration
 
-Goal: add optional local LLM-backed modules only after routing, safety, context, validation, review, clustering, and evaluation contracts are strong enough.
+Goal: add optional local LLM-backed modules only after routing, safety, context, validation, review, clustering, growth planning, and evaluation contracts are strong enough.
 
 Near-term boundaries:
 
@@ -192,6 +214,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - selected modules and scores
 - knowledge seed validation and review status
 - grape cluster assignment status
+- GrowthEngine decision status
 - context sources
 - expert results
 - mock tool results

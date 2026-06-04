@@ -12,7 +12,9 @@ These notes describe the intended first public prototype milestone. They do not 
 - Growth Lab seed validation foundation with `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, and `KnowledgeValidator`.
 - Growth Lab seed review foundation with deterministic normalization, duplicate checks, potential conflict checks, and review decisions.
 - Growth Lab grape cluster foundation with `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, and `GrapeClusterer`.
-- Deterministic bridge from grape clusters into memory records.
+- Growth Lab GrowthEngine MVP with `GrowthDecision`, `GrowthPlan`, `GrowthEngineConfig`, and `GrowthEngine`.
+- Deterministic bridge from grape clusters and growth plans into memory records.
+- Expert-candidate recommendations for sufficiently strong deterministic clusters.
 - Conversion helpers from document chunks and mock tool results into raw knowledge seeds.
 - `ContextBuilder`, `Orchestrator`, and `OrchestrationResult`.
 - Deterministic demo expert executors.
@@ -33,8 +35,9 @@ These notes describe the intended first public prototype milestone. They do not 
 - Semantic clustering or embedding-backed cluster assignment.
 - Web fact-checking, temporal freshness checks, semantic deduplication, or automatic truth resolution.
 - LLM-based contradiction detection or external evidence lookup.
-- Automatic expert growth, training, model weights, or training-data export.
-- Persisted workspace directories, persisted seed stores, persisted cluster stores, or external config files.
+- Autonomous self-training, automatic expert growth, training, model weights, or training-data export.
+- Automatic mutation from GrowthEngine decisions into memory, modules, clusters, routing, or tools.
+- Persisted workspace directories, seed stores, cluster stores, growth plan stores, or external config files.
 - Production orchestration, production config management, or deployment guidance.
 
 ## Try the CLI
@@ -48,6 +51,7 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
+python -m grona --growth-engine-demo
 ```
 
 Run tests:
@@ -68,6 +72,7 @@ ruff check .
 - KnowledgeSeed validation is deterministic scoring, not truth verification.
 - KnowledgeSeed review is deterministic duplicate and potential conflict detection, not fact-checking.
 - GrapeCluster creation is deterministic domain and keyword-overlap grouping, not semantic clustering.
+- GrowthEngine is deterministic recommendation logic, not autonomous learning or automatic mutation.
 - Feedback adjusts scores in small bounded ways; it is not model training.
 
 ## Next Planned Areas
@@ -75,8 +80,8 @@ ruff check .
 - Growth Lab seed storage and review trace persistence.
 - KnowledgeSeed promotion rules into memory candidates.
 - GrapeCluster persistence and manual cluster review status.
+- GrowthEngine plan persistence and human approval status.
 - KnowledgeValidator freshness and workspace relevance checks.
-- GrowthEngine research prototypes.
-- BenchmarkSuite for repeatable routing, seed validation, seed review, cluster assignment, and orchestration evaluation.
+- BenchmarkSuite for repeatable routing, seed validation, seed review, cluster assignment, growth decision, and orchestration evaluation.
 - Optional DonorModelAdapter and LMStudioAdapter experiments.
 - TrainingDataExporter for validated traces and specialized expert data.

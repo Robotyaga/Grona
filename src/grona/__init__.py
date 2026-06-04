@@ -62,6 +62,15 @@ from .growth_clusters import (
     create_demo_grape_nodes,
     memory_records_from_grape_clusters,
 )
+from .growth_engine import (
+    GrowthDecision,
+    GrowthEngine,
+    GrowthEngineConfig,
+    GrowthPlan,
+    create_demo_growth_plan,
+    create_growth_engine_demo_seeds,
+    memory_records_from_growth_plan,
+)
 from .growth_review import (
     ConflictCheckResult,
     DuplicateCheckResult,
@@ -143,6 +152,10 @@ __all__ = [
     "GrapeCluster",
     "GrapeClusterer",
     "GrapeNode",
+    "GrowthDecision",
+    "GrowthEngine",
+    "GrowthEngineConfig",
+    "GrowthPlan",
     "InMemoryFeedbackStore",
     "InMemoryKeywordMemory",
     "JsonlFeedbackStore",
@@ -199,10 +212,12 @@ __all__ = [
     "create_demo_grape_clusters",
     "create_demo_grape_knowledge_seeds",
     "create_demo_grape_nodes",
+    "create_demo_growth_plan",
     "create_demo_knowledge_seeds",
     "create_demo_knowledge_sources",
     "create_demo_review_knowledge_seeds",
     "create_document_research_workspace_profile",
+    "create_growth_engine_demo_seeds",
     "create_media_workflow_workspace_profile",
     "extract_keywords",
     "filter_modules_for_workspace",
@@ -210,5 +225,6 @@ __all__ = [
     "knowledge_seed_from_document_chunk",
     "knowledge_seed_from_tool_result",
     "memory_records_from_grape_clusters",
+    "memory_records_from_growth_plan",
     "summarize_feedback",
 ]

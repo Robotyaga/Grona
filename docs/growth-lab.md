@@ -6,11 +6,12 @@ The long-term idea is:
 
 ```text
 raw knowledge -> KnowledgeSeed -> validation -> deduplication/conflict checks
--> review decision -> grape cluster assignment -> memory/expert growth
--> feedback -> benchmarks -> optional training data export
+-> review decision -> grape cluster assignment -> GrowthEngine recommendations
+-> memory bridge / expert proposal review -> feedback -> benchmarks
+-> optional training data export
 ```
 
-The current implementation adds deterministic local-first foundations for `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, `KnowledgeValidator`, `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, `KnowledgeReviewPipeline`, `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, and `GrapeClusterer`.
+The current implementation adds deterministic local-first foundations for `KnowledgeSource`, `KnowledgeSeed`, `ValidationResult`, `KnowledgeValidator`, `KnowledgeDeduplicator`, `KnowledgeConflictDetector`, `KnowledgeReviewPipeline`, `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, `GrapeClusterer`, `GrowthDecision`, `GrowthPlan`, and `GrowthEngine`.
 
 ## What Is a KnowledgeSeed?
 
@@ -18,15 +19,7 @@ A `KnowledgeSeed` is a raw piece of knowledge that Grona may ingest from a user 
 
 It is not trusted memory yet.
 
-A seed carries:
-
-- content
-- source
-- domains
-- keywords
-- confidence
-- status
-- metadata
+A seed carries content, source, domains, keywords, confidence, status, and metadata.
 
 Suggested statuses are:
 
@@ -39,15 +32,7 @@ Suggested statuses are:
 
 ## What Is a KnowledgeSource?
 
-A `KnowledgeSource` describes where a seed came from:
-
-- `user_note`
-- `document`
-- `donor_model`
-- `tool_result`
-- `feedback`
-- `benchmark`
-- `unknown`
+A `KnowledgeSource` describes where a seed came from: user note, document, donor model, tool result, feedback, benchmark, or unknown source.
 
 Each source has a simple reliability score from `0.0` to `1.0`. This is a local heuristic, not a proof of truth.
 
@@ -59,44 +44,17 @@ The seed layer makes raw knowledge visible before promotion. It lets Grona quara
 
 ## Validation
 
-`KnowledgeValidator` is deterministic and standard-library only. It checks:
+`KnowledgeValidator` is deterministic and standard-library only. It checks empty content, content length, source reliability, seed confidence, missing domains, missing keywords, generic content, and unknown source type.
 
-- empty content
-- content length
-- source reliability
-- seed confidence
-- missing domains
-- missing keywords
-- suspiciously generic content
-- unknown source type
-
-It returns `ValidationResult` with:
-
-- accepted flag
-- status
-- score
-- reasons
-- warnings
-- metadata
+It returns `ValidationResult` with accepted flag, status, score, reasons, warnings, and metadata.
 
 This is not web fact-checking. It does not call external APIs, search the internet, run models, or verify factual truth.
 
 ## Normalization and Deduplication
 
-`KnowledgeDeduplicator` creates `NormalizedKnowledge` for each seed by:
+`KnowledgeDeduplicator` creates `NormalizedKnowledge` for each seed by lowercasing text, trimming whitespace, collapsing repeated whitespace, removing trivial punctuation for matching, and normalizing keywords/domains.
 
-- lowercasing text
-- trimming whitespace
-- collapsing repeated whitespace
-- removing trivial punctuation for matching
-- normalizing keywords and domains
-
-It can detect:
-
-- exact normalized content duplicates
-- same-source exact duplicates
-- high keyword overlap inside the same domain
-- highly similar short statements
+It can detect exact normalized content duplicates, same-source exact duplicates, high keyword overlap inside the same domain, and highly similar short statements.
 
 Duplicate results are represented as `DuplicateCheckResult`. A duplicate is not automatically deleted. It becomes a merge candidate so future memory or cluster layers can preserve provenance.
 
@@ -104,24 +62,9 @@ Duplicate results are represented as `DuplicateCheckResult`. A duplicate is not 
 
 `KnowledgeConflictDetector` is conservative and deterministic. It looks for possible contradiction patterns when seeds share a domain and overlapping keywords or text.
 
-Current examples include opposite polarity around terms such as:
-
-- supports / does not support
-- enabled / disabled
-- allowed / blocked
-- true / false
-- available / unavailable
-- safe / unsafe
-- works / does not work
+Current examples include opposite polarity around terms such as supports / does not support, enabled / disabled, allowed / blocked, true / false, available / unavailable, safe / unsafe, and works / does not work.
 
 A conflict result means potential conflict, not factual falsity. The detector does not know which claim is true. It only marks candidates that should not be promoted blindly.
-
-Potential conflicts are represented as `ConflictCheckResult` with severity:
-
-- `none`
-- `low`
-- `medium`
-- `high`
 
 ## Review Decisions
 
@@ -150,11 +93,48 @@ The current clusterer groups seeds by primary domain and deterministic keyword o
 
 Seeds with duplicate, weak, conflict, rejected, or manual-review decisions are not silently absorbed. They receive unassigned `GrapeAssignment` traces with a reason.
 
-## Memory Bridge
+## GrowthEngine MVP
 
-`memory_records_from_grape_clusters(clusters)` converts candidate or active clusters into `MemoryRecord` values.
+`GrowthEngine` is the first deterministic growth decision layer. It receives reviewed seeds, review decisions, candidate grape clusters, and assignment traces, then returns a `GrowthPlan`.
 
-This bridge lets the existing deterministic memory and context path see reviewed cluster summaries without introducing embeddings, vector search, or persistent memory. It is a prototype bridge, not a claim that clusters have become trusted expert behavior.
+A `GrowthDecision` includes:
+
+- id
+- target type
+- target id
+- action
+- confidence
+- reasons
+- metadata
+
+The current engine can recommend:
+
+- `promote_seed`
+- `merge_duplicate`
+- `quarantine_seed`
+- `reject_seed`
+- `create_candidate_cluster`
+- `strengthen_cluster`
+- `mark_cluster_needs_review`
+- `create_memory_record`
+- `suggest_expert_candidate`
+- `no_action`
+
+These are recommendations only. The engine does not mutate seeds, clusters, memory, modules, routing metadata, tools, model weights, or training data.
+
+## GrowthPlan and Memory Bridge
+
+`GrowthPlan` is a deterministic bundle of `GrowthDecision` values with a summary and metadata. Its `to_text()` method prints a readable explanation for demos and CLI output.
+
+`memory_records_from_growth_plan(plan, clusters)` prepares `MemoryRecord` values only for clusters that received `create_memory_record` decisions. It does not persist those records or promote them into trusted memory automatically.
+
+This bridge connects GrowthEngine recommendations to the existing deterministic memory path while keeping human review and future policy gates possible.
+
+## Expert Candidate Suggestions
+
+`GrowthEngine` can emit `suggest_expert_candidate` when a cluster has enough reviewed seeds, enough confidence, and strong domain consistency.
+
+This is not automatic expert creation. It is an auditable proposal for future review. No model is trained, no model weights are changed, and no expert module is created automatically.
 
 ## Conversions
 
@@ -167,27 +147,14 @@ This connects document ingestion and mock tool output to the future Growth Lab w
 
 ## CLI Demos
 
-Validation-only demo:
-
 ```bash
 python -m grona --growth-demo
-```
-
-Review pipeline demo:
-
-```bash
 python -m grona --growth-review-demo
-```
-
-Grape cluster demo:
-
-```bash
 python -m grona --grape-demo
+python -m grona --growth-engine-demo
 ```
 
-The review demo prints validation results, duplicate checks, potential conflict checks, review decisions, and counts by decision.
-
-The grape demo prints deterministic cluster counts, nodes, assignments, and memory-record bridge counts.
+The GrowthEngine demo prints review counts, cluster counts, growth decisions, action counts, and memory records prepared from the plan.
 
 ## Examples
 
@@ -195,34 +162,30 @@ The grape demo prints deterministic cluster counts, nodes, assignments, and memo
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
+python examples/growth_engine_demo.py
 ```
 
-The review example shows why some seeds become promote candidates while others are merge candidates, quarantined conflicts, weak quarantines, or rejected broken seeds.
+The GrowthEngine example shows raw demo seeds, review pipeline output, grape clustering, growth planning, memory-record preparation, and expert-candidate suggestion when a cluster is strong enough.
 
-The grape cluster example shows how promote-candidate seeds become `GrapeCluster` and `GrapeNode` values, then bridge into deterministic memory records.
+## How This Prepares Future Growth
 
-## How This Prepares GrowthEngine
+`GrowthEngine` gives Grona a controlled recommendation layer between candidate clusters and future changes to memory, routing, experts, or training-data exports.
 
-`GrapeCluster` now gives future GrowthEngine experiments a structured candidate layer between reviewed seeds and any future memory, routing, expert, or training-data changes.
+The important boundary is that recommendations stay explicit and reviewable. Humans can still review important structural changes before they affect durable memory, modules, or training data.
 
-Future `GrowthEngine` work can propose changes based on reviewed seeds, clusters, and feedback, but it should remain auditable. The GrowthEngine should not silently mutate modules, memory, or training data.
-
-Deduplication matters because clusters should not over-weight repeated copies of the same claim. Conflict detection matters because a cluster should not blindly absorb two opposite claims as equal nutrients.
+Deduplication matters because clusters should not over-weight repeated copies of the same claim. Conflict detection matters because a cluster should not blindly absorb two opposite claims as equal nutrients. Growth decisions make the next step visible instead of automatic.
 
 ## Why Donor Model Outputs Could Become Seeds
 
 A donor model may later suggest summaries, labels, examples, or candidate facts. Grona can store those outputs as `KnowledgeSeed` values with `source_type="donor_model"` and a source reliability score.
 
-That output should be validated, deduplicated, reviewed, and optionally assigned to candidate clusters before it becomes memory, benchmark material, or training data.
-
-## Why Raw Data Can Be Messier Than Monolithic Training Data
-
-A monolithic training pipeline often needs cleaner input before training because bad data can become hard to inspect later. Grona can tolerate rougher raw input at the seed stage because it can label, weight, deduplicate, quarantine, validate, reject, and assign knowledge before promotion.
-
-This does not make bad data good. It makes uncertainty explicit.
+That output should be validated, deduplicated, reviewed, optionally assigned to candidate clusters, and evaluated by GrowthEngine before it becomes memory, benchmark material, expert behavior, or training data.
 
 ## Current Limitations
 
+- No autonomous self-training.
+- No automatic expert creation.
+- No model weights.
 - No web fact-checking.
 - No temporal freshness checks.
 - No semantic embeddings.
@@ -230,11 +193,10 @@ This does not make bad data good. It makes uncertainty explicit.
 - No LLM-based contradiction detection.
 - No external evidence lookup.
 - No automatic truth resolution.
-- No automatic expert growth.
-- No training or model-weight changes.
 - No real donor model integration.
 - No persisted seed store.
 - No persisted cluster store.
+- No persisted growth plan store.
 - No semantic clustering.
 - No automatic promotion from cluster to trusted memory or expert behavior.
 - No production knowledge-quality claims.

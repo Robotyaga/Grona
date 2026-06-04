@@ -22,6 +22,11 @@ from .growth_clusters import (
     create_demo_grape_knowledge_seeds,
     memory_records_from_grape_clusters,
 )
+from .growth_engine import (
+    GrowthPlan,
+    create_growth_engine_demo_seeds,
+    memory_records_from_growth_plan,
+)
 from .growth_review import (
     ConflictCheckResult,
     DuplicateCheckResult,
@@ -207,6 +212,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.grape_demo:
         print(format_grape_demo())
+        return 0
+    if args.growth_engine_demo:
+        print(format_growth_engine_demo())
         return 0
 
     profile = get_builtin_workspace_profile(args.workspace)
@@ -400,6 +408,48 @@ def format_grape_demo() -> str:
     return "\n".join(lines)
 
 
+def format_growth_engine_demo() -> str:
+    """Run deterministic GrowthEngine planning from reviewed seeds and clusters."""
+    seeds = create_growth_engine_demo_seeds()
+    review_decisions = tuple(KnowledgeReviewPipeline().review(seeds))
+    clusters, assignments = GrapeClusterer(keyword_overlap_threshold=0.3).cluster(
+        seeds,
+        review_decisions,
+    )
+    from .growth_engine import GrowthEngine
+
+    plan = GrowthEngine().plan_growth(seeds, review_decisions, clusters, assignments)
+    records = memory_records_from_growth_plan(plan, clusters)
+    action_counts = Counter(decision.action for decision in plan.decisions)
+    lines = [
+        "Growth Lab demo: GrowthEngine MVP",
+        (
+            "Execution: deterministic recommendations only; "
+            "no LLM, embeddings, web, APIs, or training."
+        ),
+        "",
+        f"Seeds: {len(seeds)}",
+        f"Review decisions: {len(review_decisions)}",
+        f"Clusters: {len(clusters)}",
+        f"Assignments: {len(assignments)}",
+        f"Growth decisions: {len(plan.decisions)}",
+        f"Prepared memory records: {len(records)}",
+        "",
+        "Decision counts by action:",
+    ]
+    for action, count in sorted(action_counts.items()):
+        lines.append(f"- {action}: {count}")
+    lines.extend(["", plan.to_text()])
+    if records:
+        lines.extend(["", "Prepared memory records:"])
+        for record in records:
+            lines.append(
+                f"- {record.id}: domain={', '.join(record.domains)}, "
+                f"keywords={', '.join(record.keywords[:4])}"
+            )
+    return "\n".join(lines)
+
+
 def format_validation_result_line(result: ValidationResult) -> str:
     """Format one compact validation result line."""
     warnings = f"; warnings: {', '.join(result.warnings)}" if result.warnings else ""
@@ -449,6 +499,11 @@ def format_grape_cluster_line(cluster: GrapeCluster) -> str:
         f"status={cluster.status}, confidence={cluster.confidence:.2f}, "
         f"nodes={len(cluster.nodes)}, seeds={len(cluster.seed_ids)}, keywords={keywords}"
     )
+
+
+def format_growth_plan_line(plan: GrowthPlan) -> str:
+    """Format one compact growth plan line."""
+    return f"Growth plan: {plan.summary}"
 
 
 def format_grape_assignment_line(assignment: GrapeAssignment) -> str:
@@ -535,6 +590,11 @@ def build_parser() -> ArgumentParser:
         "--grape-demo",
         action="store_true",
         help="Run deterministic Growth Lab GrapeNode and GrapeCluster demo creation.",
+    )
+    parser.add_argument(
+        "--growth-engine-demo",
+        action="store_true",
+        help="Run deterministic GrowthEngine MVP recommendations.",
     )
     parser.add_argument(
         "--adaptive",
