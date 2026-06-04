@@ -51,6 +51,17 @@ from .documents import (
     create_demo_document_sources,
     extract_keywords,
 )
+from .donor import (
+    DonorModelAdapter,
+    DonorModelError,
+    DonorModelProposal,
+    DonorProposalBatch,
+    DonorProposalCollector,
+    DonorProposalError,
+    LMStudioAdapter,
+    StaticDonorModelAdapter,
+    knowledge_seed_from_donor_proposal,
+)
 from .executor import (
     AutomotiveDiagnosticsExpertExecutor,
     CodeExpertExecutor,
