@@ -299,7 +299,10 @@ def static_proposal_content(task: str, proposal_type: str) -> str:
             "knowledge seed candidate with provenance, validation, review, and benchmarks."
         )
     if proposal_type == "benchmark_answer":
-        return f"Benchmark answer proposal for '{normalized_task}': compare against expected traces."
+        return (
+            f"Benchmark answer proposal for '{normalized_task}': "
+            "compare against expected traces."
+        )
     if proposal_type == "module_suggestion":
         return f"Module suggestion for '{normalized_task}': consider only matching domain modules."
     if proposal_type == "context_hint":
