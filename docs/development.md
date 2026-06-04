@@ -8,35 +8,58 @@ See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Archit
 
 ```text
 src/grona/
-|-- adaptive.py         Feedback-informed score adjustment helpers
-|-- adapters.py         ExecutionRequest, adapters, and adapter registry
-|-- benchmark_cli.py    BenchmarkSuite CLI demo formatter
-|-- benchmarks.py       BenchmarkCase, BenchmarkSuite, reports, scoring helpers
-|-- cli.py              Routing, workspace, memory, ingestion, execution, safety, tool, and growth CLI
-|-- context.py          ContextItem and ContextBuilder
-|-- datasets.py         DatasetSource, DatasetSample, adapters, seed conversion
-|-- decision.py         Routing decision data structures
-|-- defaults.py         Default module registry
-|-- documents.py        DocumentSource, TextChunker, DocumentIngestor
-|-- donor.py            Donor proposals, static donor, LM Studio adapter foundation
-|-- donor_cli.py        Offline donor proposal CLI demo
-|-- executor.py         ExpertResult, ExecutableExpert, demo executors
-|-- feedback.py         Feedback records and route history stores
-|-- growth.py           KnowledgeSource, KnowledgeSeed, KnowledgeValidator
-|-- growth_clusters.py  GrapeNode, GrapeCluster, assignments, and memory bridge
-|-- growth_engine.py    GrowthDecision, GrowthPlan, GrowthEngine recommendations
-|-- growth_review.py    KnowledgeSeed deduplication, conflict checks, and review decisions
-|-- memory.py           MemoryRecord and deterministic keyword memory
-|-- module.py           ExpertModule routing metadata
-|-- orchestrator.py     Orchestrator and OrchestrationResult
-|-- registry.py         ModuleRegistry
-|-- router.py           Keyword/domain router
-|-- safety.py           ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
-|-- tools.py            ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
-|-- training.py         TrainingExample, TrainingDataset, TrainingDataExporter
-|-- training_cli.py     Offline training export CLI demo
-`-- workspace.py        WorkspaceProfile, WorkspaceConfig, built-in profiles
+|-- adaptive.py           Feedback-informed score adjustment helpers
+|-- adapters.py           ExecutionRequest, adapters, and adapter registry
+|-- benchmark_cli.py      BenchmarkSuite CLI demo formatter
+|-- benchmarks.py         BenchmarkCase, BenchmarkSuite, reports, scoring helpers
+|-- cli.py                Routing, workspace, memory, ingestion, execution, safety, tool, and growth CLI
+|-- context.py            ContextItem and ContextBuilder
+|-- dataset_manifest.py   DatasetManifest, policy, JSONL records, DatasetIngestor
+|-- datasets.py           DatasetSource, DatasetSample, adapters, seed conversion
+|-- decision.py           Routing decision data structures
+|-- defaults.py           Default module registry
+|-- documents.py          DocumentSource, TextChunker, DocumentIngestor
+|-- donor.py              Donor proposals, static donor, LM Studio adapter foundation
+|-- donor_cli.py          Offline donor proposal CLI demo
+|-- executor.py           ExpertResult, ExecutableExpert, demo executors
+|-- feedback.py           Feedback records and route history stores
+|-- growth.py             KnowledgeSource, KnowledgeSeed, KnowledgeValidator
+|-- growth_clusters.py    GrapeNode, GrapeCluster, assignments, and memory bridge
+|-- growth_engine.py      GrowthDecision, GrowthPlan, GrowthEngine recommendations
+|-- growth_review.py      KnowledgeSeed deduplication, conflict checks, and review decisions
+|-- jsonl_dataset_cli.py  Offline JSONL dataset ingestion CLI demo
+|-- memory.py             MemoryRecord and deterministic keyword memory
+|-- module.py             ExpertModule routing metadata
+|-- orchestrator.py       Orchestrator and OrchestrationResult
+|-- registry.py           ModuleRegistry
+|-- router.py             Keyword/domain router
+|-- safety.py             ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
+|-- tools.py              ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
+|-- training.py           TrainingExample, TrainingDataset, TrainingDataExporter
+|-- training_cli.py       Offline training export CLI demo
+`-- workspace.py          WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
+
+## Add Dataset Manifests And JSONL Samples
+
+Use `DatasetManifest` before parsing local JSONL rows so provenance, license, allowed uses, domains, capabilities, and review requirements stay explicit:
+
+```python
+from grona import DatasetIngestor, DatasetManifest
+
+manifest = DatasetManifest(
+    "demo-jsonl",
+    "Small explicit JSONL corpus.",
+    "in-memory-demo",
+    license="MIT",
+    allowed_uses=("knowledge_seed_candidate",),
+    requires_review=True,
+)
+
+samples, report = DatasetIngestor().ingest_jsonl_text(manifest, '{"text":"Keep provenance."}')
+```
+
+Keep JSONL ingestion tiny, explicit, and deterministic. Do not add downloads, Hugging Face dependencies, large files, generated artifacts, training, embeddings, or vector databases at this layer.
 
 ## Add Donor Proposals
 
@@ -150,9 +173,11 @@ python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
 python -m grona --dataset-demo
+python -m grona --jsonl-dataset-demo
 python -m grona --donor-demo
 python -m grona --benchmark-demo
 python -m grona --training-export-demo
+python examples/jsonl_dataset_ingestion_demo.py
 python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 python examples/training_export_demo.py
@@ -187,7 +212,7 @@ Do not add these until the workspace, ingestion, growth, donor, execution, bench
 - external judge models
 - real Alpaca, ShareGPT, OpenHermes, C4, Wikipedia, LMSYS, or Loghub downloads
 - large dataset files or generated benchmark artifacts
-- JSONL or Parquet readers without a scoped design
+- Parquet readers without a scoped design
 - persisted workspace, seed, donor proposal, cluster, growth plan, benchmark, or training dataset stores
 - external config files loaded from disk
 - secrets or credential handling
