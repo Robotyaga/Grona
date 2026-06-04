@@ -33,8 +33,51 @@ The repository already has the first deterministic foundation:
 - Growth Lab deterministic `GrowthEngine` recommendation MVP
 - deterministic `BenchmarkSuite` MVP for routing, context, and growth trace scoring
 - donor model proposal foundation with static offline proposals and optional LM Studio adapter scaffolding
+- conservative `TrainingDataExporter` foundation for in-memory reviewed example candidates
 - public README polish and project documentation
 - examples, tests, and CI
+
+## TrainingDataExporter Foundation
+
+Goal: export reviewed and validated traces, feedback, benchmark examples, and knowledge seeds as explicit future training candidates without training anything.
+
+Current foundation:
+
+- `TrainingExample`
+- `TrainingDataset`
+- `TrainingExportConfig`
+- `TrainingDataExporter`
+- conservative default policy that skips raw and rejected records
+- support for validated `KnowledgeSeed` values
+- support for accepted review decisions
+- support for positive feedback records
+- support for synthetic benchmark traces
+- deterministic Grona-native JSONL string export
+- deterministic Alpaca-like JSONL string export
+- CLI `--training-export-demo`
+- `examples/training_export_demo.py`
+- offline tests
+
+Boundaries:
+
+- no model training
+- no LLM calls
+- no LM Studio calls
+- no dataset downloads
+- no Hugging Face integration
+- no Parquet export
+- no JSONL file writing by default
+- no claim that exported examples are high-quality real training data
+- raw donor proposals are not exported by default
+
+Possible next work:
+
+- explicit file-writing export method with user-provided path
+- persisted training export manifest
+- stronger human review metadata
+- benchmark impact checks before accepting exported datasets
+- explicit license policy checks
+- JSONL and Parquet reader designs after storage needs are clearer
 
 ## BenchmarkSuite MVP
 
@@ -124,12 +167,6 @@ Possible next work:
 
 BenchmarkSuite should keep reports explicit and conservative. It should not become an opaque automatic quality claim.
 
-## TrainingDataExporter
-
-Goal: export validated traces, corrections, examples, and knowledge seeds for future specialized expert training.
-
-This should preserve provenance and validation metadata instead of flattening everything into opaque text.
-
 ## Later Product Surfaces
 
 UI/API layers should come after the architecture contracts are stable enough to display useful traces:
@@ -139,6 +176,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - dataset source and sample provenance
 - donor proposal source, type, validation status, and error status
 - benchmark case and report summaries
+- training export candidate counts, validation statuses, and provenance
 - knowledge seed validation and review status
 - grape cluster assignment status
 - GrowthEngine decision status
