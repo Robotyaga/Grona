@@ -6,12 +6,20 @@ from collections.abc import Sequence
 
 from .dataset_manifest import DatasetIngestor, DatasetManifest
 
-DEMO_JSONL = """
-{"instruction":"Explain safe dataset ingestion.","input":"A small JSONL corpus.","output":"Keep provenance, license, and review metadata visible."}
-{"conversations":[{"from":"human","value":"How should dataset rows become knowledge?"},{"from":"gpt","value":"Only as candidates with source metadata and review."}]}
-{"text":"Generic dataset text should preserve manifest provenance before becoming a seed candidate."}
-{"input":"broken row without text or output"}
-""".strip()
+DEMO_JSONL = "\n".join(
+    (
+        '{"instruction":"Explain safe dataset ingestion.",'
+        '"input":"A small JSONL corpus.",'
+        '"output":"Keep provenance, license, and review metadata visible."}',
+        '{"conversations":['
+        '{"from":"human","value":"How should dataset rows become knowledge?"},'
+        '{"from":"gpt","value":"Only as candidates with source metadata and review."}'
+        "]}",
+        '{"text":"Generic dataset text should preserve manifest provenance before '
+        'becoming a seed candidate."}',
+        '{"input":"broken row without text or output"}',
+    )
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
