@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from json import dumps, loads
 from typing import Protocol
-from urllib import error, request
+from urllib import request
 
 from .documents import assign_domains, extract_keywords
 from .feedback import Metadata
@@ -79,6 +79,7 @@ class DonorModelAdapter(Protocol):
 
     def propose(self, task: str, proposal_type: str = "summary") -> DonorModelProposal:
         """Return one untrusted proposal for a task."""
+        ...
 
 
 class DonorModelError(RuntimeError):
@@ -163,9 +164,11 @@ class LMStudioAdapter:
         try:
             with request.urlopen(http_request, timeout=self.timeout) as response:
                 data = loads(response.read().decode("utf-8"))
-        except (OSError, TimeoutError, error.URLError) as exc:
+            content = parse_lmstudio_content(data)
+        except OSError as exc:
             raise DonorModelError(f"LM Studio request failed: {exc}") from exc
-        content = parse_lmstudio_content(data)
+        except ValueError as exc:
+            raise DonorModelError(f"LM Studio response was invalid: {exc}") from exc
         return DonorModelProposal(
             task=task,
             source=self.name,
