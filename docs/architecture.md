@@ -28,7 +28,11 @@ flowchart TD
     E --> G[RoutingDecision]
     H[Memory Modules] --> I[ContextBuilder]
     J[Document Ingestion] --> H
-    DS[DatasetSource / DatasetSample] --> Q[KnowledgeSeed]
+    MF[DatasetManifest] --> LP[DatasetLicensePolicy]
+    JL[JsonlDatasetRecord] --> DI[DatasetIngestor]
+    LP --> DI
+    DI --> DS[DatasetSource / DatasetSample]
+    DS --> Q[KnowledgeSeed]
     DM[DonorModelAdapter / LMStudioAdapter] --> DP[DonorModelProposal]
     DP --> Q
     J --> Q
@@ -68,14 +72,15 @@ flowchart TD
 1. A caller selects a `WorkspaceProfile`.
 2. Grona filters the `ModuleRegistry` for that workspace.
 3. Raw demo documents, dataset samples, donor proposals, tool results, feedback, or notes may become raw `KnowledgeSeed` values.
-4. Growth Lab validates, reviews, clusters, and plans deterministic growth recommendations.
-5. A user task enters the router.
-6. `Router` selects relevant modules and records skipped modules, scores, and reasons.
-7. `ContextBuilder` prepares deterministic stub and memory context.
-8. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
-9. Safety policy can evaluate planned adapter or mock-tool actions.
-10. `BenchmarkSuite` can run small deterministic cases against baseline or enhanced configurations.
-11. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
+4. Dataset rows can pass through `DatasetManifest`, `DatasetLicensePolicy`, and `DatasetIngestor` before becoming `DatasetSample` values.
+5. Growth Lab validates, reviews, clusters, and plans deterministic growth recommendations.
+6. A user task enters the router.
+7. `Router` selects relevant modules and records skipped modules, scores, and reasons.
+8. `ContextBuilder` prepares deterministic stub and memory context.
+9. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
+10. Safety policy can evaluate planned adapter or mock-tool actions.
+11. `BenchmarkSuite` can run small deterministic cases against baseline or enhanced configurations.
+12. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
 
 ## Main Layers
 
@@ -83,12 +88,21 @@ flowchart TD
 - Router and registry: score modules by deterministic domain, capability, and keyword overlap.
 - Memory and context: retrieve local route-scoped context from deterministic memory modules.
 - Document ingestion: convert in-memory text into chunks and memory records.
-- Dataset ingestion: normalize tiny structured samples and preserve provenance/license metadata.
+- Dataset manifest ingestion: parse tiny JSONL records, apply license policy, and preserve provenance.
+- Dataset sample ingestion: normalize tiny structured samples and preserve provenance/license metadata.
 - Donor adapters: collect untrusted proposals from deterministic static or explicit local-model adapters.
 - Growth Lab: validate, deduplicate, review, cluster, and plan growth from raw seeds.
 - Execution: provide deterministic executors, adapters, mock tools, and safety planning.
 - BenchmarkSuite: run deterministic benchmark cases and report routing, context, growth, and overall scores.
 - Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
+
+## Dataset Manifest Layer
+
+`DatasetManifest` describes where a dataset source came from, its format, license, allowed uses, domains, capabilities, review policy, and metadata. `DatasetLicensePolicy` answers whether the manifest can be used for knowledge seed candidates or training export candidates and explains why.
+
+`JsonlDatasetRecord` preserves parsed JSONL row data with line numbers. `DatasetIngestor` applies policy, normalizes Alpaca-like, ShareGPT-like, or generic text rows, and returns `DatasetIngestionReport` counts and rejection reasons.
+
+This layer does not download datasets, call Hugging Face, add `datasets`, parse Parquet, stream large corpora, train models, or promote rows into durable knowledge.
 
 ## Donor Proposal Layer
 
@@ -114,4 +128,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset ingestion, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset manifest ingestion, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
