@@ -10,7 +10,7 @@ See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Archit
 src/grona/
 |-- adaptive.py         Feedback-informed score adjustment helpers
 |-- adapters.py         ExecutionRequest, adapters, and adapter registry
-|-- cli.py              Routing, workspace, memory, ingestion, execution, safety, and tool CLI
+|-- cli.py              Routing, workspace, memory, ingestion, execution, safety, tool, and growth CLI
 |-- context.py          ContextItem and ContextBuilder
 |-- decision.py         Routing decision data structures
 |-- defaults.py         Default module registry
@@ -19,6 +19,7 @@ src/grona/
 |-- feedback.py         Feedback records and route history stores
 |-- growth.py           KnowledgeSource, KnowledgeSeed, KnowledgeValidator
 |-- growth_clusters.py  GrapeNode, GrapeCluster, assignments, and memory bridge
+|-- growth_engine.py    GrowthDecision, GrowthPlan, GrowthEngine recommendations
 |-- growth_review.py    KnowledgeSeed deduplication, conflict checks, and review decisions
 |-- memory.py           MemoryRecord and deterministic keyword memory
 |-- module.py           ExpertModule routing metadata
@@ -43,6 +44,7 @@ Keep concerns separate:
 - conflict detection marks potential contradictions without resolving truth
 - review decisions recommend next steps before future memory or cluster promotion
 - grape clustering groups only promote-candidate reviewed seeds into candidate structures
+- GrowthEngine recommends next actions without mutating seeds, clusters, modules, or memory
 - memory modules retrieve route-relevant context
 - direct executors produce `ExpertResult` values from a task and context
 - adapters normalize backend integration through `ExecutionRequest`
@@ -142,6 +144,21 @@ records = memory_records_from_grape_clusters(clusters)
 
 The clusterer is deterministic domain and keyword-overlap grouping. It is not embeddings, semantic clustering, autonomous growth, or training. Keep assignment reasons visible so skipped seeds remain auditable.
 
+## Plan Growth Decisions
+
+Use `GrowthEngine` after review and clustering when Grona should recommend next actions:
+
+```python
+from grona import GrowthEngine, memory_records_from_growth_plan
+
+plan = GrowthEngine().plan_growth([seed], decisions, clusters, assignments)
+records = memory_records_from_growth_plan(plan, clusters)
+```
+
+`GrowthEngine` may recommend seed promotion, duplicate merge, quarantine, rejection, candidate cluster creation, cluster strengthening, memory-record preparation, cluster review, or expert-candidate proposals.
+
+It must remain a recommendation layer. Do not make it silently mutate modules, memory stores, clusters, tools, routing metadata, training data, or model weights.
+
 ## Run Demo Execution
 
 ```bash
@@ -152,10 +169,12 @@ python -m grona "Diagnose engine overheating" --orchestrate --ingest-demo-docs
 python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
+python -m grona --growth-engine-demo
 python examples/workspace_profile_demo.py
 python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
+python examples/growth_engine_demo.py
 ```
 
 ## Run Tests
@@ -184,6 +203,7 @@ Do not add these until the workspace, ingestion, growth, execution, and safety i
 - persisted workspace directories
 - persisted seed stores
 - persisted cluster stores
+- persisted growth plan stores
 - external config files loaded from disk
 - secrets or credential handling
 - production config management
@@ -208,5 +228,6 @@ Do not add these until the workspace, ingestion, growth, execution, and safety i
 - sandboxing claims
 - automatic expert growth
 - automatic model training
+- model weights
 
 The current workspace, ingestion, growth, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, or config management.
