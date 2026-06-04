@@ -43,6 +43,20 @@ SUPPORTED_REVIEW_SAMPLE_TYPES = (
     "code",
     "unknown",
 )
+ANSWER_SAMPLE_TYPES = {
+    "instruction",
+    "conversation",
+    "factual_qa",
+    "reasoning",
+    "classification",
+    "summarization",
+    "code",
+}
+HARD_REJECTION_REASONS = {
+    "content is too short",
+    "output or assistant answer is missing",
+    "output is too short",
+}
 
 
 @dataclass(frozen=True)
@@ -126,14 +140,7 @@ class DatasetReviewConfig:
         object.__setattr__(self, "require_allowed_license", require_allowed_license)
         object.__setattr__(self, "human_review_threshold", human_review_threshold)
         object.__setattr__(self, "expected_domains", tuple(expected_domains))
-        if min_instruction_length < 1:
-            raise ValueError("min_instruction_length must be at least 1")
-        if min_output_length < 1:
-            raise ValueError("min_output_length must be at least 1")
-        if min_text_length < 1:
-            raise ValueError("min_text_length must be at least 1")
-        if not 0.0 <= human_review_threshold <= 1.0:
-            raise ValueError("human_review_threshold must be between 0.0 and 1.0")
+        validate_review_config(self)
 
 
 @dataclass(frozen=True)
@@ -231,66 +238,29 @@ class DatasetQualityReviewer:
         """Review one normalized sample using deterministic quality signals."""
         text = normalized_text(sample.content)
         content_hash = sample_content_hash(sample)
+        if not text:
+            return self.rejected(sample, "rejected_empty", "content is empty", content_hash)
+        if sample.sample_type not in SUPPORTED_REVIEW_SAMPLE_TYPES:
+            reason = f"unsupported sample type: {sample.sample_type}"
+            return self.rejected(sample, "rejected_unsupported", reason, content_hash)
+        if self.license_is_rejected(sample, manifest):
+            reason = f"license is not allowed for review promotion: {sample.source.license}"
+            return self.rejected(sample, "rejected_license", reason, content_hash)
+        if self.duplicate_is_rejected(content_hash, seen_hashes):
+            return self.rejected(sample, "rejected_duplicate", "duplicate normalized content", content_hash)
+        return self.scored_review(sample, text, content_hash)
+
+    def scored_review(
+        self,
+        sample: DatasetSample,
+        text: str,
+        content_hash: str,
+    ) -> DatasetSampleReview:
+        """Score a non-empty, non-duplicate, license-compatible sample."""
         reasons: list[str] = []
         penalties: list[float] = []
-        decision = "accepted"
-        accepted = True
-
-        if not text:
-            return self.build_review(
-                sample,
-                False,
-                "rejected_empty",
-                ("content is empty",),
-                0.0,
-                content_hash,
-            )
-        if sample.sample_type not in SUPPORTED_REVIEW_SAMPLE_TYPES:
-            return self.build_review(
-                sample,
-                False,
-                "rejected_unsupported",
-                (f"unsupported sample type: {sample.sample_type}",),
-                0.0,
-                content_hash,
-            )
-        if self.config.require_allowed_license and license_rejected(sample, manifest, self.license_policy):
-            return self.build_review(
-                sample,
-                False,
-                "rejected_license",
-                (f"license is not allowed for review promotion: {sample.source.license}",),
-                0.0,
-                content_hash,
-            )
-        if self.config.deduplicate and seen_hashes is not None and content_hash in seen_hashes:
-            return self.build_review(
-                sample,
-                False,
-                "rejected_duplicate",
-                ("duplicate normalized content",),
-                0.0,
-                content_hash,
-            )
-
-        instruction_text = extract_instruction_text(sample)
-        output_text = extract_output_text(sample)
-        if len(text) < self.config.min_text_length:
-            reasons.append("content is too short")
-            penalties.append(0.45)
-        if instruction_text and len(instruction_text) < self.config.min_instruction_length:
-            reasons.append("instruction is too short")
-            penalties.append(0.2)
-        if self.config.require_output and requires_answer(sample):
-            if not output_text:
-                reasons.append("output or assistant answer is missing")
-                penalties.append(0.55)
-            elif len(output_text) < self.config.min_output_length:
-                reasons.append("output is too short")
-                penalties.append(0.35)
-        if self.config.expected_domains and not domain_matches(sample, self.config.expected_domains):
-            reasons.append("sample domains do not match expected domains")
-            penalties.append(0.25)
+        self.collect_length_reasons(sample, text, reasons, penalties)
+        self.collect_domain_reasons(sample, reasons, penalties)
         if low_information_density(text):
             reasons.append("content has low information density")
             penalties.append(0.25)
@@ -298,19 +268,78 @@ class DatasetQualityReviewer:
         if suspicious:
             reasons.append("suspicious marker detected: " + ", ".join(suspicious))
             penalties.append(0.25)
-
         score = quality_score(sample, text, penalties)
-        if hard_rejection_reason(reasons):
-            decision = "rejected_too_short"
-            accepted = False
-        elif score < self.config.human_review_threshold or suspicious:
-            decision = "needs_human_review"
-            accepted = False
+        if any(reason in HARD_REJECTION_REASONS for reason in reasons):
+            return self.build_review(sample, False, "rejected_too_short", reasons, score, content_hash)
+        if score < self.config.human_review_threshold or suspicious:
             if not reasons:
                 reasons.append("quality score is below human review threshold")
-        else:
-            reasons.append("sample passed deterministic review checks")
-        return self.build_review(sample, accepted, decision, reasons, score, content_hash)
+            return self.build_review(sample, False, "needs_human_review", reasons, score, content_hash)
+        reasons.append("sample passed deterministic review checks")
+        return self.build_review(sample, True, "accepted", reasons, score, content_hash)
+
+    def collect_length_reasons(
+        self,
+        sample: DatasetSample,
+        text: str,
+        reasons: list[str],
+        penalties: list[float],
+    ) -> None:
+        """Collect deterministic length and answer-shape reasons."""
+        if len(text) < self.config.min_text_length:
+            reasons.append("content is too short")
+            penalties.append(0.45)
+        instruction = extract_instruction_text(sample)
+        if instruction and len(instruction) < self.config.min_instruction_length:
+            reasons.append("instruction is too short")
+            penalties.append(0.2)
+        output = extract_output_text(sample)
+        if self.config.require_output and requires_answer(sample):
+            if not output:
+                reasons.append("output or assistant answer is missing")
+                penalties.append(0.55)
+            elif len(output) < self.config.min_output_length:
+                reasons.append("output is too short")
+                penalties.append(0.35)
+
+    def collect_domain_reasons(
+        self,
+        sample: DatasetSample,
+        reasons: list[str],
+        penalties: list[float],
+    ) -> None:
+        """Collect optional domain mismatch reasons."""
+        if self.config.expected_domains and not domain_matches(sample, self.config.expected_domains):
+            reasons.append("sample domains do not match expected domains")
+            penalties.append(0.25)
+
+    def license_is_rejected(
+        self,
+        sample: DatasetSample,
+        manifest: DatasetManifest | None,
+    ) -> bool:
+        """Return whether the configured license gate rejects the sample."""
+        if not self.config.require_allowed_license:
+            return False
+        return license_rejected(sample, manifest, self.license_policy)
+
+    def duplicate_is_rejected(
+        self,
+        content_hash: str,
+        seen_hashes: set[str] | None,
+    ) -> bool:
+        """Return whether duplicate filtering rejects the content hash."""
+        return self.config.deduplicate and seen_hashes is not None and content_hash in seen_hashes
+
+    def rejected(
+        self,
+        sample: DatasetSample,
+        decision: str,
+        reason: str,
+        content_hash: str,
+    ) -> DatasetSampleReview:
+        """Build a zero-score rejected review."""
+        return self.build_review(sample, False, decision, (reason,), 0.0, content_hash)
 
     def build_review(
         self,
@@ -427,6 +456,18 @@ def build_review_report(
     )
 
 
+def validate_review_config(config: DatasetReviewConfig) -> None:
+    """Validate numeric configuration boundaries."""
+    if config.min_instruction_length < 1:
+        raise ValueError("min_instruction_length must be at least 1")
+    if config.min_output_length < 1:
+        raise ValueError("min_output_length must be at least 1")
+    if config.min_text_length < 1:
+        raise ValueError("min_text_length must be at least 1")
+    if not 0.0 <= config.human_review_threshold <= 1.0:
+        raise ValueError("human_review_threshold must be between 0.0 and 1.0")
+
+
 def normalized_text(value: str) -> str:
     """Return a stable normalized text value for review checks."""
     return " ".join(value.split())
@@ -493,15 +534,7 @@ def extract_prefixed_block(content: str, prefix: str) -> str:
 
 def requires_answer(sample: DatasetSample) -> bool:
     """Return whether the sample shape should include an output or assistant answer."""
-    return sample.sample_type in {
-        "instruction",
-        "conversation",
-        "factual_qa",
-        "reasoning",
-        "classification",
-        "summarization",
-        "code",
-    }
+    return sample.sample_type in ANSWER_SAMPLE_TYPES
 
 
 def domain_matches(sample: DatasetSample, expected_domains: Sequence[str]) -> bool:
@@ -524,13 +557,3 @@ def suspicious_markers(text: str) -> tuple[str, ...]:
     """Return suspicious prompt or secret markers found in text."""
     lowered = text.lower()
     return tuple(marker for marker in SUSPICIOUS_MARKERS if marker in lowered)
-
-
-def hard_rejection_reason(reasons: Sequence[str]) -> bool:
-    """Return whether reasons should reject instead of requesting review."""
-    hard_reasons = {
-        "content is too short",
-        "output or assistant answer is missing",
-        "output is too short",
-    }
-    return any(reason in hard_reasons for reason in reasons)
