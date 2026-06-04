@@ -114,9 +114,10 @@ class TrainingDataset:
         created_at: str = "1970-01-01T00:00:00+00:00",
         metadata: Mapping[str, object] | None = None,
     ) -> None:
+        ordered_examples = tuple(sorted(examples, key=lambda item: item.sort_key()))
         object.__setattr__(self, "name", name)
         object.__setattr__(self, "description", description)
-        object.__setattr__(self, "examples", tuple(sorted(examples, key=lambda item: item.sort_key())))
+        object.__setattr__(self, "examples", ordered_examples)
         object.__setattr__(self, "created_at", created_at)
         object.__setattr__(self, "metadata", json_metadata(metadata or {}))
         if not name:
