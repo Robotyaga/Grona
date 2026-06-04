@@ -4,6 +4,13 @@
 
 ### Added
 
+- TrainingDataExporter foundation for conservative in-memory training example candidates.
+- `TrainingExample`, `TrainingDataset`, `TrainingExportConfig`, and `TrainingDataExporter`.
+- Deterministic Grona-native JSONL and Alpaca-like JSONL string export helpers.
+- Conservative export policy that skips raw and rejected records by default.
+- Training export support for validated knowledge seeds, reviewed knowledge decisions, positive feedback records, and synthetic benchmark traces.
+- CLI `--training-export-demo` support through `python -m grona`.
+- `examples/training_export_demo.py` and deterministic offline training exporter tests.
 - Donor model adapter foundation for untrusted proposal sources.
 - `DonorModelProposal`, `DonorModelAdapter`, `StaticDonorModelAdapter`, and `LMStudioAdapter`.
 - `DonorProposalCollector`, `DonorProposalBatch`, and explicit donor proposal error records.
