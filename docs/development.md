@@ -33,6 +33,8 @@ src/grona/
 |-- router.py           Keyword/domain router
 |-- safety.py           ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
 |-- tools.py            ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
+|-- training.py         TrainingExample, TrainingDataset, TrainingDataExporter
+|-- training_cli.py     Offline training export CLI demo
 `-- workspace.py        WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
 
@@ -57,6 +59,25 @@ seed = knowledge_seed_from_donor_proposal(proposal)
 ```
 
 `LMStudioAdapter` is an optional foundation for a future local LM Studio-compatible server. Do not use it in CI or default demos. It should only run behind explicit user configuration and should keep errors visible.
+
+## Add Training Export Candidates
+
+Use `TrainingDataExporter` only after records have enough validation or review metadata for a conservative export. It should prepare future training examples, not train a model:
+
+```python
+from grona import TrainingDataExporter
+
+exporter = TrainingDataExporter()
+examples = exporter.from_knowledge_seeds(validated_seeds)
+dataset = exporter.build_dataset(
+    "reviewed-knowledge",
+    "Reviewed knowledge candidates for future training experiments.",
+    examples,
+)
+print(dataset.to_native_jsonl())
+```
+
+Default policy skips raw and rejected records. Raw donor proposals should not be exported directly. If donor material should become exportable, first convert it into a `KnowledgeSeed`, run validation/review, and export only the reviewed or validated result.
 
 ## Add Benchmark Cases
 
@@ -131,8 +152,10 @@ python -m grona --growth-engine-demo
 python -m grona --dataset-demo
 python -m grona --donor-demo
 python -m grona --benchmark-demo
+python -m grona --training-export-demo
 python examples/donor_model_demo.py
 python examples/benchmark_demo.py
+python examples/training_export_demo.py
 ```
 
 ## Run Tests
@@ -156,7 +179,7 @@ Before opening a PR, check that the change:
 
 ## What Not to Add Yet
 
-Do not add these until the workspace, ingestion, growth, donor, execution, benchmarking, and safety interfaces have stronger tests and real requirements:
+Do not add these until the workspace, ingestion, growth, donor, execution, benchmarking, training export, and safety interfaces have stronger tests and real requirements:
 
 - dataset downloads
 - Hugging Face `datasets` dependency
@@ -165,7 +188,7 @@ Do not add these until the workspace, ingestion, growth, donor, execution, bench
 - real Alpaca, ShareGPT, OpenHermes, C4, Wikipedia, LMSYS, or Loghub downloads
 - large dataset files or generated benchmark artifacts
 - JSONL or Parquet readers without a scoped design
-- persisted workspace, seed, donor proposal, cluster, growth plan, or benchmark stores
+- persisted workspace, seed, donor proposal, cluster, growth plan, benchmark, or training dataset stores
 - external config files loaded from disk
 - secrets or credential handling
 - OpenAI API calls
@@ -188,6 +211,7 @@ Do not add these until the workspace, ingestion, growth, donor, execution, bench
 - automatic expert growth
 - automatic model training
 - model weights
-- training data export
+- file-writing training export CLI by default
+- claims that exported examples are already high-quality training data
 
-The current workspace, ingestion, donor, growth, benchmarking, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
+The current workspace, ingestion, donor, growth, benchmarking, training export, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
