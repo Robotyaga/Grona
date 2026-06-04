@@ -164,7 +164,10 @@ class DatasetLicensePolicy:
 
     def policy_summary(self, manifest: DatasetManifest) -> tuple[DatasetPolicyDecision, ...]:
         """Return deterministic decisions for all supported allowed uses."""
-        return tuple(self.decision_for_use(manifest, allowed_use) for allowed_use in DATASET_ALLOWED_USES)
+        return tuple(
+            self.decision_for_use(manifest, allowed_use)
+            for allowed_use in DATASET_ALLOWED_USES
+        )
 
     def training_license_blocked(self, manifest: DatasetManifest) -> bool:
         """Return whether license metadata blocks training export candidates."""
@@ -244,11 +247,15 @@ class DatasetIngestor:
             rejection_reasons.append("manifest rejected for all supported uses")
         for record in records:
             if not manifest_allowed:
-                rejection_reasons.append(f"line {record.line_number}: manifest policy rejected record")
+                rejection_reasons.append(
+                    f"line {record.line_number}: manifest policy rejected record"
+                )
                 continue
             sample = normalize_jsonl_record(record, manifest, source)
             if sample is None:
-                rejection_reasons.append(f"line {record.line_number}: unsupported or incomplete record")
+                rejection_reasons.append(
+                    f"line {record.line_number}: unsupported or incomplete record"
+                )
                 continue
             samples.append(sample)
         report = DatasetIngestionReport(
