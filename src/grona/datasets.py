@@ -485,7 +485,10 @@ def create_demo_sharegpt_samples() -> tuple[ConversationDatasetSample, ...]:
                 {"from": "human", "value": "How should I inspect suspicious firewall logs?"},
                 {
                     "from": "gpt",
-                    "value": "Check source IPs, ports, authentication failures, and timing patterns.",
+                    "value": (
+                        "Check source IPs, ports, authentication failures, "
+                        "and timing patterns."
+                    ),
                 },
             ],
             "metadata": {"conversation_style": "sharegpt"},
