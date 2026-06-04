@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing. Instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules and keeps the route trace visible.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset samples, donor proposals, feedback traces, benchmark traces, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, donor proposals, feedback traces, benchmark traces, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
 
 ## Current Status
 
@@ -19,7 +19,10 @@ What it does today:
 - adjusts routing with optional feedback-informed scoring
 - builds route-scoped context from deterministic memory modules
 - ingests in-memory demo documents into memory records
-- normalizes tiny Alpaca-like and ShareGPT-like in-memory dataset samples
+- describes small dataset sources with `DatasetManifest`
+- parses tiny explicit JSONL text or files into line-aware records
+- applies conservative `DatasetLicensePolicy` checks before dataset use
+- normalizes tiny Alpaca-like, ShareGPT-like, and generic text dataset samples
 - converts normalized dataset samples into raw `KnowledgeSeed` values with license metadata
 - collects deterministic donor model proposals through a static offline adapter
 - defines an optional LM Studio adapter foundation behind explicit user configuration
@@ -58,7 +61,7 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Find document indexing notes" --workspace documents
 ```
 
-Run deterministic Growth Lab, benchmark, donor, and training export demos:
+Run deterministic Growth Lab, dataset, benchmark, donor, and training export demos:
 
 ```bash
 python -m grona --growth-demo
@@ -66,6 +69,7 @@ python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
 python -m grona --dataset-demo
+python -m grona --jsonl-dataset-demo
 python -m grona --donor-demo
 python -m grona --benchmark-demo
 python -m grona --training-export-demo
@@ -99,10 +103,17 @@ python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
 python examples/growth_engine_demo.py
 python examples/dataset_ingestion_demo.py
+python examples/jsonl_dataset_ingestion_demo.py
 python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 python examples/training_export_demo.py
 ```
+
+## Dataset Manifest And JSONL Foundation
+
+`DatasetManifest` records where a dataset source came from, what format it uses, which license applies, which uses are allowed, which domains and capabilities are relevant, and whether review is required. `DatasetLicensePolicy` keeps use decisions explicit and conservative.
+
+`DatasetIngestor` can parse tiny JSONL records, normalize Alpaca-like, ShareGPT-like, and generic text rows, attach manifest provenance, and return a `DatasetIngestionReport`. This prepares dataset rows as candidates only; it does not download datasets, trust rows, train models, or promote anything into durable knowledge.
 
 ## Donor Model Adapter Foundation
 
@@ -158,14 +169,14 @@ This is not a model judge and does not claim real answer accuracy. See [Benchmar
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, clustering, growth, donor proposals, benchmarking, and training export are deterministic or explicitly configured prototype layers.
+- Routing, memory retrieval, dataset ingestion, clustering, growth, donor proposals, benchmarking, and training export are deterministic or explicitly configured prototype layers.
+- Dataset rows are candidates only; they are not automatically trusted, promoted, or training-safe.
+- No dataset downloads, Hugging Face integration, `datasets` dependency, Parquet support, or large dataset streaming yet.
 - Donor model output is untrusted proposal material, not validated truth.
 - Raw donor proposals are not exported as training data by default.
 - LM Studio support is optional and not used by default or by CI.
 - BenchmarkSuite is a deterministic rubric only; it does not evaluate real LLM answers.
 - TrainingDataExporter produces candidate records only; it does not train models or prove example quality.
-- Dataset ingestion is in-memory normalization only; it does not download or read real datasets.
-- No Hugging Face integration, `datasets` dependency, JSONL loader, Parquet reader, or file-writing export CLI yet.
 - No real LLM integration, trusted donor model workflow, external judge model, or automatic answer generation yet.
 - No embeddings, semantic clustering, vector database, SQL database, or web server.
 - No autonomous self-training, model weights, or automatic expert creation yet.

@@ -27,6 +27,16 @@ from .benchmarks import (
     routing_match_score,
 )
 from .context import ContextBuilder, ContextItem
+from .dataset_manifest import (
+    DatasetIngestionReport,
+    DatasetIngestor,
+    DatasetLicensePolicy,
+    DatasetManifest,
+    JsonlDatasetRecord,
+    read_jsonl_file,
+    read_jsonl_records,
+    read_jsonl_stream,
+)
 from .datasets import (
     AlpacaFormatAdapter,
     ConversationDatasetSample,
