@@ -29,6 +29,8 @@ flowchart TD
     H[Memory Modules] --> I[ContextBuilder]
     J[Document Ingestion] --> H
     DS[DatasetSource / DatasetSample] --> Q[KnowledgeSeed]
+    DM[DonorModelAdapter / LMStudioAdapter] --> DP[DonorModelProposal]
+    DP --> Q
     J --> Q
     R[Tool Result] --> Q
     F --> Q
@@ -61,7 +63,7 @@ flowchart TD
 
 1. A caller selects a `WorkspaceProfile`.
 2. Grona filters the `ModuleRegistry` for that workspace.
-3. Raw demo documents, dataset samples, tool results, feedback, or notes may become raw `KnowledgeSeed` values.
+3. Raw demo documents, dataset samples, donor proposals, tool results, feedback, or notes may become raw `KnowledgeSeed` values.
 4. Growth Lab validates, reviews, clusters, and plans deterministic growth recommendations.
 5. A user task enters the router.
 6. `Router` selects relevant modules and records skipped modules, scores, and reasons.
@@ -77,9 +79,18 @@ flowchart TD
 - Memory and context: retrieve local route-scoped context from deterministic memory modules.
 - Document ingestion: convert in-memory text into chunks and memory records.
 - Dataset ingestion: normalize tiny structured samples and preserve provenance/license metadata.
+- Donor adapters: collect untrusted proposals from deterministic static or explicit local-model adapters.
 - Growth Lab: validate, deduplicate, review, cluster, and plan growth from raw seeds.
 - Execution: provide deterministic executors, adapters, mock tools, and safety planning.
 - BenchmarkSuite: run deterministic benchmark cases and report routing, context, growth, and overall scores.
+
+## Donor Proposal Layer
+
+`DonorModelProposal` stores untrusted proposal output with task, source, proposal type, content, confidence, and metadata. `StaticDonorModelAdapter` is deterministic and offline for tests and demos. `LMStudioAdapter` is an optional local adapter foundation that uses standard-library HTTP only when explicitly configured by a caller.
+
+`DonorProposalCollector` collects successful proposals and records adapter errors separately. A `knowledge_seed` proposal can become a raw `KnowledgeSeed` through `knowledge_seed_from_donor_proposal()`, but this does not bypass validation, review, benchmarking, or human judgment.
+
+The donor layer is not answer generation, autonomous learning, training, or a trusted model authority.
 
 ## Benchmark Layer
 
@@ -89,4 +100,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset ingestion, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset ingestion, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, automatic expert growth, or production configuration management.

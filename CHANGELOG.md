@@ -4,6 +4,12 @@
 
 ### Added
 
+- Donor model adapter foundation for untrusted proposal sources.
+- `DonorModelProposal`, `DonorModelAdapter`, `StaticDonorModelAdapter`, and `LMStudioAdapter`.
+- `DonorProposalCollector`, `DonorProposalBatch`, and explicit donor proposal error records.
+- `knowledge_seed_from_donor_proposal()` bridge into raw untrusted Growth Lab seeds.
+- CLI `--donor-demo` support through `python -m grona` using the deterministic static donor only.
+- `examples/donor_model_demo.py` and deterministic offline donor adapter tests.
 - Deterministic BenchmarkSuite MVP for local prototype comparisons.
 - `BenchmarkCase`, `BenchmarkRunConfig`, `BenchmarkResult`, `BenchmarkReport`, and `BenchmarkSuite`.
 - Deterministic scoring helpers for domain coverage, module coverage, context keyword coverage, growth trace relevance, routing score, and overall score.

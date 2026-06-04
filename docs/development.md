@@ -18,6 +18,8 @@ src/grona/
 |-- decision.py         Routing decision data structures
 |-- defaults.py         Default module registry
 |-- documents.py        DocumentSource, TextChunker, DocumentIngestor
+|-- donor.py            Donor proposals, static donor, LM Studio adapter foundation
+|-- donor_cli.py        Offline donor proposal CLI demo
 |-- executor.py         ExpertResult, ExecutableExpert, demo executors
 |-- feedback.py         Feedback records and route history stores
 |-- growth.py           KnowledgeSource, KnowledgeSeed, KnowledgeValidator
@@ -33,6 +35,28 @@ src/grona/
 |-- tools.py            ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
 `-- workspace.py        WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
+
+## Add Donor Proposals
+
+Use `StaticDonorModelAdapter` when tests or examples need deterministic donor output:
+
+```python
+from grona import DonorProposalCollector, StaticDonorModelAdapter
+
+collector = DonorProposalCollector((StaticDonorModelAdapter(),))
+batch = collector.collect("Summarize modular AI routing", ("summary", "knowledge_seed"))
+```
+
+A donor model is a proposal source only. Its output is not trusted memory, not a route decision, not automatic learning, and not training data. If a `knowledge_seed` proposal should enter Growth Lab, convert it into a raw seed and then validate/review it:
+
+```python
+from grona import knowledge_seed_from_donor_proposal
+
+proposal = batch.proposals[-1]
+seed = knowledge_seed_from_donor_proposal(proposal)
+```
+
+`LMStudioAdapter` is an optional foundation for a future local LM Studio-compatible server. Do not use it in CI or default demos. It should only run behind explicit user configuration and should keep errors visible.
 
 ## Add Benchmark Cases
 
@@ -105,7 +129,9 @@ python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
 python -m grona --dataset-demo
+python -m grona --donor-demo
 python -m grona --benchmark-demo
+python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 ```
 
@@ -130,7 +156,7 @@ Before opening a PR, check that the change:
 
 ## What Not to Add Yet
 
-Do not add these until the workspace, ingestion, growth, execution, benchmarking, and safety interfaces have stronger tests and real requirements:
+Do not add these until the workspace, ingestion, growth, donor, execution, benchmarking, and safety interfaces have stronger tests and real requirements:
 
 - dataset downloads
 - Hugging Face `datasets` dependency
@@ -139,13 +165,11 @@ Do not add these until the workspace, ingestion, growth, execution, benchmarking
 - real Alpaca, ShareGPT, OpenHermes, C4, Wikipedia, LMSYS, or Loghub downloads
 - large dataset files or generated benchmark artifacts
 - JSONL or Parquet readers without a scoped design
-- persisted workspace, seed, cluster, growth plan, or benchmark stores
+- persisted workspace, seed, donor proposal, cluster, growth plan, or benchmark stores
 - external config files loaded from disk
 - secrets or credential handling
 - OpenAI API calls
-- LM Studio adapters
 - Ollama integration
-- donor model adapters
 - external APIs
 - web servers
 - vector databases
@@ -159,10 +183,11 @@ Do not add these until the workspace, ingestion, growth, execution, benchmarking
 - automatic truth resolution
 - subprocess or shell execution
 - real filesystem tool execution
-- network tool execution
+- network tool execution beyond explicit optional local-model adapter calls
 - sandboxing claims
 - automatic expert growth
 - automatic model training
 - model weights
+- training data export
 
-The current workspace, ingestion, growth, benchmarking, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
+The current workspace, ingestion, donor, growth, benchmarking, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
