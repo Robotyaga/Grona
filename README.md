@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing: instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset samples and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, and safety policy is the protective layer around future tool use.
 
 ## Why This Exists
 
@@ -18,6 +18,7 @@ Grona explores a different shape:
 - route each task to a focused subset
 - keep context scoped to the selected route
 - preserve a visible trace of scores, reasons, context, safety decisions, growth decisions, and feedback
+- normalize tiny structured dataset samples before they become Growth Lab seeds
 - validate, deduplicate, and review raw knowledge before it becomes memory, training data, or expert behavior
 - group reviewed Growth Lab seeds into deterministic `GrapeCluster` and `GrapeNode` candidates
 - recommend conservative growth actions from reviewed seeds and clusters without mutating the system automatically
@@ -25,7 +26,7 @@ Grona explores a different shape:
 
 ## Current Prototype Status
 
-Grona is currently deterministic and local-first. It does not call an LLM, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, train models, or run real tools.
+Grona is currently deterministic and local-first. It does not call an LLM, execute shell commands, use external APIs, crawl files, parse PDFs, build embeddings, train models, download datasets, or run real tools.
 
 What it does today:
 
@@ -34,6 +35,8 @@ What it does today:
 - adjusts routing with optional feedback-informed scoring
 - builds route-scoped context from deterministic memory modules
 - ingests in-memory demo documents into memory records
+- normalizes tiny Alpaca-like and ShareGPT-like in-memory dataset samples
+- converts normalized dataset samples into raw `KnowledgeSeed` values with license metadata
 - validates raw `KnowledgeSeed` values before future promotion
 - detects deterministic duplicate and potential conflict candidates between seeds
 - recommends whether seeds should be promoted, merged, quarantined, rejected, or reviewed
@@ -60,7 +63,8 @@ flowchart TD
     E --> G[RoutingDecision]
     H[Memory Modules] --> I[ContextBuilder]
     J[Document Ingestion] --> H
-    J --> Q[KnowledgeSeed]
+    DS[DatasetSample] --> Q[KnowledgeSeed]
+    J --> Q
     R[Tool Result] --> Q
     F --> Q
     Q --> S[KnowledgeValidator]
@@ -92,6 +96,8 @@ flowchart TD
 - Adaptive feedback-informed routing
 - Memory modules and context building
 - Deterministic document ingestion stubs
+- Deterministic dataset ingestion foundation for tiny in-memory samples
+- Alpaca-like and ShareGPT-like demo adapters without downloads or heavy dependencies
 - KnowledgeSeed, KnowledgeSource, and deterministic KnowledgeValidator
 - KnowledgeSeed normalization, deduplication, potential conflict detection, and review decisions
 - GrapeNode, GrapeCluster, assignment traces, and memory-record bridge helpers
@@ -143,6 +149,7 @@ python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
+python -m grona --dataset-demo
 ```
 
 Build context from demo memory or deterministic in-memory documents:
@@ -181,12 +188,14 @@ python examples/knowledge_seed_demo.py
 python examples/knowledge_review_demo.py
 python examples/grape_cluster_demo.py
 python examples/growth_engine_demo.py
+python examples/dataset_ingestion_demo.py
 ```
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [Growth Lab](docs/growth-lab.md)
+- [Dataset ingestion](docs/dataset-ingestion.md)
 - [Development notes](docs/development.md)
 - [Workspace profiles](docs/workspaces.md)
 - [Research notes](docs/research-notes.md)
@@ -199,10 +208,15 @@ python examples/growth_engine_demo.py
 
 ## Roadmap Toward Growth Lab
 
-Growth Lab is a controlled environment for experimenting with how modular AI systems can grow from structured knowledge, feedback, donor model outputs, validation loops, and local tools.
+Growth Lab is a controlled environment for experimenting with how modular AI systems can grow from structured knowledge, feedback, donor model outputs, validation loops, datasets, and local tools.
 
 Current Growth Lab foundation:
 
+- `DatasetSource`: dataset provenance, format, license, language, and reliability metadata
+- `DatasetSample`: normalized tiny dataset sample before seed conversion
+- `InstructionDatasetSample`: Alpaca-like instruction sample structure
+- `ConversationDatasetSample`: ShareGPT/LMSYS-like conversation sample structure
+- `AlpacaFormatAdapter` and `ShareGPTFormatAdapter`: in-memory demo adapters
 - `KnowledgeSource`: source type, name, reliability, metadata
 - `KnowledgeSeed`: raw knowledge candidate with domains, keywords, confidence, and status
 - `KnowledgeValidator`: deterministic scoring, warnings, and validation status
@@ -215,7 +229,7 @@ Current Growth Lab foundation:
 - `GrowthDecision`: one explainable recommended growth action
 - `GrowthPlan`: a deterministic bundle of growth recommendations
 - `GrowthEngine`: conservative recommendations from reviewed seeds, clusters, and assignments
-- conversions from document chunks and mock tool results into raw seeds
+- conversions from dataset samples, document chunks, and mock tool results into raw seeds
 - conversion from grape clusters and growth plans into memory records
 
 Planned concepts include:
@@ -224,11 +238,13 @@ Planned concepts include:
 - `DonorModelAdapter` and `LMStudioAdapter`: future optional model interfaces
 - `TrainingDataExporter`: future export of validated traces for specialized experts
 
-See [Growth Lab](docs/growth-lab.md), [Project vision](docs/project-vision.md), and [Roadmap](docs/roadmap.md) for the longer version.
+See [Growth Lab](docs/growth-lab.md), [Dataset ingestion](docs/dataset-ingestion.md), [Project vision](docs/project-vision.md), and [Roadmap](docs/roadmap.md) for the longer version.
 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
+- Dataset ingestion is in-memory normalization only; it does not download or read real datasets.
+- No Hugging Face integration, `datasets` dependency, JSONL loader, or Parquet reader yet.
 - GrowthEngine recommends actions only; it does not mutate modules, memory, clusters, or models automatically.
 - No autonomous self-training, model weights, training-data export, or automatic expert creation yet.
 - No real LLM integration yet.
