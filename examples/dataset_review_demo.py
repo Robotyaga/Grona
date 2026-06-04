@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from grona.dataset_review_cli import DEMO_JSONL, create_review_demo_manifest
 from grona import DatasetIngestor, DatasetQualityReviewer, DatasetReviewConfig
+from grona.dataset_review_cli import DEMO_JSONL, create_review_demo_manifest
 
 
 def main() -> None:
