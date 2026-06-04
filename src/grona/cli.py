@@ -9,6 +9,11 @@ from collections.abc import Sequence
 from .adapters import create_default_adapter_registry
 from .adaptive import AdaptiveRoutingConfig
 from .context import ContextBuilder
+from .datasets import (
+    create_demo_alpaca_samples,
+    create_demo_sharegpt_samples,
+    knowledge_seeds_from_dataset_samples,
+)
 from .decision import RoutingDecision
 from .defaults import create_default_registry
 from .documents import DocumentIngestor, create_demo_document_sources
@@ -215,6 +220,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.growth_engine_demo:
         print(format_growth_engine_demo())
+        return 0
+    if args.dataset_demo:
+        print(format_dataset_demo())
         return 0
 
     profile = get_builtin_workspace_profile(args.workspace)
@@ -450,6 +458,59 @@ def format_growth_engine_demo() -> str:
     return "\n".join(lines)
 
 
+def format_dataset_demo() -> str:
+    """Run deterministic dataset ingestion through the Growth Lab pipeline."""
+    instruction_samples = create_demo_alpaca_samples()
+    conversation_samples = create_demo_sharegpt_samples()
+    dataset_samples = tuple(sample.to_dataset_sample() for sample in instruction_samples)
+    dataset_samples += tuple(sample.to_dataset_sample() for sample in conversation_samples)
+    seeds = knowledge_seeds_from_dataset_samples(dataset_samples)
+    validations = tuple(KnowledgeValidator().validate(seed) for seed in seeds)
+    review_decisions = tuple(KnowledgeReviewPipeline().review(seeds))
+    clusters, assignments = GrapeClusterer(keyword_overlap_threshold=0.25).cluster(
+        seeds,
+        review_decisions,
+    )
+    from .growth_engine import GrowthEngine
+
+    plan = GrowthEngine().plan_growth(seeds, review_decisions, clusters, assignments)
+    validation_counts = Counter(result.status for result in validations)
+    action_counts = Counter(decision.action for decision in plan.decisions)
+    lines = [
+        "Growth Lab demo: Dataset ingestion foundation",
+        (
+            "Execution: deterministic in-memory dataset normalization only; "
+            "no downloads, APIs, embeddings, or training."
+        ),
+        "",
+        f"Dataset samples: {len(dataset_samples)}",
+        f"Instruction samples: {len(instruction_samples)}",
+        f"Conversation samples: {len(conversation_samples)}",
+        f"Generated KnowledgeSeeds: {len(seeds)}",
+        f"Clusters: {len(clusters)}",
+        f"Assignments: {len(assignments)}",
+        f"Growth decisions: {len(plan.decisions)}",
+        "",
+        "Validation statuses:",
+    ]
+    for status, count in sorted(validation_counts.items()):
+        lines.append(f"- {status}: {count}")
+    lines.extend(["", "Growth decisions by action:"])
+    if action_counts:
+        for action, count in sorted(action_counts.items()):
+            lines.append(f"- {action}: {count}")
+    else:
+        lines.append("- none")
+    lines.extend(["", "Dataset seeds:"])
+    for seed in seeds:
+        lines.append(
+            f"- {seed.id}: type={seed.metadata.get('sample_type')}, "
+            f"license={seed.metadata.get('dataset_license')}, "
+            f"language={seed.metadata.get('dataset_language')}"
+        )
+    return "\n".join(lines)
+
+
 def format_validation_result_line(result: ValidationResult) -> str:
     """Format one compact validation result line."""
     warnings = f"; warnings: {', '.join(result.warnings)}" if result.warnings else ""
@@ -595,6 +656,11 @@ def build_parser() -> ArgumentParser:
         "--growth-engine-demo",
         action="store_true",
         help="Run deterministic GrowthEngine MVP recommendations.",
+    )
+    parser.add_argument(
+        "--dataset-demo",
+        action="store_true",
+        help="Run deterministic in-memory dataset ingestion into Growth Lab seeds.",
     )
     parser.add_argument(
         "--adaptive",
