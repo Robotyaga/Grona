@@ -247,7 +247,12 @@ class DatasetQualityReviewer:
             reason = f"license is not allowed for review promotion: {sample.source.license}"
             return self.rejected(sample, "rejected_license", reason, content_hash)
         if self.duplicate_is_rejected(content_hash, seen_hashes):
-            return self.rejected(sample, "rejected_duplicate", "duplicate normalized content", content_hash)
+            return self.rejected(
+                sample,
+                "rejected_duplicate",
+                "duplicate normalized content",
+                content_hash,
+            )
         return self.scored_review(sample, text, content_hash)
 
     def scored_review(
@@ -270,11 +275,25 @@ class DatasetQualityReviewer:
             penalties.append(0.25)
         score = quality_score(sample, text, penalties)
         if any(reason in HARD_REJECTION_REASONS for reason in reasons):
-            return self.build_review(sample, False, "rejected_too_short", reasons, score, content_hash)
+            return self.build_review(
+                sample,
+                False,
+                "rejected_too_short",
+                reasons,
+                score,
+                content_hash,
+            )
         if score < self.config.human_review_threshold or suspicious:
             if not reasons:
                 reasons.append("quality score is below human review threshold")
-            return self.build_review(sample, False, "needs_human_review", reasons, score, content_hash)
+            return self.build_review(
+                sample,
+                False,
+                "needs_human_review",
+                reasons,
+                score,
+                content_hash,
+            )
         reasons.append("sample passed deterministic review checks")
         return self.build_review(sample, True, "accepted", reasons, score, content_hash)
 
@@ -309,7 +328,8 @@ class DatasetQualityReviewer:
         penalties: list[float],
     ) -> None:
         """Collect optional domain mismatch reasons."""
-        if self.config.expected_domains and not domain_matches(sample, self.config.expected_domains):
+        expected = self.config.expected_domains
+        if expected and not domain_matches(sample, expected):
             reasons.append("sample domains do not match expected domains")
             penalties.append(0.25)
 
