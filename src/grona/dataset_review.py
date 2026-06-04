@@ -57,6 +57,7 @@ HARD_REJECTION_REASONS = {
     "output or assistant answer is missing",
     "output is too short",
 }
+BLOCK_PREFIXES = ("Instruction:", "Input:", "Output:", "assistant:", "user:")
 
 
 @dataclass(frozen=True)
@@ -544,12 +545,20 @@ def extract_output_text(sample: DatasetSample) -> str:
 
 
 def extract_prefixed_block(content: str, prefix: str) -> str:
-    """Extract the first line value after a stable normalized prefix."""
-    for line in content.splitlines():
-        stripped = line.strip()
-        if stripped.lower().startswith(prefix.lower()):
-            return normalized_text(stripped[len(prefix) :])
-    return ""
+    """Extract text after a normalized prefix even when newlines were collapsed."""
+    text = normalized_text(content)
+    lowered = text.lower()
+    prefix_lower = prefix.lower()
+    if prefix_lower not in lowered:
+        return ""
+    start = lowered.index(prefix_lower) + len(prefix)
+    end = len(text)
+    for marker in BLOCK_PREFIXES:
+        marker_lower = marker.lower()
+        next_index = lowered.find(marker_lower, start)
+        if next_index != -1:
+            end = min(end, next_index)
+    return normalized_text(text[start:end])
 
 
 def requires_answer(sample: DatasetSample) -> bool:
