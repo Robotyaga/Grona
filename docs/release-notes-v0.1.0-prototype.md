@@ -17,6 +17,8 @@ These notes describe the intended first public prototype milestone. They do not 
 - Growth Lab grape cluster foundation with `GrapeNode`, `GrapeCluster`, `GrapeAssignment`, and `GrapeClusterer`.
 - Growth Lab GrowthEngine MVP with `GrowthDecision`, `GrowthPlan`, `GrowthEngineConfig`, and `GrowthEngine`.
 - Deterministic bridge from grape clusters and growth plans into memory records.
+- BenchmarkSuite MVP with `BenchmarkCase`, `BenchmarkRunConfig`, `BenchmarkResult`, `BenchmarkReport`, and `BenchmarkSuite`.
+- Deterministic benchmark scoring for routing, context, growth traces, and overall reports.
 - Expert-candidate recommendations for sufficiently strong deterministic clusters.
 - Conversion helpers from document chunks and mock tool results into raw knowledge seeds.
 - `ContextBuilder`, `Orchestrator`, and `OrchestrationResult`.
@@ -27,38 +29,18 @@ These notes describe the intended first public prototype milestone. They do not 
 - Workspace profiles and lightweight workspace config objects.
 - CLI examples, demo scripts, tests, CI, and public documentation.
 
-## Intentionally Not Included
-
-- Real LLM integration.
-- Real donor model integration.
-- Real dataset downloads.
-- Hugging Face integration or `datasets` dependency.
-- JSONL loader, Parquet reader, or large dataset files.
-- Real tool execution.
-- Shell commands, subprocesses, filesystem tools, network tools, or external APIs.
-- Real sandboxing or process isolation.
-- Filesystem crawling, PDF parsing, OCR, embeddings, vector search, or database-backed memory.
-- Semantic clustering or embedding-backed cluster assignment.
-- Web fact-checking, temporal freshness checks, semantic deduplication, or automatic truth resolution.
-- LLM-based contradiction detection or external evidence lookup.
-- Autonomous self-training, automatic expert growth, training, model weights, or training-data export.
-- Automatic mutation from GrowthEngine decisions into memory, modules, clusters, routing, or tools.
-- Persisted workspace directories, dataset stores, seed stores, cluster stores, growth plan stores, or external config files.
-- Production orchestration, production config management, or deployment guidance.
-
 ## Try the CLI
 
 ```bash
 pip install -e .
 python -m grona "Review firewall logs for suspicious port scans"
 python -m grona "Diagnose engine overheating" --workspace automotive
-python -m grona "Review this Python script for security issues" --workspace cybersecurity
-python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona --growth-demo
 python -m grona --growth-review-demo
 python -m grona --grape-demo
 python -m grona --growth-engine-demo
 python -m grona --dataset-demo
+python -m grona --benchmark-demo
 ```
 
 Run tests:
@@ -69,11 +51,34 @@ pytest
 ruff check .
 ```
 
+## Intentionally Not Included
+
+- Real LLM integration.
+- Real donor model integration.
+- LM Studio adapter.
+- External judge model.
+- Real dataset downloads.
+- Hugging Face integration or `datasets` dependency.
+- JSONL loader, Parquet reader, or large dataset files.
+- Large benchmark datasets or generated benchmark artifacts.
+- Real tool execution.
+- Shell commands, subprocesses, filesystem tools, network tools, or external APIs.
+- Real sandboxing or process isolation.
+- Filesystem crawling, PDF parsing, OCR, embeddings, vector search, or database-backed memory.
+- Semantic clustering or embedding-backed cluster assignment.
+- Web fact-checking, temporal freshness checks, semantic deduplication, or automatic truth resolution.
+- LLM-based contradiction detection or external evidence lookup.
+- Autonomous self-training, automatic expert growth, training, model weights, or training-data export.
+- Automatic mutation from GrowthEngine decisions into memory, modules, clusters, routing, or tools.
+- Persisted workspace directories, dataset stores, seed stores, cluster stores, growth plan stores, benchmark stores, or external config files.
+- Production orchestration, production config management, deployment guidance, or benchmark accuracy claims.
+
 ## Known Limitations
 
 - Routing and memory retrieval are deterministic keyword/domain prototypes.
 - Demo executors and adapters are not real AI.
 - Dataset ingestion is in-memory normalization only.
+- BenchmarkSuite is deterministic rubric scoring only, not answer-quality evaluation.
 - Safety policy is a planning layer, not a sandbox.
 - Mock tools return deterministic mock output only.
 - Workspaces are built in and in memory.
@@ -90,7 +95,6 @@ ruff check .
 - KnowledgeSeed promotion rules into memory candidates.
 - GrapeCluster persistence and manual cluster review status.
 - GrowthEngine plan persistence and human approval status.
-- KnowledgeValidator freshness and workspace relevance checks.
-- BenchmarkSuite for repeatable routing, dataset ingestion, seed validation, seed review, cluster assignment, growth decision, and orchestration evaluation.
+- BenchmarkSuite persisted run traces, human review fields, and future adapter comparisons.
 - Optional DonorModelAdapter and LMStudioAdapter experiments.
 - TrainingDataExporter for validated traces and specialized expert data.
