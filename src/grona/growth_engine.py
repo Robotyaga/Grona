@@ -209,7 +209,10 @@ class GrowthEngine:
                     target_type="seed",
                     target_id=review.seed_id,
                     action="promote_seed",
-                    confidence=max(seed_confidence, confidence_from_review(review, seed_confidence)),
+                    confidence=max(
+                        seed_confidence,
+                        confidence_from_review(review, seed_confidence),
+                    ),
                     reasons=(
                         "review decision promotes seed candidate",
                         "seed confidence meets promotion threshold",
@@ -469,7 +472,10 @@ def create_growth_engine_demo_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:growth-auto-fan",
-            "Engine cooling review supports fan activation, coolant checks, radiator flow, and leaks.",
+            (
+                "Engine cooling review supports fan activation, coolant checks, "
+                "radiator flow, and leaks."
+            ),
             source,
             domains=("automotive",),
             keywords=("engine", "coolant", "radiator", "fan"),
@@ -493,7 +499,10 @@ def create_growth_engine_demo_seeds() -> tuple[KnowledgeSeed, ...]:
         ),
         KnowledgeSeed(
             "seed:growth-security-conflict",
-            "Security review does not support checking authentication, permissions, secrets, or logs.",
+            (
+                "Security review does not support checking authentication, "
+                "permissions, secrets, or logs."
+            ),
             source,
             domains=("cybersecurity",),
             keywords=("security", "authentication", "secrets", "logs"),
