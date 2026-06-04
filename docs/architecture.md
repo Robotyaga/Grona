@@ -57,6 +57,10 @@ flowchart TD
     G --> BS[BenchmarkSuite]
     I --> BS
     Z --> BS
+    W --> TD[TrainingDataExporter]
+    F --> TD
+    BS --> TD
+    TD --> TE[TrainingExample / TrainingDataset]
 ```
 
 ## Current Request Lifecycle
@@ -71,6 +75,7 @@ flowchart TD
 8. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
 9. Safety policy can evaluate planned adapter or mock-tool actions.
 10. `BenchmarkSuite` can run small deterministic cases against baseline or enhanced configurations.
+11. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
 
 ## Main Layers
 
@@ -83,6 +88,7 @@ flowchart TD
 - Growth Lab: validate, deduplicate, review, cluster, and plan growth from raw seeds.
 - Execution: provide deterministic executors, adapters, mock tools, and safety planning.
 - BenchmarkSuite: run deterministic benchmark cases and report routing, context, growth, and overall scores.
+- Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
 
 ## Donor Proposal Layer
 
@@ -92,6 +98,14 @@ flowchart TD
 
 The donor layer is not answer generation, autonomous learning, training, or a trusted model authority.
 
+## Training Export Layer
+
+`TrainingExample` stores explicit candidate training data with instruction, input, output, source, domains, capabilities, provenance, license, validation status, and metadata. `TrainingDataset` keeps examples in deterministic order and can summarize domains, sources, and validation statuses.
+
+`TrainingDataExporter` builds examples from safe internal records such as validated `KnowledgeSeed` values, accepted review decisions, positive feedback records, and synthetic benchmark traces. `TrainingExportConfig` is conservative by default: raw records are skipped, rejected records are skipped, validation or review is required, metadata is included, and synthetic demo examples are allowed.
+
+The exporter can return deterministic Grona-native JSONL strings with metadata preserved or Alpaca-like JSONL strings containing only `instruction`, `input`, and `output`. It does not write files by default, train models, call LLMs, download datasets, or guarantee that exported examples are useful for real training.
+
 ## Benchmark Layer
 
 `BenchmarkCase` defines a task with expected domains, modules, and keywords. `BenchmarkRunConfig` enables deterministic features such as demo memory, dataset seeds, grape clusters, GrowthEngine, and orchestration. `BenchmarkSuite` returns a `BenchmarkReport` containing per-case `BenchmarkResult` scores.
@@ -100,4 +114,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset ingestion, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset ingestion, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.

@@ -8,6 +8,7 @@ import sys
 from .benchmark_cli import main as benchmark_main
 from .cli import main as cli_main
 from .donor_cli import main as donor_main
+from .training_cli import main as training_main
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -17,4 +18,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return benchmark_main(args)
     if "--donor-demo" in args:
         return donor_main(args)
+    if "--training-export-demo" in args:
+        return training_main(args)
     return cli_main(args)
