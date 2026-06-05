@@ -4,6 +4,11 @@
 
 ### Added
 
+- Local LLM baseline adapter foundation for explicit, opt-in experiment comparisons.
+- `LocalLLMAdapter`, `StaticLocalLLMAdapter`, `LMStudioCompletionAdapter`, `LocalLLMBaselineRunner`, and related request/response/result records.
+- `local_llm_baseline` experiment mode that compares a direct local-LLM-style answer path against existing deterministic experiment configs.
+- CLI `--local-llm-static-demo` support through `python -m grona` using only the deterministic static adapter.
+- `examples/local_llm_baseline_demo.py` and deterministic offline tests for the local LLM baseline contract.
 - ExperimentRegressionGate foundation for deterministic experiment threshold reports.
 - `ExperimentGateConfig`, `ExperimentGateDecision`, and `ExperimentRegressionGate`.
 - Warning-only experiment gate decisions by default, with strict mode available for opt-in checks.
