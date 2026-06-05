@@ -27,7 +27,8 @@ src/grona/
 |-- donor_cli.py                Offline donor proposal CLI demo
 |-- executor.py                 ExpertResult, ExecutableExpert, demo executors
 |-- experiment_cli.py           Offline ExperimentRunner comparison CLI demo
-|-- experiments.py              Experiment configs, runner, monolith stub, comparison report
+|-- experiment_gate_cli.py      Offline experiment regression gate CLI demo
+|-- experiments.py              Experiment configs, runner, monolith stub, gate reports
 |-- feedback.py                 Feedback records and route history stores
 |-- growth.py                   KnowledgeSource, KnowledgeSeed, KnowledgeValidator
 |-- growth_clusters.py          GrapeNode, GrapeCluster, assignments, and memory bridge
@@ -110,19 +111,42 @@ print(comparison.to_text())
 
 `ExperimentRunner` reuses `BenchmarkSuite`, `BenchmarkRunRecord`, and regression comparison helpers. `MonolithBaseline` is a deterministic stub only; do not treat it as a real monolithic LLM baseline.
 
+## Evaluate Experiment Gates
+
+Use `ExperimentRegressionGate` when a comparison should become an explainable threshold report:
+
+```python
+from grona import ExperimentGateConfig, ExperimentRegressionGate
+
+config = ExperimentGateConfig(
+    overall_regression_threshold=0.05,
+    routing_regression_threshold=0.05,
+    context_regression_threshold=0.05,
+    growth_regression_threshold=0.05,
+    case_regression_threshold=0.10,
+    warning_only=True,
+)
+decision = ExperimentRegressionGate(config).evaluate(comparison)
+print(decision.to_text())
+```
+
+Keep normal gates warning-only until thresholds are calibrated. Strict gates are useful for demos and future CI experiments, but they should not become default CI blockers without an explicit project decision.
+
 ## Run Benchmarks And Experiments
 
 ```bash
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
 python -m grona --experiment-demo
+python -m grona --experiment-gate-demo
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
 python examples/experiment_comparison_demo.py
+python examples/experiment_gate_demo.py
 pytest tests/test_benchmarks.py tests/test_benchmark_runs.py tests/test_experiments.py
 ```
 
-BenchmarkSuite measures expected domain coverage, module coverage, keyword/context coverage, and GrowthEngine trace relevance. The experiment layer compares those deterministic scores without changing the scoring logic.
+BenchmarkSuite measures expected domain coverage, module coverage, keyword/context coverage, and GrowthEngine trace relevance. The experiment layer compares those deterministic scores without changing the scoring logic. The gate layer classifies threshold regressions without claiming semantic quality.
 
 ## Add Dataset Manifests And JSONL Samples
 
@@ -158,6 +182,7 @@ python -m grona --donor-demo
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
 python -m grona --experiment-demo
+python -m grona --experiment-gate-demo
 python -m grona --training-export-demo
 python examples/jsonl_dataset_ingestion_demo.py
 python examples/dataset_review_demo.py
@@ -165,6 +190,7 @@ python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
 python examples/experiment_comparison_demo.py
+python examples/experiment_gate_demo.py
 python examples/training_export_demo.py
 ```
 
@@ -203,6 +229,7 @@ Do not add these until the workspace, ingestion, review, growth, donor, executio
 - Parquet readers without a scoped design
 - persisted workspace, seed, donor proposal, cluster, growth plan, or training dataset stores
 - benchmark file writing by default
+- hard CI failure from experiment gate scores by default
 - external config files loaded from disk
 - secrets or credential handling
 - OpenAI API calls
@@ -228,4 +255,4 @@ Do not add these until the workspace, ingestion, review, growth, donor, executio
 - file-writing training export CLI by default
 - claims that exported examples are already high-quality training data
 
-The current workspace, ingestion, review, donor, growth, benchmarking, benchmark snapshots, experiments, training export, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
+The current workspace, ingestion, review, donor, growth, benchmarking, benchmark snapshots, experiments, experiment gates, training export, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
