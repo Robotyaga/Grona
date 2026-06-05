@@ -9,8 +9,8 @@ from grona import (
     create_demo_benchmark_cases,
     create_demo_experiment_configs,
 )
-from grona.experiment_cli import format_experiment_demo
 from grona.entrypoint import main as entrypoint_main
+from grona.experiment_cli import format_experiment_demo
 
 
 def test_experiment_config_creation() -> None:
