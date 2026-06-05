@@ -10,6 +10,7 @@ It does not judge model answers. It does not call an LLM, use an external judge,
 
 ```text
 BenchmarkCase -> BenchmarkRunConfig -> BenchmarkSuite -> BenchmarkReport
+BenchmarkReport -> BenchmarkRunRecord -> BenchmarkRunStore -> BenchmarkRegressionReport
 ```
 
 A `BenchmarkCase` defines a task with expected domains, modules, and keywords.
@@ -25,6 +26,10 @@ A `BenchmarkRunConfig` turns deterministic components on or off:
 
 `BenchmarkSuite` runs every case with a config and returns a `BenchmarkReport` with per-case `BenchmarkResult` values.
 
+`BenchmarkRunRecord` wraps one report with run id, creation time, optional git commit, metadata, and a schema version. `InMemoryBenchmarkRunStore` is for tests and demos. `JsonlBenchmarkRunStore` writes explicit JSONL snapshots only when a caller provides a path.
+
+`BenchmarkRegressionReport` compares two saved run records and reports average score deltas plus per-case improved, regressed, and unchanged groups.
+
 ## What It Can Measure Now
 
 BenchmarkSuite can score:
@@ -34,8 +39,30 @@ BenchmarkSuite can score:
 - whether expected keywords appeared in task context, memory, grape clusters, or growth traces
 - whether GrowthEngine produced relevant deterministic signals
 - whether enhanced local configurations improve the available context score compared with baseline routing
+- whether a candidate benchmark snapshot regressed against a saved baseline by a deterministic threshold
 
 Scores are deterministic floats from `0.0` to `1.0`.
+
+## Run Persistence And Regression Snapshots
+
+Benchmark run persistence is intentionally small and inspectable:
+
+- `benchmark_report_to_dict()` and `benchmark_report_from_dict()` serialize benchmark reports without changing scoring logic.
+- `BenchmarkRunRecord` stores one immutable benchmark snapshot wrapper.
+- `InMemoryBenchmarkRunStore` keeps deterministic records for tests and demos.
+- `JsonlBenchmarkRunStore` appends explicit local JSONL records when a caller asks for file persistence.
+- `compare_benchmark_runs()` compares two records and returns a `BenchmarkRegressionReport`.
+
+Regression comparison is score-based only. Missing candidate cases are marked as regressions, new candidate cases are marked as improvements, and small deltas inside the threshold are unchanged.
+
+Run the demo:
+
+```bash
+python -m grona --benchmark-regression-demo
+python examples/benchmark_regression_demo.py
+```
+
+The demo is deterministic and local. It does not write files, call APIs, use LLMs, download data, or train models.
 
 ## What It Cannot Measure Yet
 
@@ -44,7 +71,7 @@ BenchmarkSuite cannot measure real model intelligence or real answer quality yet
 Current limitations:
 
 - no LLM output evaluation
-- no LM Studio adapter
+- no LM Studio adapter use in benchmark demos
 - no OpenAI API
 - no external judge model
 - no human evaluation workflow
@@ -55,12 +82,13 @@ Current limitations:
 - no training or fine-tuning
 - no production orchestration claims
 - no automatic accuracy claims
+- no statistical significance claims for regression snapshots
 
 ## Why Deterministic Scoring First
 
 Grona is still building its architecture contracts. Deterministic scoring keeps early regressions visible before model uncertainty enters the system.
 
-This makes it easier to see whether a code change broke routing, context assembly, dataset seed conversion, grape clustering, or growth decisions.
+This makes it easier to see whether a code change broke routing, context assembly, dataset seed conversion, grape clustering, growth decisions, or benchmark snapshot serialization.
 
 The scoring helpers are intentionally simple:
 
@@ -90,11 +118,13 @@ The scoring helpers are intentionally simple:
 
 ```bash
 python -m grona --benchmark-demo
+python -m grona --benchmark-regression-demo
 python examples/benchmark_demo.py
+python examples/benchmark_regression_demo.py
 pytest
 ```
 
-The CLI prints compact reports with average routing, context, growth, and overall scores. It also shows a simple baseline-versus-enhanced comparison.
+The CLI prints compact reports with average routing, context, growth, and overall scores. The regression demo also shows a baseline-versus-candidate snapshot comparison and stable JSON output.
 
 ## Preparing Grona-vs-Monolith Experiments
 
@@ -108,4 +138,4 @@ The current layer is not a Grona-vs-monolith result. It is the measuring harness
 - future monolithic model adapters
 - future local LLM adapters
 
-Future work can add human review, optional LLM judges, task output rubrics, and adapter comparisons without changing the principle that benchmark traces must stay explicit and reviewable.
+Future work can add human review, optional LLM judges, task output rubrics, persisted baseline selection, CI regression gates, and adapter comparisons without changing the principle that benchmark traces must stay explicit and reviewable.
