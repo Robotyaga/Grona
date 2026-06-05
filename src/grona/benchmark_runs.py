@@ -54,24 +54,25 @@ class BenchmarkRunRecord:
     def to_dict(self) -> dict[str, JsonValue]:
         """Serialize the run record to deterministic JSON-compatible data."""
         return {
-            "version": self.version,
-            "run_id": self.run_id,
-            "created_at": self.created_at,
+            "benchmark_report": benchmark_report_to_dict(self.benchmark_report),
             "config_name": self.config_name,
+            "created_at": self.created_at,
             "git_commit": self.git_commit,
             "metadata": json_compatible(self.metadata),
-            "benchmark_report": benchmark_report_to_dict(self.benchmark_report),
+            "run_id": self.run_id,
+            "version": self.version,
         }
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "BenchmarkRunRecord":
+    def from_dict(cls, data: Mapping[str, object]) -> BenchmarkRunRecord:
         """Build a benchmark run record from JSON-compatible data."""
-        report_data = required_mapping(data, "benchmark_report")
         return cls(
             run_id=required_str(data, "run_id"),
             created_at=required_str(data, "created_at"),
             config_name=required_str(data, "config_name"),
-            benchmark_report=benchmark_report_from_dict(report_data),
+            benchmark_report=benchmark_report_from_dict(
+                required_mapping(data, "benchmark_report")
+            ),
             metadata=dict(optional_mapping(data, "metadata")),
             git_commit=optional_str(data, "git_commit"),
             version=required_str(data, "version"),
@@ -82,7 +83,7 @@ class BenchmarkRunRecord:
         return dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
 
     @classmethod
-    def from_json(cls, text: str) -> "BenchmarkRunRecord":
+    def from_json(cls, text: str) -> BenchmarkRunRecord:
         """Deserialize a benchmark run record from JSON text."""
         data = loads(text)
         if not isinstance(data, Mapping):
@@ -144,7 +145,7 @@ class InMemoryBenchmarkRunStore(BenchmarkRunStore):
 
     def list(self) -> tuple[BenchmarkRunRecord, ...]:
         """Return stored records ordered by creation time and run id."""
-        return tuple(sorted(self._records.values(), key=lambda record: record_order_key(record)))
+        return tuple(sorted(self._records.values(), key=record_order_key))
 
     def clear(self) -> None:
         """Remove all in-memory run records."""
@@ -179,7 +180,7 @@ class JsonlBenchmarkRunStore(BenchmarkRunStore):
                 except ValueError as exc:
                     message = f"invalid benchmark JSONL record at line {line_number}: {exc}"
                     raise ValueError(message) from exc
-        return tuple(sorted(records, key=lambda record: record_order_key(record)))
+        return tuple(sorted(records, key=record_order_key))
 
     def clear(self) -> None:
         """Clear the JSONL file, creating parent directories if needed."""
@@ -210,17 +211,17 @@ class BenchmarkRegressionReport:
         return {
             "baseline_run_id": self.baseline_run_id,
             "candidate_run_id": self.candidate_run_id,
-            "overall_score_delta": self.overall_score_delta,
-            "routing_score_delta": self.routing_score_delta,
             "context_score_delta": self.context_score_delta,
             "growth_score_delta": self.growth_score_delta,
-            "per_case_score_deltas": json_compatible(self.per_case_score_deltas),
             "improved_cases": list(self.improved_cases),
-            "regressed_cases": list(self.regressed_cases),
-            "unchanged_cases": list(self.unchanged_cases),
-            "regression_threshold": self.regression_threshold,
-            "summary": self.summary,
             "metadata": json_compatible(self.metadata),
+            "overall_score_delta": self.overall_score_delta,
+            "per_case_score_deltas": json_compatible(self.per_case_score_deltas),
+            "regressed_cases": list(self.regressed_cases),
+            "regression_threshold": self.regression_threshold,
+            "routing_score_delta": self.routing_score_delta,
+            "summary": self.summary,
+            "unchanged_cases": list(self.unchanged_cases),
         }
 
     def to_json(self) -> str:
@@ -312,22 +313,10 @@ def compare_benchmark_runs(
     return BenchmarkRegressionReport(
         baseline_run_id=baseline.run_id,
         candidate_run_id=candidate.run_id,
-        overall_score_delta=score_delta(
-            baseline_report.average_overall_score,
-            candidate_report.average_overall_score,
-        ),
-        routing_score_delta=score_delta(
-            baseline_report.average_routing_score,
-            candidate_report.average_routing_score,
-        ),
-        context_score_delta=score_delta(
-            baseline_report.average_context_score,
-            candidate_report.average_context_score,
-        ),
-        growth_score_delta=score_delta(
-            baseline_report.average_growth_score,
-            candidate_report.average_growth_score,
-        ),
+        overall_score_delta=report_score_delta(baseline_report, candidate_report, "overall"),
+        routing_score_delta=report_score_delta(baseline_report, candidate_report, "routing"),
+        context_score_delta=report_score_delta(baseline_report, candidate_report, "context"),
+        growth_score_delta=report_score_delta(baseline_report, candidate_report, "growth"),
         per_case_score_deltas=deltas,
         improved_cases=tuple(improved),
         regressed_cases=tuple(regressed),
@@ -347,17 +336,17 @@ def benchmark_result_to_dict(result: BenchmarkResult) -> dict[str, JsonValue]:
     return {
         "case_id": result.case_id,
         "config_name": result.config_name,
-        "selected_modules": list(result.selected_modules),
-        "selected_domains": list(result.selected_domains),
+        "context_score": result.context_score,
+        "growth_score": result.growth_score,
         "matched_expected_domains": list(result.matched_expected_domains),
         "matched_expected_modules": list(result.matched_expected_modules),
         "matched_keywords": list(result.matched_keywords),
-        "routing_score": result.routing_score,
-        "context_score": result.context_score,
-        "growth_score": result.growth_score,
-        "overall_score": result.overall_score,
-        "summary": result.summary,
         "metadata": json_compatible(result.metadata),
+        "overall_score": result.overall_score,
+        "routing_score": result.routing_score,
+        "selected_domains": list(result.selected_domains),
+        "selected_modules": list(result.selected_modules),
+        "summary": result.summary,
     }
 
 
@@ -383,14 +372,14 @@ def benchmark_result_from_dict(data: Mapping[str, object]) -> BenchmarkResult:
 def benchmark_report_to_dict(report: BenchmarkReport) -> dict[str, JsonValue]:
     """Serialize one benchmark report to JSON-compatible data."""
     return {
-        "config_name": report.config_name,
-        "results": [benchmark_result_to_dict(result) for result in report.results],
-        "average_routing_score": report.average_routing_score,
         "average_context_score": report.average_context_score,
         "average_growth_score": report.average_growth_score,
         "average_overall_score": report.average_overall_score,
-        "summary": report.summary,
+        "average_routing_score": report.average_routing_score,
+        "config_name": report.config_name,
         "metadata": json_compatible(report.metadata),
+        "results": [benchmark_result_to_dict(result) for result in report.results],
+        "summary": report.summary,
     }
 
 
@@ -399,7 +388,10 @@ def benchmark_report_from_dict(data: Mapping[str, object]) -> BenchmarkReport:
     raw_results = data.get("results", ())
     if not isinstance(raw_results, Sequence) or isinstance(raw_results, str):
         raise ValueError("benchmark report results must be a sequence")
-    results = tuple(benchmark_result_from_dict(required_mapping(result, "result")) for result in raw_results)
+    results = tuple(
+        benchmark_result_from_dict(required_mapping(result, "result"))
+        for result in raw_results
+    )
     return BenchmarkReport(
         config_name=required_str(data, "config_name"),
         results=results,
@@ -418,10 +410,10 @@ def case_score_delta(
 ) -> dict[str, float]:
     """Return score deltas for one case, including missing-case handling."""
     return {
-        "routing": score_delta(score_or_zero(baseline, "routing"), score_or_zero(candidate, "routing")),
-        "context": score_delta(score_or_zero(baseline, "context"), score_or_zero(candidate, "context")),
-        "growth": score_delta(score_or_zero(baseline, "growth"), score_or_zero(candidate, "growth")),
-        "overall": score_delta(score_or_zero(baseline, "overall"), score_or_zero(candidate, "overall")),
+        "context": result_score_delta(baseline, candidate, "context"),
+        "growth": result_score_delta(baseline, candidate, "growth"),
+        "overall": result_score_delta(baseline, candidate, "overall"),
+        "routing": result_score_delta(baseline, candidate, "routing"),
     }
 
 
@@ -441,6 +433,26 @@ def classify_case_delta(
     if overall_delta <= -regression_threshold:
         return "regressed"
     return "unchanged"
+
+
+def result_score_delta(
+    baseline: BenchmarkResult | None,
+    candidate: BenchmarkResult | None,
+    score_name: str,
+) -> float:
+    """Return candidate-minus-baseline score delta for one result score."""
+    return score_delta(score_or_zero(baseline, score_name), score_or_zero(candidate, score_name))
+
+
+def report_score_delta(
+    baseline: BenchmarkReport,
+    candidate: BenchmarkReport,
+    score_name: str,
+) -> float:
+    """Return candidate-minus-baseline score delta for one report average."""
+    baseline_score = float(getattr(baseline, f"average_{score_name}_score"))
+    candidate_score = float(getattr(candidate, f"average_{score_name}_score"))
+    return score_delta(baseline_score, candidate_score)
 
 
 def score_or_zero(result: BenchmarkResult | None, score_name: str) -> float:
