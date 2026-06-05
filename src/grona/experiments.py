@@ -628,7 +628,11 @@ class ExperimentRunner:
             )
             response = baseline_result.response
             matched_keywords = matched_keywords_in_text(case.expected_keywords, response.text)
-            context = keyword_context_score(case.expected_keywords, response.text) if response.ok else 0.0
+            context = (
+                keyword_context_score(case.expected_keywords, response.text)
+                if response.ok
+                else 0.0
+            )
             routing = 0.15 if "general" in case.expected_domains else 0.0
             growth = 0.0
             results.append(
