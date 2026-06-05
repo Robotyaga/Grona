@@ -4,6 +4,12 @@
 
 ### Added
 
+- ExperimentRunner foundation for deterministic Grona-vs-monolith comparison reports.
+- `ExperimentConfig`, `ExperimentResult`, `ExperimentRunner`, and `ExperimentComparisonReport`.
+- `MonolithBaseline` deterministic stub for future comparison harnesses without model calls.
+- Demo experiment configs for routing-only, memory-context, growth-trace, and monolith-stub modes.
+- CLI `--experiment-demo` support through `python -m grona`.
+- `examples/experiment_comparison_demo.py` and deterministic offline experiment runner tests.
 - Benchmark run persistence foundation for deterministic benchmark snapshots.
 - `BenchmarkRunRecord`, `BenchmarkRunStore`, `InMemoryBenchmarkRunStore`, and `JsonlBenchmarkRunStore`.
 - JSON-compatible serialization helpers for `BenchmarkResult` and `BenchmarkReport`.
