@@ -11,6 +11,7 @@ from .cli import main as cli_main
 from .dataset_review_cli import main as dataset_review_main
 from .donor_cli import main as donor_main
 from .experiment_cli import main as experiment_main
+from .experiment_gate_cli import main as experiment_gate_main
 from .jsonl_dataset_cli import main as jsonl_dataset_main
 from .training_cli import main as training_main
 
@@ -24,6 +25,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return benchmark_regression_main(args)
     if "--experiment-demo" in args:
         return experiment_main(args)
+    if "--experiment-gate-demo" in args or "--experiment-gate-strict-demo" in args:
+        return experiment_gate_main(args)
     if "--donor-demo" in args:
         return donor_main(args)
     if "--training-export-demo" in args:

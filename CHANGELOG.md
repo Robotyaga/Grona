@@ -4,6 +4,12 @@
 
 ### Added
 
+- ExperimentRegressionGate foundation for deterministic experiment threshold reports.
+- `ExperimentGateConfig`, `ExperimentGateDecision`, and `ExperimentRegressionGate`.
+- Warning-only experiment gate decisions by default, with strict mode available for opt-in checks.
+- CLI `--experiment-gate-demo` and `--experiment-gate-strict-demo` support through `python -m grona`.
+- `examples/experiment_gate_demo.py` and deterministic offline experiment gate tests.
+- Experiment gate documentation for threshold reports, future CI use, and explicit limitations.
 - ExperimentRunner foundation for deterministic Grona-vs-monolith comparison reports.
 - `ExperimentConfig`, `ExperimentResult`, `ExperimentRunner`, and `ExperimentComparisonReport`.
 - `MonolithBaseline` deterministic stub for future comparison harnesses without model calls.

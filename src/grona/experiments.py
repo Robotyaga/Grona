@@ -36,6 +36,8 @@ EXPERIMENT_MODES = frozenset(
         "monolith_stub",
     )
 )
+EXPERIMENT_GATE_STATUSES = frozenset(("passed", "warning", "failed"))
+EXPERIMENT_GATE_METRICS = ("overall", "routing", "context", "growth")
 
 
 @dataclass(frozen=True)
@@ -223,6 +225,333 @@ class ExperimentComparisonReport:
         lines.append("")
         lines.append("Limitations: deterministic rubric only; no LLMs or real monolithic baseline.")
         return "\n".join(lines)
+
+
+@dataclass(frozen=True)
+class ExperimentGateConfig:
+    """Threshold config for deterministic experiment regression gate decisions."""
+
+    overall_regression_threshold: float = 0.05
+    routing_regression_threshold: float = 0.05
+    context_regression_threshold: float = 0.05
+    growth_regression_threshold: float = 0.05
+    case_regression_threshold: float = 0.10
+    warning_only: bool = True
+    fail_on_missing_scores: bool = True
+    metadata: Metadata = field(default_factory=dict)
+
+    def __init__(
+        self,
+        overall_regression_threshold: float = 0.05,
+        routing_regression_threshold: float = 0.05,
+        context_regression_threshold: float = 0.05,
+        growth_regression_threshold: float = 0.05,
+        case_regression_threshold: float = 0.10,
+        warning_only: bool = True,
+        fail_on_missing_scores: bool = True,
+        metadata: Mapping[str, object] | None = None,
+    ) -> None:
+        thresholds = {
+            "overall_regression_threshold": overall_regression_threshold,
+            "routing_regression_threshold": routing_regression_threshold,
+            "context_regression_threshold": context_regression_threshold,
+            "growth_regression_threshold": growth_regression_threshold,
+            "case_regression_threshold": case_regression_threshold,
+        }
+        for name, value in thresholds.items():
+            if value < 0:
+                raise ValueError(f"{name} cannot be negative")
+        object.__setattr__(self, "overall_regression_threshold", overall_regression_threshold)
+        object.__setattr__(self, "routing_regression_threshold", routing_regression_threshold)
+        object.__setattr__(self, "context_regression_threshold", context_regression_threshold)
+        object.__setattr__(self, "growth_regression_threshold", growth_regression_threshold)
+        object.__setattr__(self, "case_regression_threshold", case_regression_threshold)
+        object.__setattr__(self, "warning_only", warning_only)
+        object.__setattr__(self, "fail_on_missing_scores", fail_on_missing_scores)
+        object.__setattr__(self, "metadata", dict(metadata or {}))
+
+    def threshold_for_metric(self, metric: str) -> float:
+        """Return the configured regression threshold for one aggregate metric."""
+        thresholds = {
+            "overall": self.overall_regression_threshold,
+            "routing": self.routing_regression_threshold,
+            "context": self.context_regression_threshold,
+            "growth": self.growth_regression_threshold,
+        }
+        if metric not in thresholds:
+            raise ValueError(f"unsupported experiment gate metric: {metric}")
+        return thresholds[metric]
+
+    def to_dict(self) -> dict[str, JsonValue]:
+        """Serialize gate config to deterministic JSON-compatible data."""
+        return {
+            "case_regression_threshold": self.case_regression_threshold,
+            "context_regression_threshold": self.context_regression_threshold,
+            "fail_on_missing_scores": self.fail_on_missing_scores,
+            "growth_regression_threshold": self.growth_regression_threshold,
+            "metadata": json_compatible(self.metadata),
+            "overall_regression_threshold": self.overall_regression_threshold,
+            "routing_regression_threshold": self.routing_regression_threshold,
+            "warning_only": self.warning_only,
+        }
+
+    def to_json(self) -> str:
+        """Serialize gate config as stable JSON."""
+        return dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
+
+
+@dataclass(frozen=True)
+class ExperimentGateDecision:
+    """Explainable deterministic decision returned by ExperimentRegressionGate."""
+
+    passed: bool
+    warning_only: bool
+    status: str
+    reasons: tuple[str, ...]
+    failed_metrics: tuple[str, ...] = ()
+    warning_metrics: tuple[str, ...] = ()
+    regressed_cases: tuple[str, ...] = ()
+    summary: str = ""
+    metadata: Metadata = field(default_factory=dict)
+
+    def __init__(
+        self,
+        passed: bool,
+        warning_only: bool,
+        status: str,
+        reasons: Sequence[str] = (),
+        failed_metrics: Sequence[str] = (),
+        warning_metrics: Sequence[str] = (),
+        regressed_cases: Sequence[str] = (),
+        summary: str = "",
+        metadata: Mapping[str, object] | None = None,
+    ) -> None:
+        if status not in EXPERIMENT_GATE_STATUSES:
+            valid = ", ".join(sorted(EXPERIMENT_GATE_STATUSES))
+            message = (
+                f"unsupported experiment gate status: {status}; "
+                f"expected one of {valid}"
+            )
+            raise ValueError(message)
+        object.__setattr__(self, "passed", passed)
+        object.__setattr__(self, "warning_only", warning_only)
+        object.__setattr__(self, "status", status)
+        object.__setattr__(self, "reasons", tuple(reasons))
+        object.__setattr__(self, "failed_metrics", tuple(failed_metrics))
+        object.__setattr__(self, "warning_metrics", tuple(warning_metrics))
+        object.__setattr__(self, "regressed_cases", tuple(regressed_cases))
+        object.__setattr__(self, "summary", summary)
+        object.__setattr__(self, "metadata", dict(metadata or {}))
+
+    def to_dict(self) -> dict[str, JsonValue]:
+        """Serialize the gate decision to deterministic JSON-compatible data."""
+        return {
+            "failed_metrics": list(self.failed_metrics),
+            "metadata": json_compatible(self.metadata),
+            "passed": self.passed,
+            "reasons": list(self.reasons),
+            "regressed_cases": list(self.regressed_cases),
+            "status": self.status,
+            "summary": self.summary,
+            "warning_metrics": list(self.warning_metrics),
+            "warning_only": self.warning_only,
+        }
+
+    def to_json(self) -> str:
+        """Serialize the gate decision as stable JSON."""
+        return dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
+
+    def to_text(self) -> str:
+        """Format the gate decision for console output."""
+        lines = [
+            "Experiment regression gate decision",
+            f"Status: {self.status}",
+            f"Passed: {self.passed}",
+            f"Warning only: {self.warning_only}",
+            self.summary,
+        ]
+        if self.warning_metrics:
+            lines.append("Warning metrics:")
+            lines.extend(f"- {metric}" for metric in self.warning_metrics)
+        if self.failed_metrics:
+            lines.append("Failed metrics:")
+            lines.extend(f"- {metric}" for metric in self.failed_metrics)
+        if self.regressed_cases:
+            lines.append("Regressed cases:")
+            lines.extend(f"- {case}" for case in self.regressed_cases)
+        if self.reasons:
+            lines.append("Reasons:")
+            lines.extend(f"- {reason}" for reason in self.reasons)
+        lines.append("Limitations: deterministic thresholds only; no LLM judging or quality proof.")
+        return "\n".join(line for line in lines if line)
+
+
+class ExperimentRegressionGate:
+    """Evaluate an experiment comparison report against deterministic thresholds."""
+
+    def __init__(self, config: ExperimentGateConfig | None = None) -> None:
+        self.config = config or ExperimentGateConfig()
+
+    def evaluate(self, comparison: ExperimentComparisonReport) -> ExperimentGateDecision:
+        """Return an explainable gate decision for one experiment comparison report."""
+        metric_regressions = self._metric_regressions(comparison)
+        case_regressions = self._case_regressions(comparison)
+        reasons = tuple(
+            sorted(
+                (
+                    *(regression["reason"] for regression in metric_regressions),
+                    *(regression["reason"] for regression in case_regressions),
+                )
+            )
+        )
+        regressed_cases = tuple(
+            sorted(str(regression["label"]) for regression in case_regressions)
+        )
+        metric_labels = tuple(sorted(str(regression["label"]) for regression in metric_regressions))
+        has_regression = bool(metric_labels or regressed_cases)
+        if not has_regression:
+            return ExperimentGateDecision(
+                passed=True,
+                warning_only=self.config.warning_only,
+                status="passed",
+                reasons=("no experiment regression exceeded configured thresholds",),
+                summary="experiment regression gate passed",
+                metadata=self._decision_metadata(comparison, metric_regressions, case_regressions),
+            )
+        if self.config.warning_only:
+            return ExperimentGateDecision(
+                passed=True,
+                warning_only=True,
+                status="warning",
+                reasons=reasons,
+                warning_metrics=metric_labels,
+                regressed_cases=regressed_cases,
+                summary="experiment regression gate produced warnings only",
+                metadata=self._decision_metadata(comparison, metric_regressions, case_regressions),
+            )
+        return ExperimentGateDecision(
+            passed=False,
+            warning_only=False,
+            status="failed",
+            reasons=reasons,
+            failed_metrics=metric_labels,
+            regressed_cases=regressed_cases,
+            summary="experiment regression gate failed configured thresholds",
+            metadata=self._decision_metadata(comparison, metric_regressions, case_regressions),
+        )
+
+    def _metric_regressions(
+        self,
+        comparison: ExperimentComparisonReport,
+    ) -> tuple[dict[str, JsonValue], ...]:
+        regressions: list[dict[str, JsonValue]] = []
+        for config_name in sorted(comparison.candidate_config_names):
+            deltas = comparison.deltas_vs_baseline.get(config_name)
+            if deltas is None:
+                if self.config.fail_on_missing_scores:
+                    regressions.append(
+                        {
+                            "label": f"{config_name}:missing-deltas",
+                            "reason": f"{config_name} is missing aggregate score deltas",
+                        }
+                    )
+                continue
+            for metric in EXPERIMENT_GATE_METRICS:
+                threshold = self.config.threshold_for_metric(metric)
+                if metric not in deltas:
+                    if self.config.fail_on_missing_scores:
+                        regressions.append(
+                            {
+                                "label": f"{config_name}:{metric}:missing",
+                                "reason": f"{config_name} is missing {metric} delta",
+                            }
+                        )
+                    continue
+                delta = deltas[metric]
+                if delta <= -threshold:
+                    regressions.append(
+                        {
+                            "delta": delta,
+                            "label": f"{config_name}:{metric}",
+                            "reason": (
+                                f"{config_name} {metric} delta {delta:+.3f} "
+                                f"exceeded regression threshold {-threshold:+.3f}"
+                            ),
+                            "threshold": threshold,
+                        }
+                    )
+        return tuple(regressions)
+
+    def _case_regressions(
+        self,
+        comparison: ExperimentComparisonReport,
+    ) -> tuple[dict[str, JsonValue], ...]:
+        regressions: list[dict[str, JsonValue]] = []
+        baseline_name = comparison.baseline_config_name
+        threshold = comparison.metadata.get(
+            "case_regression_threshold",
+            self.config.case_regression_threshold,
+        )
+        threshold = float(threshold)
+        for case_id, case_data in sorted(comparison.per_case_comparison.items()):
+            raw_scores = case_data.get("overall_scores")
+            scores = raw_scores if isinstance(raw_scores, Mapping) else {}
+            baseline_score = scores.get(baseline_name)
+            if baseline_score is None:
+                if self.config.fail_on_missing_scores:
+                    regressions.append(
+                        {
+                            "label": f"{case_id}:{baseline_name}:missing",
+                            "reason": (
+                                f"case {case_id} is missing baseline score "
+                                f"for {baseline_name}"
+                            ),
+                        }
+                    )
+                continue
+            for config_name in sorted(comparison.candidate_config_names):
+                candidate_score = scores.get(config_name)
+                if candidate_score is None:
+                    if self.config.fail_on_missing_scores:
+                        regressions.append(
+                            {
+                                "label": f"{case_id}:{config_name}:missing",
+                                "reason": (
+                                    f"case {case_id} is missing candidate score "
+                                    f"for {config_name}"
+                                ),
+                            }
+                        )
+                    continue
+                delta = float(candidate_score) - float(baseline_score)
+                if delta <= -threshold:
+                    regressions.append(
+                        {
+                            "case_id": case_id,
+                            "delta": delta,
+                            "label": f"{case_id}:{config_name}",
+                            "reason": (
+                                f"case {case_id} candidate {config_name} delta {delta:+.3f} "
+                                f"exceeded case regression threshold {-threshold:+.3f}"
+                            ),
+                            "threshold": threshold,
+                        }
+                    )
+        return tuple(regressions)
+
+    def _decision_metadata(
+        self,
+        comparison: ExperimentComparisonReport,
+        metric_regressions: Sequence[Mapping[str, JsonValue]],
+        case_regressions: Sequence[Mapping[str, JsonValue]],
+    ) -> Metadata:
+        return {
+            "baseline_config_name": comparison.baseline_config_name,
+            "candidate_config_names": list(comparison.candidate_config_names),
+            "case_regression_count": len(case_regressions),
+            "config": self.config.to_dict(),
+            "metric_regression_count": len(metric_regressions),
+        }
 
 
 class ExperimentRunner:

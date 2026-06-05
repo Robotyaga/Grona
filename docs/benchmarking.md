@@ -12,6 +12,7 @@ It does not judge model answers. It does not call an LLM, use an external judge,
 BenchmarkCase -> BenchmarkRunConfig -> BenchmarkSuite -> BenchmarkReport
 BenchmarkReport -> BenchmarkRunRecord -> BenchmarkRunStore -> BenchmarkRegressionReport
 ExperimentConfig -> ExperimentRunner -> ExperimentResult -> ExperimentComparisonReport
+ExperimentComparisonReport -> ExperimentRegressionGate -> ExperimentGateDecision
 ```
 
 A `BenchmarkCase` defines a task with expected domains, modules, and keywords.
@@ -32,6 +33,8 @@ A `BenchmarkRunConfig` turns deterministic components on or off:
 `BenchmarkRegressionReport` compares two saved run records and reports average score deltas plus per-case improved, regressed, and unchanged groups.
 
 `ExperimentRunner` runs multiple deterministic configurations side by side and produces one comparison report.
+
+`ExperimentRegressionGate` turns that comparison into a deterministic threshold decision for warning-only or strict use.
 
 ## ExperimentRunner
 
@@ -72,6 +75,43 @@ python examples/experiment_comparison_demo.py
 
 The demo runs routing-only, memory-context, growth-trace, and monolith-stub configs. It does not call models, network, LM Studio, APIs, downloads, embeddings, or training.
 
+## ExperimentRegressionGate
+
+`ExperimentRegressionGate` evaluates an `ExperimentComparisonReport` with an `ExperimentGateConfig`.
+
+The config includes explicit thresholds for:
+
+- overall score regression
+- routing score regression
+- context score regression
+- growth score regression
+- per-case overall score regression
+- missing score handling
+- warning-only versus strict behavior
+
+`warning_only` defaults to `True`. That means a normal gate decision can report regressions without failing a process. This keeps future CI integration safe until the project has calibrated thresholds and real review expectations.
+
+`ExperimentGateDecision` includes:
+
+- `passed`
+- `warning_only`
+- `status`: `passed`, `warning`, or `failed`
+- `reasons`
+- failed or warning metric labels
+- regressed case labels
+- summary text
+- deterministic metadata
+
+Run the gate demo:
+
+```bash
+python -m grona --experiment-gate-demo
+python -m grona --experiment-gate-strict-demo
+python examples/experiment_gate_demo.py
+```
+
+The strict demo shows how a future hard gate can fail, but the normal demo remains warning-only and does not make CI fail by default.
+
 ## Monolith Stub
 
 `MonolithBaseline` is a deterministic broad baseline stub. It simulates a generic system with weak broad coverage, no explicit module selection trace, no real context routing, and no GrowthEngine trace.
@@ -83,12 +123,13 @@ It is not a real monolithic LLM. It does not prove that Grona is better than a m
 Benchmark and experiment layers can score:
 
 - whether expected module names were selected
-- whether expected high-level domains were selected
+- whether expected high-level domains appeared in the selected route
 - whether expected keywords appeared in task context, memory, grape clusters, or growth traces
 - whether GrowthEngine produced relevant deterministic signals
 - whether enhanced local configurations improve the available context score compared with baseline routing
 - whether a candidate benchmark snapshot regressed against a saved baseline by a deterministic threshold
 - which deterministic experiment config has the best average overall score under the current rubric
+- whether an experiment comparison exceeded configured regression thresholds
 
 Scores are deterministic floats from `0.0` to `1.0`.
 
@@ -113,7 +154,7 @@ python examples/benchmark_regression_demo.py
 
 ## What It Cannot Measure Yet
 
-BenchmarkSuite and ExperimentRunner cannot measure real model intelligence or real answer quality yet.
+BenchmarkSuite, ExperimentRunner, and ExperimentRegressionGate cannot measure real model intelligence or real answer quality yet.
 
 Current limitations:
 
@@ -130,13 +171,14 @@ Current limitations:
 - no training or fine-tuning
 - no production orchestration claims
 - no automatic accuracy claims
-- no statistical significance claims for regression snapshots or experiment comparisons
+- no default hard CI failure from experiment thresholds
+- no statistical significance claims for regression snapshots, experiment comparisons, or gate decisions
 
 ## Why Deterministic Scoring First
 
 Grona is still building its architecture contracts. Deterministic scoring keeps early regressions visible before model uncertainty enters the system.
 
-This makes it easier to see whether a code change broke routing, context assembly, dataset seed conversion, grape clustering, growth decisions, benchmark snapshot serialization, or experiment comparison output.
+This makes it easier to see whether a code change broke routing, context assembly, dataset seed conversion, grape clustering, growth decisions, benchmark snapshot serialization, experiment comparison output, or threshold reporting.
 
 The scoring helpers are intentionally simple:
 
@@ -175,13 +217,15 @@ The scoring helpers are intentionally simple:
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
 python -m grona --experiment-demo
+python -m grona --experiment-gate-demo
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
 python examples/experiment_comparison_demo.py
+python examples/experiment_gate_demo.py
 pytest
 ```
 
-The CLI prints compact reports with average routing, context, growth, and overall scores. The experiment demo prints per-config summaries, deltas against the routing-only baseline, the best config, and a stable JSON preview.
+The CLI prints compact reports with average routing, context, growth, and overall scores. The experiment gate demo prints threshold config, decision status, reasons, and stable JSON output.
 
 ## Preparing Grona-vs-Monolith Experiments
 

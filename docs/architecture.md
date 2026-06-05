@@ -68,6 +68,8 @@ flowchart TD
     BS --> ER[ExperimentRunner]
     BRS --> ER
     ER --> EC[ExperimentComparisonReport]
+    EC --> EG[ExperimentRegressionGate]
+    EG --> ED[ExperimentGateDecision]
     W --> TD[TrainingDataExporter]
     F --> TD
     BS --> TD
@@ -91,7 +93,8 @@ flowchart TD
 13. `BenchmarkRunRecord` can preserve a `BenchmarkReport` snapshot.
 14. `compare_benchmark_runs()` can compare two snapshots and produce a regression report.
 15. `ExperimentRunner` can compare multiple deterministic configs and a monolith stub in one report.
-16. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
+16. `ExperimentRegressionGate` can turn experiment deltas into a warning or strict threshold decision.
+17. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
 
 ## Main Layers
 
@@ -108,6 +111,7 @@ flowchart TD
 - BenchmarkSuite: run deterministic benchmark cases and report routing, context, growth, and overall scores.
 - Benchmark snapshots: persist report records and compare baseline/candidate score deltas.
 - Experiment runner: run multiple deterministic configs and compare them against a baseline config.
+- Experiment regression gate: classify comparison regressions with explicit thresholds.
 - Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
 
 ## Experiment Layer
@@ -116,6 +120,7 @@ The experiment layer is deliberately a harness over existing benchmark contracts
 
 ```text
 ExperimentConfig -> ExperimentRunner -> ExperimentResult -> ExperimentComparisonReport
+ExperimentComparisonReport -> ExperimentRegressionGate -> ExperimentGateDecision
 ```
 
 `ExperimentConfig` names one deterministic mode: `routing_only`, `orchestrated_context`, `memory_context`, `growth_trace`, or `monolith_stub`.
@@ -125,6 +130,8 @@ ExperimentConfig -> ExperimentRunner -> ExperimentResult -> ExperimentComparison
 `MonolithBaseline` is only a deterministic stub. It simulates weak broad coverage without explicit module trace, real context routing, GrowthEngine traces, LM Studio, model calls, external APIs, downloads, or training.
 
 `ExperimentComparisonReport` summarizes per-config scores, deltas, best config, improved/regressed configs, and per-case score comparison. It is not a real Grona-vs-monolith proof.
+
+`ExperimentRegressionGate` evaluates the comparison with explicit overall, routing, context, growth, and per-case thresholds. It is warning-only by default and exists to prepare future CI checks without making benchmark scores a hard blocker before calibration.
 
 ## Benchmark Snapshot Layer
 
@@ -174,4 +181,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, experiment gate reports, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
