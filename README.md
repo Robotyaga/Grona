@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing. Instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules and keeps the route trace visible.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, experiment comparisons, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, experiment comparisons, experiment gate reports, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
 
 ## Current Status
 
@@ -35,6 +35,7 @@ What it does today:
 - stores explicit benchmark run snapshots in memory or caller-provided JSONL files
 - compares benchmark snapshots with deterministic regression reports
 - runs deterministic experiment comparisons across Grona configs and a monolith stub
+- evaluates experiment comparisons with warning-only threshold gate reports by default
 - exports conservative in-memory training example candidates with `TrainingDataExporter`
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors, execution adapters, and mock tools
@@ -79,6 +80,8 @@ python -m grona --donor-demo
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
 python -m grona --experiment-demo
+python -m grona --experiment-gate-demo
+python -m grona --experiment-gate-strict-demo
 python -m grona --training-export-demo
 ```
 
@@ -116,6 +119,7 @@ python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
 python examples/experiment_comparison_demo.py
+python examples/experiment_gate_demo.py
 python examples/training_export_demo.py
 ```
 
@@ -134,6 +138,8 @@ It currently scores:
 `BenchmarkRunRecord`, `InMemoryBenchmarkRunStore`, `JsonlBenchmarkRunStore`, and `BenchmarkRegressionReport` add a small snapshot layer around those reports. They preserve benchmark runs and compare candidate-vs-baseline score deltas without changing benchmark scoring.
 
 `ExperimentRunner` runs multiple deterministic `ExperimentConfig` values side by side and produces an `ExperimentComparisonReport`. Current modes include routing-only, orchestrated context, memory context, growth trace, and `monolith_stub`.
+
+`ExperimentRegressionGate` evaluates an `ExperimentComparisonReport` against explicit overall, routing, context, growth, and per-case regression thresholds. It is warning-only by default so future CI checks can report regressions before any score threshold becomes a hard blocker.
 
 The monolith baseline is only a deterministic stub. It is not a real monolithic LLM, does not call LM Studio, and does not prove Grona is better than any model. It exists to shape the future comparison contract. See [Benchmarking](docs/benchmarking.md).
 
@@ -187,7 +193,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, dataset ingestion, dataset review, clustering, growth, donor proposals, benchmarking, benchmark snapshots, experiments, and training export are deterministic or explicitly configured prototype layers.
+- Routing, memory retrieval, dataset ingestion, dataset review, clustering, growth, donor proposals, benchmarking, benchmark snapshots, experiments, experiment gates, and training export are deterministic or explicitly configured prototype layers.
 - Dataset rows are candidates only; they are not automatically trusted, promoted, or training-safe.
 - Dataset quality review is deterministic only; it is not semantic deduplication, LLM judging, legal review, or a guarantee of real training quality.
 - No dataset downloads, Hugging Face integration, `datasets` dependency, Parquet support, or large dataset streaming yet.
@@ -197,6 +203,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - BenchmarkSuite is a deterministic rubric only; it does not evaluate real LLM answers.
 - Benchmark regression snapshots are score deltas only; they are not statistical proof of quality.
 - ExperimentRunner compares deterministic traces only; it does not prove real Grona-vs-monolith quality.
+- ExperimentRegressionGate applies deterministic thresholds only; it is not semantic evaluation or a default hard CI blocker.
 - The current monolith baseline is a stub, not a real LLM.
 - TrainingDataExporter produces candidate records only; it does not train models or prove example quality.
 - No real LLM integration, trusted donor model workflow, external judge model, or automatic answer generation yet.
