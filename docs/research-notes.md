@@ -6,7 +6,7 @@ For the longer direction, see [Project vision](project-vision.md). For implement
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, experiment comparisons, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, experiment comparisons, experiment gate decisions, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -25,6 +25,7 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which benchmark cases improved or regressed under a config
 - which benchmark run snapshots changed versus a saved baseline
 - which experiment configs improved or regressed versus a baseline config
+- which experiment gate thresholds produced warnings or strict failures
 - which records were eligible or ineligible for future training export
 - which safety policy decisions were made
 - which feedback might alter future routing
@@ -42,6 +43,7 @@ BenchmarkSuite currently asks conservative local questions:
 - Did an enhanced config improve the available context compared with baseline routing?
 - Did a candidate run snapshot regress against a prior baseline snapshot?
 - Did one deterministic experiment config score higher than another under the current rubric?
+- Did an experiment comparison exceed explicit warning or strict regression thresholds?
 
 This is not answer grading. It is a deterministic rubric for trace behavior.
 
@@ -56,6 +58,16 @@ Grona-vs-monolith comparisons should start as a transparent harness before any m
 - best config by deterministic overall score
 - improved and regressed configs
 - per-case score summaries
+
+`ExperimentRegressionGate` adds a threshold report over that comparison:
+
+- aggregate metric regressions
+- per-case regressions
+- missing score handling
+- warning-only or strict status
+- deterministic reasons and JSON output
+
+The gate is warning-only by default because thresholds need calibration before they can safely block CI. A strict gate is useful as an opt-in future check, not a quality proof.
 
 The current `MonolithBaseline` is intentionally only a stub. It provides weak broad coverage without explicit module trace, real context routing, GrowthEngine traces, LM Studio, external APIs, downloads, or training. It is useful for shaping future comparison reports, not for claiming that Grona beats a monolithic LLM.
 
@@ -82,9 +94,9 @@ A regression report can then compare two snapshots with deterministic score delt
 
 ## Knowledge Before Weights
 
-Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, experiment-compared, and exported with provenance before it ever becomes training data or expert behavior.
+Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, experiment-compared, threshold-reported, and exported with provenance before it ever becomes training data or expert behavior.
 
-`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, `ExperimentRunner`, `ExperimentComparisonReport`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, compare experiment configs, and export only conservative training example candidates.
+`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, `ExperimentRunner`, `ExperimentComparisonReport`, `ExperimentRegressionGate`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, compare experiment configs, produce threshold reports, and export only conservative training example candidates.
 
 The dataset manifest and review layers are intentionally conservative. JSONL rows can be parsed and normalized, but a row is still only a candidate. Unknown or restricted licenses block unsafe use by default. Review decisions remain visible.
 
@@ -108,6 +120,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 - Can TrainingDataExporter preserve enough metadata for future specialized expert experiments?
 - Can benchmark snapshots expose routing, context, growth, donor, dataset, and export regressions?
 - Can experiment reports compare Grona configs and future monolith baselines without hiding judge assumptions?
+- Can warning-only experiment gates become useful CI reports before they become hard gates?
 - Can Grona-vs-monolith experiments remain honest when real local LLM adapters are added later?
 
 ## Current Limits
@@ -121,6 +134,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No persisted cluster store yet.
 - No persisted growth plan store yet.
 - No benchmark file writes by default.
+- No default hard CI failure from experiment gate thresholds.
 - No persisted training dataset store yet.
 - No dataset downloads, Hugging Face integration, or `datasets` dependency yet.
 - No Parquet reader or large dataset artifact handling yet.
@@ -148,4 +162,4 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No vector database, SQL database, web server, or external API.
 - No production orchestration.
 
-Before adding model-backed evaluation, donor-backed growth, or training workflows, Grona needs explicit designs for judge reliability, task outputs, human review, benchmark provenance, adapter comparison, score interpretation, failure analysis, donor proposal trust boundaries, license policy, dataset manifest persistence, dataset review calibration, and training export quality review.
+Before adding model-backed evaluation, donor-backed growth, or training workflows, Grona needs explicit designs for judge reliability, task outputs, human review, benchmark provenance, adapter comparison, score interpretation, failure analysis, donor proposal trust boundaries, license policy, dataset manifest persistence, dataset review calibration, experiment gate threshold calibration, and training export quality review.
