@@ -34,103 +34,11 @@ The repository already has the first deterministic foundation:
 - Growth Lab grape node, grape cluster, assignment, and memory bridge primitives
 - Growth Lab deterministic `GrowthEngine` recommendation MVP
 - deterministic `BenchmarkSuite` MVP for routing, context, and growth trace scoring
+- benchmark run snapshot persistence and regression comparison foundation
 - donor model proposal foundation with static offline proposals and optional LM Studio adapter scaffolding
 - conservative `TrainingDataExporter` foundation for in-memory reviewed example candidates
 - public README polish and project documentation
 - examples, tests, and CI
-
-## Dataset Manifest, JSONL, And Quality Review Foundation
-
-Goal: describe small local dataset sources explicitly, normalize supported JSONL records, and filter normalized samples without hiding provenance, license, or review boundaries.
-
-Current foundation:
-
-- `DatasetManifest`
-- `DatasetLicensePolicy`
-- `DatasetPolicyDecision`
-- `JsonlDatasetRecord`
-- `DatasetIngestor`
-- `DatasetIngestionReport`
-- `DatasetSampleReview`
-- `DatasetReviewConfig`
-- `DatasetQualityReviewer`
-- `DatasetReviewReport`
-- JSONL text, stream, and explicit file parser helpers
-- manifest-aware Alpaca-like, ShareGPT-like, and generic text normalization
-- policy decisions for knowledge seed candidates and training export candidates
-- deterministic review checks for empty, short, duplicate, missing-answer, suspicious-marker, license-blocked, unsupported, low-information, and optional domain-mismatch samples
-- bridge from accepted reviewed samples into raw `KnowledgeSeed` candidates
-- CLI `--jsonl-dataset-demo` and `--dataset-review-demo`
-- `examples/jsonl_dataset_ingestion_demo.py` and `examples/dataset_review_demo.py`
-- offline tests
-
-Boundaries:
-
-- no dataset downloads
-- no Hugging Face integration
-- no `datasets` dependency
-- no pandas, pyarrow, fastparquet, or heavy dependencies
-- no Parquet support yet
-- no large dataset streaming
-- no embeddings or semantic deduplication
-- no LLM judging
-- no automatic training
-- no automatic promotion to durable knowledge
-- no guarantee that accepted samples are good enough for real training
-- no trust in donor/model-generated data without review
-
-Possible next work:
-
-- persisted manifest files
-- explicit safe file-writing/export paths
-- larger JSONL streaming design
-- Parquet reader design after storage requirements are clearer
-- dataset manifest validation reports
-- license policy presets and review workflows
-- stronger human review metadata
-- benchmark impact checks for accepted dataset-derived context
-
-## TrainingDataExporter Foundation
-
-Goal: export reviewed and validated traces, feedback, benchmark examples, and knowledge seeds as explicit future training candidates without training anything.
-
-Current foundation:
-
-- `TrainingExample`
-- `TrainingDataset`
-- `TrainingExportConfig`
-- `TrainingDataExporter`
-- conservative default policy that skips raw and rejected records
-- support for validated `KnowledgeSeed` values
-- support for accepted review decisions
-- support for positive feedback records
-- support for synthetic benchmark traces
-- deterministic Grona-native JSONL string export
-- deterministic Alpaca-like JSONL string export
-- CLI `--training-export-demo`
-- `examples/training_export_demo.py`
-- offline tests
-
-Boundaries:
-
-- no model training
-- no LLM calls
-- no LM Studio calls
-- no dataset downloads
-- no Hugging Face integration
-- no Parquet export
-- no JSONL file writing by default
-- no claim that exported examples are high-quality real training data
-- raw donor proposals are not exported by default
-
-Possible next work:
-
-- explicit file-writing export method with user-provided path
-- persisted training export manifest
-- stronger human review metadata
-- benchmark impact checks before accepting exported datasets
-- explicit license policy checks
-- JSONL and Parquet reader designs after storage needs are clearer
 
 ## BenchmarkSuite MVP
 
@@ -152,72 +60,67 @@ Current foundation:
 
 This layer is a rubric and reporting layer only. It does not call real LLMs, use LM Studio, call external APIs, download benchmark datasets, use embeddings, train models, or claim real answer accuracy.
 
-## DonorModelAdapter / LMStudioAdapter Foundation
+## Benchmark Run Persistence And Regression Snapshots
 
-Goal: optionally use model outputs as untrusted proposal sources without making network calls part of the default prototype.
+Goal: keep benchmark runs comparable over time without introducing databases, services, model judges, or hidden state.
 
 Current foundation:
 
-- `DonorModelProposal`
-- `DonorModelAdapter`
-- `StaticDonorModelAdapter`
-- optional `LMStudioAdapter` using only the Python standard library
-- `DonorProposalCollector`
-- `DonorProposalBatch`
-- visible donor proposal error records
-- `knowledge_seed_from_donor_proposal`
-- CLI `--donor-demo`
-- `examples/donor_model_demo.py`
-- offline tests for static donor behavior and LM Studio adapter construction
+- `BenchmarkRunRecord`
+- `BenchmarkRunStore`
+- `InMemoryBenchmarkRunStore`
+- `JsonlBenchmarkRunStore`
+- report/result dict and JSON serialization helpers
+- `BenchmarkRegressionReport`
+- `compare_benchmark_runs()`
+- CLI `--benchmark-regression-demo`
+- `examples/benchmark_regression_demo.py`
+- offline tests
 
 Boundaries:
 
-- static donor demos are deterministic and offline
-- LM Studio is optional and must be explicitly configured by callers
-- CI does not require LM Studio, external APIs, or network access
-- donor output is untrusted until validation, review, benchmarks, and human judgment accept it
-- this is not training, self-improvement, or automatic expert creation
+- no LLM judging
+- no statistical significance claims
+- no CI gate yet
+- no database or web server
+- no file writes by default; JSONL persistence only happens when a caller gives a path
+- no external APIs, downloads, embeddings, training, or datasets
 
 Possible next work:
 
-- persisted donor proposal records
-- explicit runtime config for opt-in model-backed donor adapters
-- benchmark impact checks for donor-derived context
-- review workflow before donor proposals become durable knowledge
-- adapter comparison reports that keep errors and provenance visible
-
-## Dataset Ingestion Next Steps
-
-Goal: prepare future dataset sources without losing provenance, license, or quality boundaries.
-
-Possible next work:
-
-- persisted dataset manifests
-- richer sample filtering and human review traces
-- license policy checks before export or training use
-- workspace relevance scoring for dataset samples
-- deterministic dataset split metadata
-- benchmark impact checks for dataset-derived context
-- explicit Parquet reader design
-
-Any future support for `yahma/alpaca-cleaned`, UA-Alpaca, OpenHermes, LMSYS / ShareGPT, Loghub, C4 slices, or Wikipedia-derived samples should keep downloads optional, provenance explicit, and tests small.
-
-## BenchmarkSuite Next Steps
-
-Goal: prepare Grona-vs-monolith experiments without hiding evaluation assumptions.
-
-Possible next work:
-
-- persisted benchmark run records
+- explicit baseline files under user-provided paths
+- CI-friendly regression thresholds
+- persisted benchmark metadata for branch, commit, and suite version
 - richer deterministic rubrics
-- route regression snapshots
 - human review fields
 - optional adapter output comparison
 - future local LLM judge experiments behind explicit config
 - future monolithic model adapter baselines
 - benchmark impact checks before accepting GrowthEngine recommendations
 
-BenchmarkSuite should keep reports explicit and conservative. It should not become an opaque automatic quality claim.
+## Dataset Manifest, JSONL, And Quality Review Foundation
+
+Goal: describe small local dataset sources explicitly, normalize supported JSONL records, and filter normalized samples without hiding provenance, license, or review boundaries.
+
+Current foundation includes `DatasetManifest`, `DatasetLicensePolicy`, `JsonlDatasetRecord`, `DatasetIngestor`, `DatasetQualityReviewer`, deterministic review reports, manifest-aware Alpaca-like and ShareGPT-like normalization, and CLI demos.
+
+Boundaries: no downloads, Hugging Face dependency, heavy readers, embeddings, semantic deduplication, LLM judging, automatic training, or automatic promotion to durable knowledge.
+
+## TrainingDataExporter Foundation
+
+Goal: export reviewed and validated traces, feedback, benchmark examples, and knowledge seeds as explicit future training candidates without training anything.
+
+Current foundation includes `TrainingExample`, `TrainingDataset`, `TrainingExportConfig`, `TrainingDataExporter`, conservative default export policy, native JSONL strings, Alpaca-like JSONL strings, CLI demo, example, and tests.
+
+Boundaries: no model training, model calls, downloads, Parquet export, file writing by default, or claim that exported examples are high-quality real training data.
+
+## DonorModelAdapter / LMStudioAdapter Foundation
+
+Goal: optionally use model outputs as untrusted proposal sources without making network calls part of the default prototype.
+
+Current foundation includes deterministic static donor proposals, optional `LMStudioAdapter` construction, visible donor errors, and a bridge from `knowledge_seed` proposals into raw untrusted Growth Lab seeds.
+
+Boundaries: static donor demos are deterministic and offline; LM Studio is optional and must be explicitly configured; donor output is untrusted until validation, review, benchmarks, and human judgment accept it.
 
 ## Later Product Surfaces
 
@@ -227,7 +130,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - selected modules and scores
 - dataset manifest, policy, source, sample provenance, and quality review decision
 - donor proposal source, type, validation status, and error status
-- benchmark case and report summaries
+- benchmark case, run snapshot, and regression report summaries
 - training export candidate counts, validation statuses, and provenance
 - knowledge seed validation and review status
 - grape cluster assignment status
