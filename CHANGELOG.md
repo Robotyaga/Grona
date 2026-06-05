@@ -4,6 +4,12 @@
 
 ### Added
 
+- Benchmark run persistence foundation for deterministic benchmark snapshots.
+- `BenchmarkRunRecord`, `BenchmarkRunStore`, `InMemoryBenchmarkRunStore`, and `JsonlBenchmarkRunStore`.
+- JSON-compatible serialization helpers for `BenchmarkResult` and `BenchmarkReport`.
+- `BenchmarkRegressionReport` and `compare_benchmark_runs()` for candidate-vs-baseline score deltas.
+- CLI `--benchmark-regression-demo` support through `python -m grona`.
+- `examples/benchmark_regression_demo.py` and deterministic offline benchmark snapshot tests.
 - Dataset quality review foundation for deterministic filtering before knowledge seed or training export use.
 - `DatasetSampleReview`, `DatasetReviewConfig`, `DatasetQualityReviewer`, and `DatasetReviewReport`.
 - Deterministic review checks for empty content, short samples, duplicates, missing answers, suspicious markers, unsupported shapes, license restrictions, low information density, and optional domain mismatch.
