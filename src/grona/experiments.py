@@ -304,12 +304,18 @@ class ExperimentRunner:
             }
             for report in regression_reports
         }
-        improved = tuple(
-            sorted(name for name, delta in deltas.items() if delta["overall"] >= self.regression_threshold)
+        improved_names = (
+            name
+            for name, delta in deltas.items()
+            if delta["overall"] >= self.regression_threshold
         )
-        regressed = tuple(
-            sorted(name for name, delta in deltas.items() if delta["overall"] <= -self.regression_threshold)
+        regressed_names = (
+            name
+            for name, delta in deltas.items()
+            if delta["overall"] <= -self.regression_threshold
         )
+        improved = tuple(sorted(improved_names))
+        regressed = tuple(sorted(regressed_names))
         best = best_experiment_result(result_tuple)
         summary = (
             f"ran {len(result_tuple)} deterministic experiment configs; "
@@ -447,7 +453,10 @@ def per_case_comparison(results: Sequence[ExperimentResult]) -> dict[str, dict[s
     comparison: dict[str, dict[str, JsonValue]] = {}
     for case_id, scores in sorted(config_scores.items()):
         best_name = sorted(scores.items(), key=lambda item: (-item[1], item[0]))[0][0]
-        comparison[case_id] = {"best_config": best_name, "overall_scores": dict(sorted(scores.items()))}
+        comparison[case_id] = {
+            "best_config": best_name,
+            "overall_scores": dict(sorted(scores.items())),
+        }
     return comparison
 
 
