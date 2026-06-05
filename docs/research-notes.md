@@ -6,7 +6,7 @@ For the longer direction, see [Project vision](project-vision.md). For implement
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, experiment comparisons, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -24,11 +24,40 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which GrowthEngine decisions were recommended and why
 - which benchmark cases improved or regressed under a config
 - which benchmark run snapshots changed versus a saved baseline
+- which experiment configs improved or regressed versus a baseline config
 - which records were eligible or ineligible for future training export
 - which safety policy decisions were made
 - which feedback might alter future routing
 
 The current prototype is deterministic so these questions can be inspected before adding model uncertainty.
+
+## Benchmark Questions
+
+BenchmarkSuite currently asks conservative local questions:
+
+- Did the expected module names appear in the selected route?
+- Did the expected high-level domains appear in the selected route?
+- Did expected keywords appear in task context, memory, grape clusters, or growth traces?
+- Did GrowthEngine produce relevant deterministic signals?
+- Did an enhanced config improve the available context compared with baseline routing?
+- Did a candidate run snapshot regress against a prior baseline snapshot?
+- Did one deterministic experiment config score higher than another under the current rubric?
+
+This is not answer grading. It is a deterministic rubric for trace behavior.
+
+## Experiment Comparison Hypothesis
+
+Grona-vs-monolith comparisons should start as a transparent harness before any model-backed claim exists. `ExperimentRunner` compares deterministic configs side by side and keeps the output explicit:
+
+- config names and modes
+- benchmark run records
+- score summaries
+- deltas against a baseline config
+- best config by deterministic overall score
+- improved and regressed configs
+- per-case score summaries
+
+The current `MonolithBaseline` is intentionally only a stub. It provides weak broad coverage without explicit module trace, real context routing, GrowthEngine traces, LM Studio, external APIs, downloads, or training. It is useful for shaping future comparison reports, not for claiming that Grona beats a monolithic LLM.
 
 ## Dataset Quality Review Hypothesis
 
@@ -45,38 +74,17 @@ Dataset rows should not become knowledge seeds or training examples just because
 
 This gate is intentionally modest. It is not semantic deduplication, legal analysis, factual verification, or an LLM judge. Its value is traceability: every accepted, rejected, or human-review decision carries reasons and score metadata before later validation or export layers see the sample.
 
-## Benchmark Questions
-
-BenchmarkSuite currently asks conservative local questions:
-
-- Did the expected module names appear in the selected route?
-- Did the expected high-level domains appear in the selected route?
-- Did expected keywords appear in task context, memory, grape clusters, or growth traces?
-- Did GrowthEngine produce relevant deterministic signals?
-- Did an enhanced config improve the available context compared with baseline routing?
-- Did a candidate run snapshot regress against a prior baseline snapshot?
-
-This is not answer grading. It is a deterministic rubric for trace behavior.
-
 ## Benchmark Snapshot Hypothesis
 
-Benchmark snapshots should make regressions visible before Grona has real model-backed evaluation. A small run record can preserve:
-
-- run id
-- creation time
-- config name
-- optional git commit
-- benchmark report data
-- metadata
-- schema version
+Benchmark snapshots should make regressions visible before Grona has real model-backed evaluation. A small run record can preserve run id, creation time, config name, optional git commit, benchmark report data, metadata, and schema version.
 
 A regression report can then compare two snapshots with deterministic score deltas and per-case status groups. This is useful for engineering discipline, but it is deliberately not a claim about real-world answer quality, statistical significance, or model intelligence.
 
 ## Knowledge Before Weights
 
-Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, and exported with provenance before it ever becomes training data or expert behavior.
+Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, experiment-compared, and exported with provenance before it ever becomes training data or expert behavior.
 
-`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, and export only conservative training example candidates.
+`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, `ExperimentRunner`, `ExperimentComparisonReport`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, compare experiment configs, and export only conservative training example candidates.
 
 The dataset manifest and review layers are intentionally conservative. JSONL rows can be parsed and normalized, but a row is still only a candidate. Unknown or restricted licenses block unsafe use by default. Review decisions remain visible.
 
@@ -99,10 +107,12 @@ This does not prove factual truth. It makes uncertainty explicit.
 - Can GrowthEngine proposals stay useful while preserving human review?
 - Can TrainingDataExporter preserve enough metadata for future specialized expert experiments?
 - Can benchmark snapshots expose routing, context, growth, donor, dataset, and export regressions?
-- Can Grona-vs-monolith experiments be compared without hiding judge assumptions?
+- Can experiment reports compare Grona configs and future monolith baselines without hiding judge assumptions?
+- Can Grona-vs-monolith experiments remain honest when real local LLM adapters are added later?
 
 ## Current Limits
 
+- No real monolithic LLM baseline yet.
 - No persisted workspace directory yet.
 - No persisted dataset store yet.
 - No persisted dataset manifest files yet.
