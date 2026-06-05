@@ -65,6 +65,9 @@ flowchart TD
     BS --> BR[BenchmarkReport]
     BR --> BRS[BenchmarkRunRecord / Store]
     BRS --> REG[BenchmarkRegressionReport]
+    BS --> ER[ExperimentRunner]
+    BRS --> ER
+    ER --> EC[ExperimentComparisonReport]
     W --> TD[TrainingDataExporter]
     F --> TD
     BS --> TD
@@ -87,7 +90,8 @@ flowchart TD
 12. `BenchmarkSuite` can run small deterministic cases against baseline or enhanced configurations.
 13. `BenchmarkRunRecord` can preserve a `BenchmarkReport` snapshot.
 14. `compare_benchmark_runs()` can compare two snapshots and produce a regression report.
-15. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
+15. `ExperimentRunner` can compare multiple deterministic configs and a monolith stub in one report.
+16. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
 
 ## Main Layers
 
@@ -103,7 +107,24 @@ flowchart TD
 - Execution: provide deterministic executors, adapters, mock tools, and safety planning.
 - BenchmarkSuite: run deterministic benchmark cases and report routing, context, growth, and overall scores.
 - Benchmark snapshots: persist report records and compare baseline/candidate score deltas.
+- Experiment runner: run multiple deterministic configs and compare them against a baseline config.
 - Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
+
+## Experiment Layer
+
+The experiment layer is deliberately a harness over existing benchmark contracts:
+
+```text
+ExperimentConfig -> ExperimentRunner -> ExperimentResult -> ExperimentComparisonReport
+```
+
+`ExperimentConfig` names one deterministic mode: `routing_only`, `orchestrated_context`, `memory_context`, `growth_trace`, or `monolith_stub`.
+
+`ExperimentRunner` reuses `BenchmarkSuite` for Grona configs and wraps every report in a `BenchmarkRunRecord`. It reuses benchmark regression helpers to compute deltas against the baseline config.
+
+`MonolithBaseline` is only a deterministic stub. It simulates weak broad coverage without explicit module trace, real context routing, GrowthEngine traces, LM Studio, model calls, external APIs, downloads, or training.
+
+`ExperimentComparisonReport` summarizes per-config scores, deltas, best config, improved/regressed configs, and per-case score comparison. It is not a real Grona-vs-monolith proof.
 
 ## Benchmark Snapshot Layer
 
@@ -153,4 +174,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
