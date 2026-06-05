@@ -11,6 +11,7 @@ It does not judge model answers. It does not call an LLM, use an external judge,
 ```text
 BenchmarkCase -> BenchmarkRunConfig -> BenchmarkSuite -> BenchmarkReport
 BenchmarkReport -> BenchmarkRunRecord -> BenchmarkRunStore -> BenchmarkRegressionReport
+ExperimentConfig -> ExperimentRunner -> ExperimentResult -> ExperimentComparisonReport
 ```
 
 A `BenchmarkCase` defines a task with expected domains, modules, and keywords.
@@ -30,9 +31,56 @@ A `BenchmarkRunConfig` turns deterministic components on or off:
 
 `BenchmarkRegressionReport` compares two saved run records and reports average score deltas plus per-case improved, regressed, and unchanged groups.
 
+`ExperimentRunner` runs multiple deterministic configurations side by side and produces one comparison report.
+
+## ExperimentRunner
+
+`ExperimentConfig` describes one deterministic experiment config with:
+
+- `name`
+- `description`
+- `mode`
+- `metadata`
+
+Current modes are:
+
+- `routing_only`
+- `orchestrated_context`
+- `memory_context`
+- `growth_trace`
+- `monolith_stub`
+
+`ExperimentRunner` accepts benchmark cases and experiment configs. It reuses `BenchmarkSuite` for Grona configs, wraps each report in a `BenchmarkRunRecord`, and uses regression comparison helpers to compute deltas against the baseline config.
+
+`ExperimentComparisonReport` includes:
+
+- baseline config name
+- candidate config names
+- per-config score summaries
+- score deltas vs baseline
+- best config by overall score
+- improved and regressed configs
+- per-case best config and scores
+- deterministic human-readable summary
+
+Run the demo:
+
+```bash
+python -m grona --experiment-demo
+python examples/experiment_comparison_demo.py
+```
+
+The demo runs routing-only, memory-context, growth-trace, and monolith-stub configs. It does not call models, network, LM Studio, APIs, downloads, embeddings, or training.
+
+## Monolith Stub
+
+`MonolithBaseline` is a deterministic broad baseline stub. It simulates a generic system with weak broad coverage, no explicit module selection trace, no real context routing, and no GrowthEngine trace.
+
+It is not a real monolithic LLM. It does not prove that Grona is better than a monolithic model. It only prepares the shape of future Grona-vs-monolith experiments.
+
 ## What It Can Measure Now
 
-BenchmarkSuite can score:
+Benchmark and experiment layers can score:
 
 - whether expected module names were selected
 - whether expected high-level domains were selected
@@ -40,6 +88,7 @@ BenchmarkSuite can score:
 - whether GrowthEngine produced relevant deterministic signals
 - whether enhanced local configurations improve the available context score compared with baseline routing
 - whether a candidate benchmark snapshot regressed against a saved baseline by a deterministic threshold
+- which deterministic experiment config has the best average overall score under the current rubric
 
 Scores are deterministic floats from `0.0` to `1.0`.
 
@@ -55,23 +104,22 @@ Benchmark run persistence is intentionally small and inspectable:
 
 Regression comparison is score-based only. Missing candidate cases are marked as regressions, new candidate cases are marked as improvements, and small deltas inside the threshold are unchanged.
 
-Run the demo:
+Run the snapshot demo:
 
 ```bash
 python -m grona --benchmark-regression-demo
 python examples/benchmark_regression_demo.py
 ```
 
-The demo is deterministic and local. It does not write files, call APIs, use LLMs, download data, or train models.
-
 ## What It Cannot Measure Yet
 
-BenchmarkSuite cannot measure real model intelligence or real answer quality yet.
+BenchmarkSuite and ExperimentRunner cannot measure real model intelligence or real answer quality yet.
 
 Current limitations:
 
 - no LLM output evaluation
-- no LM Studio adapter use in benchmark demos
+- no real monolithic LLM baseline
+- no LM Studio adapter use in benchmark or experiment demos
 - no OpenAI API
 - no external judge model
 - no human evaluation workflow
@@ -82,13 +130,13 @@ Current limitations:
 - no training or fine-tuning
 - no production orchestration claims
 - no automatic accuracy claims
-- no statistical significance claims for regression snapshots
+- no statistical significance claims for regression snapshots or experiment comparisons
 
 ## Why Deterministic Scoring First
 
 Grona is still building its architecture contracts. Deterministic scoring keeps early regressions visible before model uncertainty enters the system.
 
-This makes it easier to see whether a code change broke routing, context assembly, dataset seed conversion, grape clustering, growth decisions, or benchmark snapshot serialization.
+This makes it easier to see whether a code change broke routing, context assembly, dataset seed conversion, grape clustering, growth decisions, benchmark snapshot serialization, or experiment comparison output.
 
 The scoring helpers are intentionally simple:
 
@@ -114,17 +162,26 @@ The scoring helpers are intentionally simple:
 - `orchestrated-demo-memory`
 - `dataset-growth-demo`
 
+`create_demo_experiment_configs()` includes:
+
+- `routing-only`
+- `memory-context`
+- `growth-trace`
+- `monolith-stub`
+
 ## Running
 
 ```bash
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
+python -m grona --experiment-demo
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
+python examples/experiment_comparison_demo.py
 pytest
 ```
 
-The CLI prints compact reports with average routing, context, growth, and overall scores. The regression demo also shows a baseline-versus-candidate snapshot comparison and stable JSON output.
+The CLI prints compact reports with average routing, context, growth, and overall scores. The experiment demo prints per-config summaries, deltas against the routing-only baseline, the best config, and a stable JSON preview.
 
 ## Preparing Grona-vs-Monolith Experiments
 
@@ -135,7 +192,8 @@ The current layer is not a Grona-vs-monolith result. It is the measuring harness
 - Grona with ingested dataset seeds
 - Grona with grape clusters
 - Grona with GrowthEngine decisions
+- deterministic monolith stub
 - future monolithic model adapters
 - future local LLM adapters
 
-Future work can add human review, optional LLM judges, task output rubrics, persisted baseline selection, CI regression gates, and adapter comparisons without changing the principle that benchmark traces must stay explicit and reviewable.
+Future work can add human review, optional LLM judges, task output rubrics, persisted baseline selection, CI regression gates, local LLM baselines, and adapter comparisons without changing the principle that benchmark traces must stay explicit and reviewable.
