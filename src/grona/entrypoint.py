@@ -6,6 +6,7 @@ from collections.abc import Sequence
 import sys
 
 from .benchmark_cli import main as benchmark_main
+from .benchmark_regression_cli import main as benchmark_regression_main
 from .cli import main as cli_main
 from .dataset_review_cli import main as dataset_review_main
 from .donor_cli import main as donor_main
@@ -18,6 +19,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = tuple(sys.argv[1:] if argv is None else argv)
     if "--benchmark-demo" in args:
         return benchmark_main(args)
+    if "--benchmark-regression-demo" in args:
+        return benchmark_regression_main(args)
     if "--donor-demo" in args:
         return donor_main(args)
     if "--training-export-demo" in args:

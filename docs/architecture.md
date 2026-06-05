@@ -62,6 +62,9 @@ flowchart TD
     G --> BS[BenchmarkSuite]
     I --> BS
     Z --> BS
+    BS --> BR[BenchmarkReport]
+    BR --> BRS[BenchmarkRunRecord / Store]
+    BRS --> REG[BenchmarkRegressionReport]
     W --> TD[TrainingDataExporter]
     F --> TD
     BS --> TD
@@ -82,7 +85,9 @@ flowchart TD
 10. `Orchestrator` can hand off, run deterministic experts, or use deterministic adapters.
 11. Safety policy can evaluate planned adapter or mock-tool actions.
 12. `BenchmarkSuite` can run small deterministic cases against baseline or enhanced configurations.
-13. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
+13. `BenchmarkRunRecord` can preserve a `BenchmarkReport` snapshot.
+14. `compare_benchmark_runs()` can compare two snapshots and produce a regression report.
+15. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
 
 ## Main Layers
 
@@ -97,7 +102,22 @@ flowchart TD
 - Growth Lab: validate, deduplicate, review, cluster, and plan growth from raw seeds.
 - Execution: provide deterministic executors, adapters, mock tools, and safety planning.
 - BenchmarkSuite: run deterministic benchmark cases and report routing, context, growth, and overall scores.
+- Benchmark snapshots: persist report records and compare baseline/candidate score deltas.
 - Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
+
+## Benchmark Snapshot Layer
+
+The benchmark snapshot layer is deliberately separate from scoring:
+
+```text
+BenchmarkReport -> BenchmarkRunRecord -> BenchmarkRunStore -> BenchmarkRegressionReport
+```
+
+`BenchmarkRunRecord` stores run id, creation time, config name, optional git commit, report data, metadata, and schema version.
+
+`InMemoryBenchmarkRunStore` supports deterministic tests and demos. `JsonlBenchmarkRunStore` appends explicit JSONL snapshots only when the caller provides a file path.
+
+`BenchmarkRegressionReport` compares average and per-case score deltas. It classifies cases as improved, regressed, or unchanged using a deterministic threshold. This is not LLM judging, statistical analysis, or real model accuracy evaluation.
 
 ## Dataset Manifest And Review Layer
 
@@ -105,7 +125,7 @@ flowchart TD
 
 `JsonlDatasetRecord` preserves parsed JSONL row data with line numbers. `DatasetIngestor` applies policy, normalizes Alpaca-like, ShareGPT-like, or generic text rows, and returns `DatasetIngestionReport` counts and rejection reasons.
 
-`DatasetQualityReviewer` then applies deterministic quality checks to normalized samples. It can reject empty samples, too-short samples, duplicates, license-blocked samples, unsupported samples, missing answers, and suspicious prompt-marker rows. It can also mark borderline samples as `needs_human_review` instead of accepting them. It returns `DatasetSampleReview` decisions and a `DatasetReviewReport`.
+`DatasetQualityReviewer` then applies deterministic quality checks to normalized samples. It can reject empty samples, too-short samples, duplicates, license-blocked samples, unsupported samples, missing answers, and suspicious prompt-marker rows. It can also mark borderline samples as `needs_human_review` instead of accepting them.
 
 Accepted reviewed samples can become raw `KnowledgeSeed` candidates with review metadata preserved. This does not bypass later `KnowledgeValidator`, `KnowledgeReviewPipeline`, benchmark checks, or human judgment.
 
@@ -123,9 +143,7 @@ The donor layer is not answer generation, autonomous learning, training, or a tr
 
 `TrainingExample` stores explicit candidate training data with instruction, input, output, source, domains, capabilities, provenance, license, validation status, and metadata. `TrainingDataset` keeps examples in deterministic order and can summarize domains, sources, and validation statuses.
 
-`TrainingDataExporter` builds examples from safe internal records such as validated `KnowledgeSeed` values, accepted review decisions, positive feedback records, and synthetic benchmark traces. `TrainingExportConfig` is conservative by default: raw records are skipped, rejected records are skipped, validation or review is required, metadata is included, and synthetic demo examples are allowed.
-
-The exporter can return deterministic Grona-native JSONL strings with metadata preserved or Alpaca-like JSONL strings containing only `instruction`, `input`, and `output`. It does not write files by default, train models, call LLMs, download datasets, or guarantee that exported examples are useful for real training.
+`TrainingDataExporter` builds examples from safe internal records such as validated `KnowledgeSeed` values, accepted review decisions, positive feedback records, and synthetic benchmark traces. It does not write files by default, train models, call LLMs, download datasets, or guarantee that exported examples are useful for real training.
 
 ## Benchmark Layer
 
@@ -135,4 +153,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.

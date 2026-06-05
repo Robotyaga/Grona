@@ -11,6 +11,19 @@ from .adapters import (
     create_default_adapter_registry,
 )
 from .adaptive import AdaptiveRoutingConfig, ModuleFeedbackStats, build_module_feedback_stats
+from .benchmark_runs import (
+    BenchmarkRegressionReport,
+    BenchmarkRunRecord,
+    BenchmarkRunStore,
+    InMemoryBenchmarkRunStore,
+    JsonlBenchmarkRunStore,
+    benchmark_report_from_dict,
+    benchmark_report_to_dict,
+    benchmark_result_from_dict,
+    benchmark_result_to_dict,
+    compare_benchmark_runs,
+    create_benchmark_run_record,
+)
 from .benchmarks import (
     BenchmarkCase,
     BenchmarkReport,
