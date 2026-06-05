@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing. Instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules and keeps the route trace visible.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, experiment comparisons, experiment gate reports, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, experiment comparisons, experiment gate reports, local LLM baseline traces, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
 
 ## Current Status
 
@@ -35,6 +35,7 @@ What it does today:
 - stores explicit benchmark run snapshots in memory or caller-provided JSONL files
 - compares benchmark snapshots with deterministic regression reports
 - runs deterministic experiment comparisons across Grona configs and a monolith stub
+- runs opt-in local LLM baseline comparisons through explicit adapters
 - evaluates experiment comparisons with warning-only threshold gate reports by default
 - exports conservative in-memory training example candidates with `TrainingDataExporter`
 - orchestrates selected modules into structured handoffs
@@ -66,7 +67,7 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Find document indexing notes" --workspace documents
 ```
 
-Run deterministic Growth Lab, dataset, benchmark, experiment, donor, and training export demos:
+Run deterministic Growth Lab, dataset, benchmark, experiment, donor, local LLM baseline, and training export demos:
 
 ```bash
 python -m grona --growth-demo
@@ -82,6 +83,7 @@ python -m grona --benchmark-regression-demo
 python -m grona --experiment-demo
 python -m grona --experiment-gate-demo
 python -m grona --experiment-gate-strict-demo
+python -m grona --local-llm-static-demo
 python -m grona --training-export-demo
 ```
 
@@ -120,6 +122,7 @@ python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
 python examples/experiment_comparison_demo.py
 python examples/experiment_gate_demo.py
+python examples/local_llm_baseline_demo.py
 python examples/training_export_demo.py
 ```
 
@@ -137,11 +140,11 @@ It currently scores:
 
 `BenchmarkRunRecord`, `InMemoryBenchmarkRunStore`, `JsonlBenchmarkRunStore`, and `BenchmarkRegressionReport` add a small snapshot layer around those reports. They preserve benchmark runs and compare candidate-vs-baseline score deltas without changing benchmark scoring.
 
-`ExperimentRunner` runs multiple deterministic `ExperimentConfig` values side by side and produces an `ExperimentComparisonReport`. Current modes include routing-only, orchestrated context, memory context, growth trace, and `monolith_stub`.
+`ExperimentRunner` runs multiple deterministic `ExperimentConfig` values side by side and produces an `ExperimentComparisonReport`. Current modes include routing-only, orchestrated context, memory context, growth trace, `monolith_stub`, and opt-in `local_llm_baseline`.
 
 `ExperimentRegressionGate` evaluates an `ExperimentComparisonReport` against explicit overall, routing, context, growth, and per-case regression thresholds. It is warning-only by default so future CI checks can report regressions before any score threshold becomes a hard blocker.
 
-The monolith baseline is only a deterministic stub. It is not a real monolithic LLM, does not call LM Studio, and does not prove Grona is better than any model. It exists to shape the future comparison contract. See [Benchmarking](docs/benchmarking.md).
+The monolith baseline is only a deterministic stub. It is not a real monolithic LLM, does not call LM Studio, and does not prove Grona is better than any model. The local LLM baseline adapter foundation is also opt-in: static demos are offline, and real LM Studio-compatible calls require explicit caller configuration. See [Benchmarking](docs/benchmarking.md) and [Local LLM baseline](docs/local-llm-baseline.md).
 
 ## Dataset Manifest, JSONL, And Quality Review
 
@@ -158,6 +161,12 @@ Accepted reviewed samples can become raw `KnowledgeSeed` candidates with review 
 A donor model is a proposal source, not Grona's brain and not a trusted authority. The deterministic `StaticDonorModelAdapter` is used for tests and demos. `LMStudioAdapter` is an optional local-model adapter foundation that uses the Python standard library and only runs when explicitly configured by a caller.
 
 Donor proposals can suggest summaries, route hints, context hints, benchmark answers, module suggestions, or raw `knowledge_seed` candidates. Donor `knowledge_seed` proposals can be converted into `KnowledgeSeed` values, but they still require validation, review, benchmarking, and human judgment before durable use.
+
+## Local LLM Baseline Foundation
+
+`LocalLLMAdapter` is a separate comparison interface for direct local-LLM-style answer baselines. Unlike donor proposals, it receives the whole task directly and does not expose Grona's sparse route or source-aware context trace.
+
+`StaticLocalLLMAdapter` keeps tests, CI, examples, and `python -m grona --local-llm-static-demo` deterministic and offline. `LMStudioCompletionAdapter` is an optional LM Studio-compatible foundation and only runs when explicitly constructed by a caller. See [Local LLM baseline](docs/local-llm-baseline.md).
 
 ## TrainingDataExporter Foundation
 
@@ -180,6 +189,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - [Growth Lab](docs/growth-lab.md)
 - [Dataset ingestion](docs/dataset-ingestion.md)
 - [Benchmarking](docs/benchmarking.md)
+- [Local LLM baseline](docs/local-llm-baseline.md)
 - [Development notes](docs/development.md)
 - [Workspace profiles](docs/workspaces.md)
 - [Research notes](docs/research-notes.md)
@@ -193,20 +203,21 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, dataset ingestion, dataset review, clustering, growth, donor proposals, benchmarking, benchmark snapshots, experiments, experiment gates, and training export are deterministic or explicitly configured prototype layers.
+- Routing, memory retrieval, dataset ingestion, dataset review, clustering, growth, donor proposals, local LLM baseline comparisons, benchmarking, benchmark snapshots, experiments, experiment gates, and training export are deterministic or explicitly configured prototype layers.
 - Dataset rows are candidates only; they are not automatically trusted, promoted, or training-safe.
 - Dataset quality review is deterministic only; it is not semantic deduplication, LLM judging, legal review, or a guarantee of real training quality.
 - No dataset downloads, Hugging Face integration, `datasets` dependency, Parquet support, or large dataset streaming yet.
 - Donor model output is untrusted proposal material, not validated truth.
 - Raw donor proposals are not exported as training data by default.
 - LM Studio support is optional and not used by default or by CI.
+- Local LLM baseline support is optional and not a quality or superiority claim.
 - BenchmarkSuite is a deterministic rubric only; it does not evaluate real LLM answers.
 - Benchmark regression snapshots are score deltas only; they are not statistical proof of quality.
 - ExperimentRunner compares deterministic traces only; it does not prove real Grona-vs-monolith quality.
 - ExperimentRegressionGate applies deterministic thresholds only; it is not semantic evaluation or a default hard CI blocker.
 - The current monolith baseline is a stub, not a real LLM.
 - TrainingDataExporter produces candidate records only; it does not train models or prove example quality.
-- No real LLM integration, trusted donor model workflow, external judge model, or automatic answer generation yet.
+- No trusted donor model workflow, external judge model, or automatic answer generation yet.
 - No embeddings, semantic clustering, vector database, SQL database, or web server.
 - No autonomous self-training, model weights, or automatic expert creation yet.
 - No real tool execution, shell execution, subprocesses, filesystem tools, or network tools.

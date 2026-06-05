@@ -167,6 +167,18 @@ from .growth_review import (
     SeedReviewDecision,
     create_demo_review_knowledge_seeds,
 )
+from .local_llm import (
+    LOCAL_LLM_STATIC_MODES,
+    LMStudioCompletionAdapter,
+    LocalLLMAdapter,
+    LocalLLMBaselineResult,
+    LocalLLMBaselineRunner,
+    LocalLLMRequest,
+    LocalLLMResponse,
+    StaticLocalLLMAdapter,
+    parse_chat_completion_text,
+    static_local_llm_text,
+)
 from .memory import (
     InMemoryKeywordMemory,
     JsonlMemoryStore,
