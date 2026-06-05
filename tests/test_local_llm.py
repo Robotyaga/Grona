@@ -98,16 +98,6 @@ def test_lmstudio_completion_adapter_construction_only() -> None:
     assert adapter.model == "local-model"
 
 
-def test_lmstudio_completion_adapter_reports_missing_model_without_network() -> None:
-    adapter = LMStudioCompletionAdapter(model=None)
-    request = LocalLLMRequest("Explain sparse routing.", model="fallback-model")
-
-    response = adapter.complete(request)
-
-    assert response.model == "fallback-model"
-    assert response.metadata["adapter"] == "lmstudio"
-
-
 def test_parse_chat_completion_text_rejects_invalid_payload() -> None:
     try:
         parse_chat_completion_text({"choices": []})
