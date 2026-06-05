@@ -6,7 +6,7 @@ For the longer direction, see [Project vision](project-vision.md). For implement
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -23,6 +23,7 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which reviewed seeds were assigned or skipped by the grape clusterer
 - which GrowthEngine decisions were recommended and why
 - which benchmark cases improved or regressed under a config
+- which benchmark run snapshots changed versus a saved baseline
 - which records were eligible or ineligible for future training export
 - which safety policy decisions were made
 - which feedback might alter future routing
@@ -53,14 +54,29 @@ BenchmarkSuite currently asks conservative local questions:
 - Did expected keywords appear in task context, memory, grape clusters, or growth traces?
 - Did GrowthEngine produce relevant deterministic signals?
 - Did an enhanced config improve the available context compared with baseline routing?
+- Did a candidate run snapshot regress against a prior baseline snapshot?
 
 This is not answer grading. It is a deterministic rubric for trace behavior.
 
+## Benchmark Snapshot Hypothesis
+
+Benchmark snapshots should make regressions visible before Grona has real model-backed evaluation. A small run record can preserve:
+
+- run id
+- creation time
+- config name
+- optional git commit
+- benchmark report data
+- metadata
+- schema version
+
+A regression report can then compare two snapshots with deterministic score deltas and per-case status groups. This is useful for engineering discipline, but it is deliberately not a claim about real-world answer quality, statistical significance, or model intelligence.
+
 ## Knowledge Before Weights
 
-Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, and exported with provenance before it ever becomes training data or expert behavior.
+Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, and exported with provenance before it ever becomes training data or expert behavior.
 
-`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, and export only conservative training example candidates.
+`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, and export only conservative training example candidates.
 
 The dataset manifest and review layers are intentionally conservative. JSONL rows can be parsed and normalized, but a row is still only a candidate. Unknown or restricted licenses block unsafe use by default. Review decisions remain visible.
 
@@ -82,7 +98,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 - Can deterministic grape clusters organize reviewed seeds without hiding provenance?
 - Can GrowthEngine proposals stay useful while preserving human review?
 - Can TrainingDataExporter preserve enough metadata for future specialized expert experiments?
-- Can BenchmarkSuite expose regressions in routing, context, dataset ingestion, dataset review, seed validation, seed review, cluster assignment, growth planning, donor proposal handling, training export, and safety behavior?
+- Can benchmark snapshots expose routing, context, growth, donor, dataset, and export regressions?
 - Can Grona-vs-monolith experiments be compared without hiding judge assumptions?
 
 ## Current Limits
@@ -94,7 +110,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No persisted seed store yet.
 - No persisted cluster store yet.
 - No persisted growth plan store yet.
-- No persisted benchmark store yet.
+- No benchmark file writes by default.
 - No persisted training dataset store yet.
 - No dataset downloads, Hugging Face integration, or `datasets` dependency yet.
 - No Parquet reader or large dataset artifact handling yet.
