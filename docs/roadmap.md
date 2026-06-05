@@ -36,6 +36,7 @@ The repository already has the first deterministic foundation:
 - deterministic `BenchmarkSuite` MVP for routing, context, and growth trace scoring
 - benchmark run snapshot persistence and regression comparison foundation
 - `ExperimentRunner` foundation for deterministic Grona-vs-monolith comparison reports
+- `ExperimentRegressionGate` foundation for warning-only threshold reports
 - donor model proposal foundation with static offline proposals and optional LM Studio adapter scaffolding
 - conservative `TrainingDataExporter` foundation for in-memory reviewed example candidates
 - public README polish and project documentation
@@ -59,14 +60,13 @@ Boundaries:
 
 - no LLM judging
 - no statistical significance claims
-- no CI gate yet
 - no database or web server
 - no file writes by default; JSONL persistence only happens when a caller gives a path
 - no external APIs, downloads, embeddings, training, or datasets
 
-## ExperimentRunner Foundation
+## ExperimentRunner And Regression Gate Foundation
 
-Goal: compare multiple deterministic configurations in one report and prepare future Grona-vs-monolith experiments.
+Goal: compare multiple deterministic configurations in one report and prepare future Grona-vs-monolith experiments plus CI-friendly threshold reports.
 
 Current foundation:
 
@@ -74,10 +74,15 @@ Current foundation:
 - `ExperimentResult`
 - `ExperimentRunner`
 - `ExperimentComparisonReport`
+- `ExperimentGateConfig`
+- `ExperimentGateDecision`
+- `ExperimentRegressionGate`
 - `MonolithBaseline` deterministic stub
 - demo experiment configs for routing-only, memory-context, growth-trace, and monolith-stub
 - CLI `--experiment-demo`
+- CLI `--experiment-gate-demo`
 - `examples/experiment_comparison_demo.py`
+- `examples/experiment_gate_demo.py`
 - offline tests
 
 Boundaries:
@@ -89,11 +94,12 @@ Boundaries:
 - no datasets, downloads, embeddings, training, database, or web server
 - no statistical significance claims
 - no claim that Grona is better than a monolithic AI system
+- no default CI failure from experiment gate scores
 
 Possible next work:
 
 - explicit baseline selection files under user-provided paths
-- CI-friendly experiment regression threshold reports
+- CI-friendly gate command that remains opt-in
 - local LLM baseline adapter behind explicit config
 - human review fields for task output quality
 - task output rubrics after answer-producing adapters exist
@@ -131,7 +137,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - selected modules and scores
 - dataset manifest, policy, source, sample provenance, and quality review decision
 - donor proposal source, type, validation status, and error status
-- benchmark case, run snapshot, regression report, and experiment comparison summaries
+- benchmark case, run snapshot, regression report, experiment comparison, and gate decision summaries
 - training export candidate counts, validation statuses, and provenance
 - knowledge seed validation and review status
 - grape cluster assignment status
