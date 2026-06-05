@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing. Instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules and keeps the route trace visible.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
 
 ## Current Status
 
@@ -32,6 +32,8 @@ What it does today:
 - groups promote-candidate seeds into deterministic `GrapeCluster` and `GrapeNode` structures
 - produces deterministic `GrowthDecision` and `GrowthPlan` recommendations
 - runs deterministic benchmark cases with `BenchmarkSuite`
+- stores explicit benchmark run snapshots in memory or caller-provided JSONL files
+- compares benchmark snapshots with deterministic regression reports
 - exports conservative in-memory training example candidates with `TrainingDataExporter`
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors, execution adapters, and mock tools
@@ -74,6 +76,7 @@ python -m grona --jsonl-dataset-demo
 python -m grona --dataset-review-demo
 python -m grona --donor-demo
 python -m grona --benchmark-demo
+python -m grona --benchmark-regression-demo
 python -m grona --training-export-demo
 ```
 
@@ -109,6 +112,7 @@ python examples/jsonl_dataset_ingestion_demo.py
 python examples/dataset_review_demo.py
 python examples/donor_model_demo.py
 python examples/benchmark_demo.py
+python examples/benchmark_regression_demo.py
 python examples/training_export_demo.py
 ```
 
@@ -155,7 +159,9 @@ It currently scores:
 - simple GrowthEngine relevance signals
 - average routing, context, growth, and overall scores
 
-This is not a model judge and does not claim real answer accuracy. See [Benchmarking](docs/benchmarking.md).
+`BenchmarkRunRecord`, `InMemoryBenchmarkRunStore`, `JsonlBenchmarkRunStore`, and `BenchmarkRegressionReport` add a small snapshot layer around those reports. They preserve benchmark runs and compare candidate-vs-baseline score deltas without changing benchmark scoring.
+
+This is not a model judge, does not claim real answer accuracy, and does not write files unless a caller explicitly uses the JSONL store with a path. See [Benchmarking](docs/benchmarking.md).
 
 ## Documentation
 
@@ -176,7 +182,7 @@ This is not a model judge and does not claim real answer accuracy. See [Benchmar
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, dataset ingestion, dataset review, clustering, growth, donor proposals, benchmarking, and training export are deterministic or explicitly configured prototype layers.
+- Routing, memory retrieval, dataset ingestion, dataset review, clustering, growth, donor proposals, benchmarking, benchmark snapshots, and training export are deterministic or explicitly configured prototype layers.
 - Dataset rows are candidates only; they are not automatically trusted, promoted, or training-safe.
 - Dataset quality review is deterministic only; it is not semantic deduplication, LLM judging, legal review, or a guarantee of real training quality.
 - No dataset downloads, Hugging Face integration, `datasets` dependency, Parquet support, or large dataset streaming yet.
@@ -184,6 +190,7 @@ This is not a model judge and does not claim real answer accuracy. See [Benchmar
 - Raw donor proposals are not exported as training data by default.
 - LM Studio support is optional and not used by default or by CI.
 - BenchmarkSuite is a deterministic rubric only; it does not evaluate real LLM answers.
+- Benchmark regression snapshots are score deltas only; they are not statistical proof of quality.
 - TrainingDataExporter produces candidate records only; it does not train models or prove example quality.
 - No real LLM integration, trusted donor model workflow, external judge model, or automatic answer generation yet.
 - No embeddings, semantic clustering, vector database, SQL database, or web server.
