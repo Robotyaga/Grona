@@ -328,7 +328,11 @@ class ExperimentGateDecision:
     ) -> None:
         if status not in EXPERIMENT_GATE_STATUSES:
             valid = ", ".join(sorted(EXPERIMENT_GATE_STATUSES))
-            raise ValueError(f"unsupported experiment gate status: {status}; expected one of {valid}")
+            message = (
+                f"unsupported experiment gate status: {status}; "
+                f"expected one of {valid}"
+            )
+            raise ValueError(message)
         object.__setattr__(self, "passed", passed)
         object.__setattr__(self, "warning_only", warning_only)
         object.__setattr__(self, "status", status)
@@ -498,7 +502,10 @@ class ExperimentRegressionGate:
                     regressions.append(
                         {
                             "label": f"{case_id}:{baseline_name}:missing",
-                            "reason": f"case {case_id} is missing baseline score for {baseline_name}",
+                            "reason": (
+                                f"case {case_id} is missing baseline score "
+                                f"for {baseline_name}"
+                            ),
                         }
                     )
                 continue
@@ -509,7 +516,10 @@ class ExperimentRegressionGate:
                         regressions.append(
                             {
                                 "label": f"{case_id}:{config_name}:missing",
-                                "reason": f"case {case_id} is missing candidate score for {config_name}",
+                                "reason": (
+                                    f"case {case_id} is missing candidate score "
+                                    f"for {config_name}"
+                                ),
                             }
                         )
                     continue
