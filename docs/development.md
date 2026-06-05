@@ -26,6 +26,8 @@ src/grona/
 |-- donor.py                    Donor proposals, static donor, LM Studio adapter foundation
 |-- donor_cli.py                Offline donor proposal CLI demo
 |-- executor.py                 ExpertResult, ExecutableExpert, demo executors
+|-- experiment_cli.py           Offline ExperimentRunner comparison CLI demo
+|-- experiments.py              Experiment configs, runner, monolith stub, comparison report
 |-- feedback.py                 Feedback records and route history stores
 |-- growth.py                   KnowledgeSource, KnowledgeSeed, KnowledgeValidator
 |-- growth_clusters.py          GrapeNode, GrapeCluster, assignments, and memory bridge
@@ -46,42 +48,11 @@ src/grona/
 
 ## Add Benchmark Cases
 
-Use `BenchmarkCase` when a deterministic task should be tracked over time:
-
-```python
-from grona import BenchmarkCase
-
-case = BenchmarkCase(
-    "auto-overheating",
-    "Diagnose engine overheating in traffic.",
-    expected_domains=("automotive",),
-    expected_modules=("automotive-diagnostics",),
-    expected_keywords=("engine", "overheating", "coolant"),
-    workspace="automotive",
-)
-```
-
-Keep cases tiny, explicit, and stable. Do not add large benchmark datasets yet.
+Use `BenchmarkCase` when a deterministic task should be tracked over time. Keep cases tiny, explicit, and stable. Do not add large benchmark datasets yet.
 
 ## Add Benchmark Configs
 
-Use `BenchmarkRunConfig` to compare deterministic feature sets:
-
-```python
-from grona import BenchmarkRunConfig
-
-config = BenchmarkRunConfig(
-    "dataset-growth-demo",
-    use_memory=True,
-    use_demo_memory=True,
-    use_dataset_seeds=True,
-    use_grape_clusters=True,
-    use_growth_engine=True,
-    use_orchestrator=True,
-)
-```
-
-Configs should describe local deterministic behavior only. They should not call model APIs, external services, downloads, embeddings, or training code.
+Use `BenchmarkRunConfig` to compare deterministic feature sets. Configs should describe local deterministic behavior only. They should not call model APIs, external services, downloads, embeddings, or training code.
 
 ## Persist Benchmark Runs
 
@@ -103,28 +74,55 @@ Use `InMemoryBenchmarkRunStore` for tests and demos. Use `JsonlBenchmarkRunStore
 
 ## Compare Benchmark Runs
 
-Use `compare_benchmark_runs()` to compare a candidate snapshot against a baseline:
+Use `compare_benchmark_runs()` to compare a candidate snapshot against a baseline. Regression reports are deterministic score deltas only. They are not LLM judging, statistical proof, or real model accuracy claims.
+
+## Add Experiment Configs
+
+Use `ExperimentConfig` when multiple deterministic benchmark configurations should be compared in one report:
 
 ```python
-from grona import compare_benchmark_runs
+from grona import ExperimentConfig
 
-regression = compare_benchmark_runs(baseline, candidate, regression_threshold=0.05)
-print(regression.to_text())
+config = ExperimentConfig(
+    "memory-context",
+    "Grona routing with deterministic demo memory and orchestration.",
+    "memory_context",
+)
 ```
 
-Regression reports are deterministic score deltas only. They are not LLM judging, statistical proof, or real model accuracy claims.
+Supported modes are `routing_only`, `orchestrated_context`, `memory_context`, `growth_trace`, and `monolith_stub`.
 
-## Run Benchmarks
+## Run Experiments
+
+Use `ExperimentRunner` to run configs side by side:
+
+```python
+from grona import ExperimentRunner, create_demo_benchmark_cases, create_demo_experiment_configs
+
+runner = ExperimentRunner(
+    create_demo_benchmark_cases(),
+    create_demo_experiment_configs(),
+    baseline_config_name="routing-only",
+)
+results, comparison = runner.run_and_compare()
+print(comparison.to_text())
+```
+
+`ExperimentRunner` reuses `BenchmarkSuite`, `BenchmarkRunRecord`, and regression comparison helpers. `MonolithBaseline` is a deterministic stub only; do not treat it as a real monolithic LLM baseline.
+
+## Run Benchmarks And Experiments
 
 ```bash
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
+python -m grona --experiment-demo
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
-pytest tests/test_benchmarks.py tests/test_benchmark_runs.py
+python examples/experiment_comparison_demo.py
+pytest tests/test_benchmarks.py tests/test_benchmark_runs.py tests/test_experiments.py
 ```
 
-BenchmarkSuite measures expected domain coverage, module coverage, keyword/context coverage, and GrowthEngine trace relevance. The snapshot layer preserves and compares those scores without changing the scoring logic.
+BenchmarkSuite measures expected domain coverage, module coverage, keyword/context coverage, and GrowthEngine trace relevance. The experiment layer compares those deterministic scores without changing the scoring logic.
 
 ## Add Dataset Manifests And JSONL Samples
 
@@ -159,12 +157,14 @@ python -m grona --dataset-review-demo
 python -m grona --donor-demo
 python -m grona --benchmark-demo
 python -m grona --benchmark-regression-demo
+python -m grona --experiment-demo
 python -m grona --training-export-demo
 python examples/jsonl_dataset_ingestion_demo.py
 python examples/dataset_review_demo.py
 python examples/donor_model_demo.py
 python examples/benchmark_demo.py
 python examples/benchmark_regression_demo.py
+python examples/experiment_comparison_demo.py
 python examples/training_export_demo.py
 ```
 
@@ -189,13 +189,14 @@ Before opening a PR, check that the change:
 
 ## What Not to Add Yet
 
-Do not add these until the workspace, ingestion, review, growth, donor, execution, benchmarking, training export, and safety interfaces have stronger tests and real requirements:
+Do not add these until the workspace, ingestion, review, growth, donor, execution, benchmarking, experiments, training export, and safety interfaces have stronger tests and real requirements:
 
 - dataset downloads
 - Hugging Face `datasets` dependency
 - real benchmark dataset downloads
 - external judge models
-- LLM-based dataset or benchmark judging
+- real monolithic LLM comparison claims
+- LLM-based dataset, benchmark, or experiment judging
 - semantic dataset deduplication
 - real Alpaca, ShareGPT, OpenHermes, C4, Wikipedia, LMSYS, or Loghub downloads
 - large dataset files or generated benchmark artifacts
@@ -227,4 +228,4 @@ Do not add these until the workspace, ingestion, review, growth, donor, executio
 - file-writing training export CLI by default
 - claims that exported examples are already high-quality training data
 
-The current workspace, ingestion, review, donor, growth, benchmarking, benchmark snapshots, training export, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
+The current workspace, ingestion, review, donor, growth, benchmarking, benchmark snapshots, experiments, training export, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
