@@ -105,6 +105,16 @@ from .executor import (
     MediaWorkflowExpertExecutor,
     create_default_executor_registry,
 )
+from .experiments import (
+    EXPERIMENT_MODES,
+    ExperimentComparisonReport,
+    ExperimentConfig,
+    ExperimentResult,
+    ExperimentRunner,
+    MonolithBaseline,
+    best_experiment_result,
+    create_demo_experiment_configs,
+)
 from .feedback import (
     FeedbackRecord,
     FeedbackStore,
