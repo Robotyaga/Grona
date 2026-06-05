@@ -23,6 +23,7 @@ from .benchmarks import (
     matched_keywords_in_text,
     overall_benchmark_score,
 )
+from .local_llm import LocalLLMAdapter, LocalLLMBaselineRunner
 
 Metadata = dict[str, object]
 JsonValue = object
@@ -34,6 +35,7 @@ EXPERIMENT_MODES = frozenset(
         "memory_context",
         "growth_trace",
         "monolith_stub",
+        "local_llm_baseline",
     )
 )
 EXPERIMENT_GATE_STATUSES = frozenset(("passed", "warning", "failed"))
@@ -97,7 +99,7 @@ class ExperimentConfig:
                 use_orchestrator=True,
                 metadata=self.benchmark_metadata(),
             )
-        raise ValueError("monolith_stub does not map to BenchmarkSuite routing config")
+        raise ValueError(f"{self.mode} does not map to BenchmarkSuite routing config")
 
     def benchmark_metadata(self) -> Metadata:
         """Return metadata passed into benchmark configs."""
@@ -563,6 +565,7 @@ class ExperimentRunner:
         configs: Sequence[ExperimentConfig],
         baseline_config_name: str | None = None,
         regression_threshold: float = 0.05,
+        local_llm_adapter: LocalLLMAdapter | None = None,
     ) -> None:
         self.cases = tuple(cases)
         self.configs = tuple(configs)
@@ -572,6 +575,7 @@ class ExperimentRunner:
             raise ValueError("experiment runner requires at least one experiment config")
         self.baseline_config_name = baseline_config_name or self.configs[0].name
         self.regression_threshold = regression_threshold
+        self.local_llm_adapter = local_llm_adapter
         if regression_threshold < 0:
             raise ValueError("regression_threshold cannot be negative")
         if self.baseline_config_name not in {config.name for config in self.configs}:
@@ -603,10 +607,66 @@ class ExperimentRunner:
         return tuple(results)
 
     def run_config(self, suite: BenchmarkSuite, config: ExperimentConfig) -> BenchmarkReport:
-        """Run one experiment config through BenchmarkSuite or the monolith stub."""
+        """Run one experiment config through BenchmarkSuite or explicit baseline adapter."""
         if config.mode == "monolith_stub":
             return MonolithBaseline(config.name).run(self.cases)
+        if config.mode == "local_llm_baseline":
+            return self.run_local_llm_baseline_config(config)
         return suite.run(config.to_benchmark_run_config())
+
+    def run_local_llm_baseline_config(self, config: ExperimentConfig) -> BenchmarkReport:
+        """Run explicit local LLM baseline mode when an adapter is provided."""
+        if self.local_llm_adapter is None:
+            raise ValueError("local_llm_baseline experiment mode requires local_llm_adapter")
+        runner = LocalLLMBaselineRunner(self.local_llm_adapter)
+        results: list[BenchmarkResult] = []
+        for case in self.cases:
+            baseline_result = runner.run(
+                case.task,
+                model=str(config.metadata.get("model", "local-baseline")),
+                metadata={"case_id": case.id, "experiment_config": config.name},
+            )
+            response = baseline_result.response
+            matched_keywords = matched_keywords_in_text(case.expected_keywords, response.text)
+            context = keyword_context_score(case.expected_keywords, response.text) if response.ok else 0.0
+            routing = 0.15 if "general" in case.expected_domains else 0.0
+            growth = 0.0
+            results.append(
+                BenchmarkResult(
+                    case_id=case.id,
+                    config_name=config.name,
+                    selected_modules=("local-llm-baseline",),
+                    selected_domains=("general",),
+                    matched_expected_domains=("general",)
+                    if "general" in case.expected_domains
+                    else (),
+                    matched_expected_modules=(),
+                    matched_keywords=matched_keywords,
+                    routing_score=routing,
+                    context_score=context,
+                    growth_score=growth,
+                    overall_score=overall_benchmark_score(routing, context, growth),
+                    summary="explicit local LLM baseline adapter without sparse routing trace",
+                    metadata={
+                        "adapter_name": baseline_result.adapter_name,
+                        "error": response.error,
+                        "experiment_mode": config.mode,
+                        "local_llm_baseline": True,
+                        "response_ok": response.ok,
+                    },
+                )
+            )
+        return BenchmarkReport(
+            config.name,
+            tuple(results),
+            summary=f"{config.name} ran through explicit local LLM baseline adapter.",
+            metadata={
+                "adapter_name": self.local_llm_adapter.name,
+                "case_count": len(results),
+                "experiment_mode": config.mode,
+                "limitations": "not semantic answer evaluation",
+            },
+        )
 
     def compare(self, results: Sequence[ExperimentResult]) -> ExperimentComparisonReport:
         """Compare experiment results against the configured baseline."""
