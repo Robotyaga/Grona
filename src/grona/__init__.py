@@ -244,6 +244,14 @@ from .training import (
     TrainingExample,
     TrainingExportConfig,
 )
+from .training_artifacts import (
+    TrainingArtifact,
+    TrainingArtifactBuilder,
+    TrainingArtifactBundle,
+    TrainingArtifactWriteConfig,
+    TrainingArtifactWriteReport,
+    TrainingArtifactWriter,
+)
 from .training_package import (
     DatasetCardDraft,
     TrainingDatasetPackage,

@@ -56,6 +56,12 @@ It supports:
 not_trained_config_only
 ```
 
+## Artifact Bundle Bridge
+
+A validated `TrainingPlan` can now be paired with a `TrainingDatasetPackage` and passed to `TrainingArtifactBuilder`. That produces an in-memory [training artifact bundle](training-artifacts.md) with JSONL splits, config JSON, manifests, dataset/model card drafts, safety notes, and a bundle README.
+
+The artifact bridge is still config-only. It does not train, load, download, upload, call APIs, or write files unless `TrainingArtifactWriter` is explicitly called with `dry_run=False`.
+
 ## Demo
 
 ```bash
