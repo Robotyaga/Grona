@@ -54,6 +54,22 @@ The default policy:
 
 A positive policy decision only means the record is eligible as a candidate for downstream use. It does not train a model, promote knowledge, prove factual correctness, or write benchmark files.
 
+## Reviewed Trace Training Bridge
+
+`ReviewedTraceTrainingExampleBuilder` is the controlled bridge from reviewed traces into `TrainingExample` candidates.
+
+It requires both an `InferenceTrace` and a matching `InferenceReview`. It evaluates `InferenceReviewPolicy` before creating anything. Rejected, unsafe, unreviewed, missing, or still-needing-correction traces are skipped with reasons preserved in `ReviewedTraceBuildResult`.
+
+Output selection is conservative:
+
+- accepted reviews use the original trace response
+- corrected reviews use `corrected_response`
+- the original weak output from a corrected trace is not used
+
+The created `TrainingExample` preserves trace id, review id, adapter name, model name, prompt template name, selected modules, context sources, review status, rating, flags, reviewer, and review notes.
+
+See [Reviewed trace training builder](reviewed-trace-training.md).
+
 ## Stores
 
 `InMemoryInferenceReviewStore` is for tests, demos, and explicit callers.
@@ -79,21 +95,28 @@ Eligibility counts are produced by applying the deterministic policy, not by tru
 ```bash
 python -m grona --inference-review-demo
 python examples/inference_review_demo.py
+python -m grona --reviewed-trace-training-demo
+python examples/reviewed_trace_training_demo.py
 ```
 
-The demo creates static `InferenceTrace` records with the existing prompt trace runner, attaches accepted/corrected/unsafe reviews, evaluates policy decisions, and prints a summary.
+The first demo creates static `InferenceTrace` records with the existing prompt trace runner, attaches accepted/corrected/unsafe reviews, evaluates policy decisions, and prints a summary.
 
-It does not call real LLMs, LM Studio, APIs, downloads, training, databases, or web servers.
+The second demo builds explicit `TrainingExample` candidates from accepted/corrected reviewed traces and reports skipped rejected/unsafe traces. It does not write files or train anything.
+
+Neither demo calls real LLMs, LM Studio, APIs, downloads, training, databases, or web servers.
 
 ## Current Limits
 
 - no automatic quality claims
 - no LLM judge
-- no automatic conversion of traces into training data
+- no automatic conversion of raw traces into training data
+- no conversion of unreviewed/rejected/unsafe traces
 - no automatic benchmark reference creation
 - no automatic knowledge seed promotion
 - no database or service-backed review store
 - no reviewer identity system
 - no multi-review consensus policy yet
+- no training or model improvement
+- no claim that created examples are ready for real fine-tuning
 
 These limits are deliberate. The goal is to make human review explicit before future model-backed or training-related workflows are added.

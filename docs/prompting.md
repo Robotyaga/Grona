@@ -56,6 +56,14 @@ Both commands route a deterministic task, build route-scoped context, render a p
 
 This separation is intentional: a trace is not automatically training data, not automatically a benchmark reference, and not automatically a knowledge seed candidate. See [Inference review foundation](inference-review.md).
 
+## Relationship To Reviewed Trace Training
+
+`ReviewedTraceTrainingExampleBuilder` converts only policy-eligible reviewed traces into explicit `TrainingExample` candidates.
+
+Accepted reviews use the original trace response. Corrected reviews use `corrected_response`, because the original response was already marked as insufficient. Rejected, unsafe, unreviewed, or missing-review traces are skipped with reasons preserved.
+
+This bridge preserves prompt, routing, context, adapter, model, trace, and review provenance. It still does not train a model or prove that the example is ready for real fine-tuning. See [Reviewed trace training builder](reviewed-trace-training.md).
+
 ## Relationship To Local LLM Baselines
 
 `LocalLLMAdapter` describes an adapter contract. The prompt trace layer controls what text is sent to that adapter and records what came back.
@@ -68,16 +76,20 @@ The default prompt trace demo uses only `StaticLocalLLMAdapter`. `LMStudioComple
 
 `TrainingDataExporter` prepares conservative training example candidates after records have enough validation or review metadata.
 
-A trace is not automatically training data. Converting traces into training candidates should require explicit review policy, provenance checks, and quality decisions.
+A trace is not automatically training data. Converting traces into training candidates requires explicit review policy, provenance checks, and quality decisions. Reviewed trace examples remain candidates only.
 
-## Inference Review Demo
+## Inference Review And Reviewed Training Demos
 
 ```bash
 python -m grona --inference-review-demo
 python examples/inference_review_demo.py
+python -m grona --reviewed-trace-training-demo
+python examples/reviewed_trace_training_demo.py
 ```
 
-The demo creates static traces, attaches accepted/corrected/unsafe review records, evaluates deterministic policy decisions, and prints a summary. It does not call real LLMs, APIs, databases, downloads, or training.
+The inference review demo creates static traces, attaches accepted/corrected/unsafe review records, evaluates deterministic policy decisions, and prints a summary.
+
+The reviewed trace training demo builds in-memory `TrainingExample` candidates only from eligible accepted/corrected reviews and prints skipped reasons plus a native JSONL preview. It does not call real LLMs, APIs, databases, downloads, file writes, or training.
 
 ## Current Limits
 
@@ -88,8 +100,9 @@ The demo creates static traces, attaches accepted/corrected/unsafe review record
 - no answer quality judgment
 - no LLM judge
 - no training
-- no automatic conversion of traces into training examples
-- no automatic conversion of reviews into training examples
+- no automatic conversion of raw traces into training examples
+- no conversion of unreviewed/rejected/unsafe traces
+- no automatic conversion of reviews into final training data
 - no database or production trace store
 - no database or production review store
 - no streaming

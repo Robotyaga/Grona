@@ -51,6 +51,12 @@ See [Prompting and inference traces](prompting.md).
 
 This keeps baseline traces from becoming training data, benchmark references, or knowledge seed candidates by accident. It is not an LLM judge and does not claim that a baseline answer is correct. See [Inference review foundation](inference-review.md).
 
+## Reviewed Trace Training Layer
+
+`ReviewedTraceTrainingExampleBuilder` can turn only eligible accepted or corrected reviewed traces into `TrainingExample` candidates. Corrected reviews use `corrected_response` instead of the original weak output.
+
+This is still candidate material only. It does not train a model, upload a dataset, or prove real answer quality. See [Reviewed trace training builder](reviewed-trace-training.md).
+
 ## Running The Static Demo
 
 ```bash
@@ -60,6 +66,8 @@ python -m grona --prompt-trace-demo
 python examples/prompt_trace_demo.py
 python -m grona --inference-review-demo
 python examples/inference_review_demo.py
+python -m grona --reviewed-trace-training-demo
+python examples/reviewed_trace_training_demo.py
 ```
 
 All commands use deterministic static adapters or static traces only. They are deterministic and offline.
@@ -84,8 +92,9 @@ A caller must explicitly construct the adapter with a local base URL and then pa
 - no quality judging
 - no answer superiority claims
 - no persisted baseline result store
-- no automatic conversion of inference traces into training examples
-- no automatic conversion of inference reviews into training examples
+- no automatic conversion of raw inference traces into training examples
+- no conversion of unreviewed/rejected/unsafe traces
+- no automatic conversion of inference reviews into final training data
 - no default LM Studio call
 - no external API integration by default
 
