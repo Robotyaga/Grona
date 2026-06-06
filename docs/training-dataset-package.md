@@ -56,6 +56,10 @@ The helper reuses `TrainingDataExporter` so raw and rejected records stay out by
 
 Dataset packages can now feed the config-only [fine-tuning training plan scaffold](training-plan.md). That layer records a future base model spec, adapter spec, run config, validation result, dataset card draft, and model card draft without training or loading any model.
 
+## Training Artifact Bridge
+
+Dataset packages and training plans can now feed the [training artifact bundle foundation](training-artifacts.md). The artifact bundle contains stable JSONL split files, config JSON, manifests, cards, safety notes, and a README in memory. Writing remains opt-in through `TrainingArtifactWriter`.
+
 ## CLI Demo
 
 ```bash
