@@ -65,14 +65,30 @@ The default registry includes:
 
 The LoRA and QLoRA placeholders list future package names only as descriptive dependency requirements. They are not installed, imported, or executed. Their dependency reports are blocked by default so the project cannot accidentally imply that real training is ready.
 
+## Optional Real-training Plugin Scaffold
+
+The [optional real-training plugin scaffold](optional-training-plugins.md) adds metadata-only future backend stubs:
+
+- `FutureLoRABackendStub`
+- `FutureQLoRABackendStub`
+- `OptionalDependencySpec`
+- `OptionalTrainingDependencyReport`
+- `TrainingBackendDesignReport`
+
+These stubs align with the backend registry but remain blocked by default. They declare how future real plugins might report dependencies and capabilities without importing heavy packages or executing training.
+
 ## CLI Demo
 
 ```bash
 python -m grona --training-backend-demo
+python -m grona --optional-training-backend-demo
 python examples/training_backend_demo.py
+python examples/optional_training_backend_demo.py
 ```
 
-The demo creates a registry, registers placeholder backends, prints capabilities, prints static dependency reports, performs adapter/capability lookup, and builds a dry-run execution plan through the `dry-run` placeholder backend.
+The backend demo creates a registry, registers placeholder backends, prints capabilities, prints static dependency reports, performs adapter/capability lookup, and builds a dry-run execution plan through the `dry-run` placeholder backend.
+
+The optional plugin demo prints future LoRA/QLoRA stubs, optional dependency metadata, blocked readiness reports, and an explicit design report.
 
 ## Future Plugin Direction
 
