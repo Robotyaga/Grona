@@ -12,6 +12,7 @@ from .dataset_review_cli import main as dataset_review_main
 from .donor_cli import main as donor_main
 from .experiment_cli import main as experiment_main
 from .experiment_gate_cli import main as experiment_gate_main
+from .experimental_lora_cli import main as experimental_lora_main
 from .inference_review_cli import main as inference_review_main
 from .jsonl_dataset_cli import main as jsonl_dataset_main
 from .local_llm_cli import main as local_llm_main
@@ -61,6 +62,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return training_backend_main(args)
     if "--optional-training-backend-demo" in args:
         return training_plugin_main(args)
+    if "--experimental-lora-backend-demo" in args:
+        return experimental_lora_main(args)
     if "--jsonl-dataset-demo" in args:
         return jsonl_dataset_main(args)
     if "--dataset-review-demo" in args:
