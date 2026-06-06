@@ -4,6 +4,13 @@
 
 ### Added
 
+- InferenceReview foundation for explicit human review of prompt/output traces.
+- InferenceReviewConfig, InferenceReviewDecision, and InferenceReviewPolicy for conservative deterministic eligibility decisions.
+- InMemoryInferenceReviewStore and JsonlInferenceReviewStore for explicit lightweight review persistence.
+- InferenceReviewSummary for review status counts, ratings, unsafe/corrected/rejected counts, and policy-eligible counts.
+- CLI `--inference-review-demo` support through `python -m grona` using static inference traces only.
+- `examples/inference_review_demo.py` and deterministic offline inference review tests.
+- Inference review documentation covering human review boundaries and training-data limits.
 - PromptTemplate, PromptBuilder, RenderedPrompt, and InferenceTrace foundation for explicit prompt/output provenance.
 - Default prompt templates for general tasks, routing trace summaries, local baseline comparisons, knowledge seed proposals, and training example review.
 - In-memory and explicit JSONL inference trace stores without adding a database.
