@@ -77,18 +77,28 @@ The [optional real-training plugin scaffold](optional-training-plugins.md) adds 
 
 These stubs align with the backend registry but remain blocked by default. They declare how future real plugins might report dependencies and capabilities without importing heavy packages or executing training.
 
+## Experimental LoRA Backend Skeleton
+
+The [experimental LoRA backend skeleton](experimental-lora-backend.md) is a narrower next step after the metadata-only stubs. `ExperimentalLoRABackend` can inspect a LoRA-shaped `TrainingPlan`, inspect a `TrainingArtifactBundle`, detect optional dependency availability with `importlib.util.find_spec()`, and build a `LoRATrainingJob` preview.
+
+It still does not train. `run_training()` refuses by default and remains not implemented even if explicit safety gates are passed. The skeleton exists to shape a future controlled LoRA implementation without adding a training loop, model loading, downloads, subprocess execution, or heavy imports to Grona core.
+
 ## CLI Demo
 
 ```bash
 python -m grona --training-backend-demo
 python -m grona --optional-training-backend-demo
+python -m grona --experimental-lora-backend-demo
 python examples/training_backend_demo.py
 python examples/optional_training_backend_demo.py
+python examples/experimental_lora_backend_demo.py
 ```
 
 The backend demo creates a registry, registers placeholder backends, prints capabilities, prints static dependency reports, performs adapter/capability lookup, and builds a dry-run execution plan through the `dry-run` placeholder backend.
 
 The optional plugin demo prints future LoRA/QLoRA stubs, optional dependency metadata, blocked readiness reports, and an explicit design report.
+
+The experimental LoRA demo prints dependency detection, safety settings, readiness blockers, and a structured job preview without executing training.
 
 ## Future Plugin Direction
 
@@ -108,8 +118,8 @@ Grona core should not silently discover or execute trainer plugins. Any future a
 - no actual training
 - no executable trainer backend
 - no subprocess or shell execution
-- no package imports for dependency checks
-- no `torch`, `transformers`, `peft`, `bitsandbytes`, `datasets`, or `accelerate`
+- no heavy package imports for dependency checks
+- no top-level `torch`, `transformers`, `peft`, `bitsandbytes`, `datasets`, or `accelerate` imports
 - no model loading or tokenizer loading
 - no model downloads
 - no dataset downloads
@@ -117,5 +127,5 @@ Grona core should not silently discover or execute trainer plugins. Any future a
 - no file writes by default
 - no plugin auto-discovery
 - no GPU or hardware probing
-- no guarantee future command previews are runnable
+- no guarantee future command previews or job previews are runnable
 - no production trainer
