@@ -63,7 +63,8 @@ class PromptTemplate:
             raise ValueError("prompt template user_template cannot be empty")
         unsupported = sorted(self.required_fields() - PROMPT_TEMPLATE_FIELDS)
         if unsupported:
-            raise ValueError(f"prompt template contains unsupported fields: {', '.join(unsupported)}")
+            message = "prompt template contains unsupported fields: "
+            raise ValueError(f"{message}{', '.join(unsupported)}")
 
     def required_fields(self) -> frozenset[str]:
         """Return format fields used by this template."""
@@ -128,7 +129,11 @@ class RenderedPrompt:
         normalized_template = " ".join(template_name.split())
         system_text = system_prompt.strip()
         user_text = user_prompt.strip()
-        prompt_text = full_prompt.strip() if full_prompt else combine_prompt_text(system_text, user_text)
+        prompt_text = (
+            full_prompt.strip()
+            if full_prompt
+            else combine_prompt_text(system_text, user_text)
+        )
         object.__setattr__(self, "template_name", normalized_template)
         object.__setattr__(self, "system_prompt", system_text)
         object.__setattr__(self, "user_prompt", user_text)
@@ -471,7 +476,10 @@ def default_prompt_templates() -> dict[str, PromptTemplate]:
         "routing_trace_summary": PromptTemplate(
             name="routing_trace_summary",
             description="Summarize the visible sparse route and context sources.",
-            system_template="Summarize only the visible Grona route trace. Do not infer hidden state.",
+            system_template=(
+                "Summarize only the visible Grona route trace. "
+                "Do not infer hidden state."
+            ),
             user_template=(
                 "Task: {task}\nWorkspace: {workspace}\nSelected modules: {selected_modules}\n"
                 "Routing summary: {routing_summary}\nContext sources: {context_sources}"
@@ -505,7 +513,8 @@ def default_prompt_templates() -> dict[str, PromptTemplate]:
             name="training_example_review",
             description="Prepare a trace for future reviewed training-example decisions.",
             system_template=(
-                "Review the prompt/response candidate conservatively. This is not automatic training."
+                "Review the prompt/response candidate conservatively. "
+                "This is not automatic training."
             ),
             user_template=(
                 "Task:\n{task}\n\nSelected modules:\n{selected_modules}\n\n"
