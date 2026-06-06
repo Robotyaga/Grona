@@ -16,6 +16,7 @@ from .inference_review_cli import main as inference_review_main
 from .jsonl_dataset_cli import main as jsonl_dataset_main
 from .local_llm_cli import main as local_llm_main
 from .prompt_trace_cli import main as prompt_trace_main
+from .reviewed_trace_training_cli import main as reviewed_trace_training_main
 from .training_cli import main as training_main
 
 
@@ -36,6 +37,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return prompt_trace_main(args)
     if "--inference-review-demo" in args:
         return inference_review_main(args)
+    if "--reviewed-trace-training-demo" in args:
+        return reviewed_trace_training_main(args)
     if "--donor-demo" in args:
         return donor_main(args)
     if "--training-export-demo" in args:
