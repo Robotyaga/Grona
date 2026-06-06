@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 
 from .feedback import Metadata
@@ -28,7 +28,6 @@ from .training_dry_run import (
 from .training_plan import TrainingPlan, TrainingRunConfig
 
 OPTIONAL_TRAINING_PLUGIN_STATUS = "not_installed_not_implemented"
-OPTIONAL_TRAINING_CREATED_AT = "2026-01-01T00:00:00+00:00"
 
 
 @dataclass(frozen=True)
@@ -93,6 +92,117 @@ class OptionalDependencySpec:
         )
 
 
+def optional_dependency_torch() -> OptionalDependencySpec:
+    """Return metadata for the future torch dependency."""
+    return OptionalDependencySpec(
+        "torch",
+        "torch",
+        "future tensor runtime and model training substrate",
+        ("lora", "qlora"),
+        "future only: install an explicit training plugin, not Grona core",
+        metadata={"heavy_dependency": True},
+    )
+
+
+def optional_dependency_transformers() -> OptionalDependencySpec:
+    """Return metadata for the future transformers dependency."""
+    return OptionalDependencySpec(
+        "transformers",
+        "transformers",
+        "future model and tokenizer integration",
+        ("lora", "qlora"),
+        "future only: install an explicit training plugin, not Grona core",
+        metadata={"heavy_dependency": True},
+    )
+
+
+def optional_dependency_peft() -> OptionalDependencySpec:
+    """Return metadata for the future peft dependency."""
+    return OptionalDependencySpec(
+        "peft",
+        "peft",
+        "future LoRA adapter implementation",
+        ("lora", "qlora"),
+        "future only: install an explicit training plugin, not Grona core",
+        metadata={"heavy_dependency": True},
+    )
+
+
+def optional_dependency_accelerate() -> OptionalDependencySpec:
+    """Return metadata for the future accelerate dependency."""
+    return OptionalDependencySpec(
+        "accelerate",
+        "accelerate",
+        "future training device orchestration",
+        ("lora", "qlora"),
+        "future only: install an explicit training plugin, not Grona core",
+        metadata={"heavy_dependency": True},
+    )
+
+
+def optional_dependency_bitsandbytes() -> OptionalDependencySpec:
+    """Return metadata for the future bitsandbytes dependency."""
+    return OptionalDependencySpec(
+        "bitsandbytes",
+        "bitsandbytes",
+        "future quantized QLoRA optimizer/runtime support",
+        ("qlora",),
+        "future only: install an explicit QLoRA plugin, not Grona core",
+        metadata={"heavy_dependency": True, "platform_sensitive": True},
+    )
+
+
+def optional_dependency_datasets() -> OptionalDependencySpec:
+    """Return metadata for the future datasets dependency."""
+    return OptionalDependencySpec(
+        "datasets",
+        "datasets",
+        "future large dataset adapter support",
+        ("lora", "qlora"),
+        "future only: install an explicit training plugin, not Grona core",
+        metadata={"heavy_dependency": True},
+    )
+
+
+def dedupe_dependency_specs(
+    dependencies: Iterable[OptionalDependencySpec],
+) -> tuple[OptionalDependencySpec, ...]:
+    """Return dependency specs de-duplicated by package in first-seen order."""
+    seen: set[str] = set()
+    result: list[OptionalDependencySpec] = []
+    for dependency in dependencies:
+        if dependency.package not in seen:
+            seen.add(dependency.package)
+            result.append(dependency)
+    return tuple(result)
+
+
+def optional_training_dependency_specs() -> tuple[OptionalDependencySpec, ...]:
+    """Return all known future optional training dependency metadata."""
+    return dedupe_dependency_specs(
+        (
+            optional_dependency_torch(),
+            optional_dependency_transformers(),
+            optional_dependency_peft(),
+            optional_dependency_accelerate(),
+            optional_dependency_bitsandbytes(),
+            optional_dependency_datasets(),
+        )
+    )
+
+
+def markdown_or_none(values: Sequence[str]) -> list[str]:
+    """Return Markdown list lines with a none fallback."""
+    if not values:
+        return ["- none"]
+    return [f"- {value}" for value in values]
+
+
+def optional_training_required_artifacts() -> tuple[str, ...]:
+    """Return artifact paths future training stubs expect to inspect."""
+    return required_training_artifacts()
+
+
 @dataclass(frozen=True)
 class OptionalTrainingDependencyReport:
     """Metadata-only dependency report for optional training plugins."""
@@ -122,7 +232,6 @@ class OptionalTrainingDependencyReport:
 
     def to_backend_dependency_report(self, backend_name: str) -> TrainingBackendDependencyReport:
         """Convert the optional plugin report to the existing backend report contract."""
-        missing_packages = tuple(dependency.package for dependency in self.missing)
         blockers = tuple(
             f"optional training plugin dependency is not installed: {dependency.package}"
             for dependency in self.missing
@@ -131,7 +240,7 @@ class OptionalTrainingDependencyReport:
         return TrainingBackendDependencyReport(
             backend_name,
             available=self.available,
-            missing_dependencies=missing_packages,
+            missing_dependencies=tuple(dependency.package for dependency in self.missing),
             optional_dependencies=tuple(dependency.package for dependency in self.missing + self.present),
             warnings=self.warnings,
             blockers=blockers,
@@ -496,114 +605,3 @@ def build_optional_training_backend_design_report(
         ),
         metadata={"plugin_status": OPTIONAL_TRAINING_PLUGIN_STATUS},
     )
-
-
-def optional_training_dependency_specs() -> tuple[OptionalDependencySpec, ...]:
-    """Return all known future optional training dependency metadata."""
-    return dedupe_dependency_specs(
-        (
-            optional_dependency_torch(),
-            optional_dependency_transformers(),
-            optional_dependency_peft(),
-            optional_dependency_accelerate(),
-            optional_dependency_bitsandbytes(),
-            optional_dependency_datasets(),
-        )
-    )
-
-
-def optional_dependency_torch() -> OptionalDependencySpec:
-    """Return metadata for the future torch dependency."""
-    return OptionalDependencySpec(
-        "torch",
-        "torch",
-        "future tensor runtime and model training substrate",
-        ("lora", "qlora"),
-        "future only: install an explicit training plugin, not Grona core",
-        metadata={"heavy_dependency": True},
-    )
-
-
-def optional_dependency_transformers() -> OptionalDependencySpec:
-    """Return metadata for the future transformers dependency."""
-    return OptionalDependencySpec(
-        "transformers",
-        "transformers",
-        "future model and tokenizer integration",
-        ("lora", "qlora"),
-        "future only: install an explicit training plugin, not Grona core",
-        metadata={"heavy_dependency": True},
-    )
-
-
-def optional_dependency_peft() -> OptionalDependencySpec:
-    """Return metadata for the future peft dependency."""
-    return OptionalDependencySpec(
-        "peft",
-        "peft",
-        "future LoRA adapter implementation",
-        ("lora", "qlora"),
-        "future only: install an explicit training plugin, not Grona core",
-        metadata={"heavy_dependency": True},
-    )
-
-
-def optional_dependency_accelerate() -> OptionalDependencySpec:
-    """Return metadata for the future accelerate dependency."""
-    return OptionalDependencySpec(
-        "accelerate",
-        "accelerate",
-        "future training device orchestration",
-        ("lora", "qlora"),
-        "future only: install an explicit training plugin, not Grona core",
-        metadata={"heavy_dependency": True},
-    )
-
-
-def optional_dependency_bitsandbytes() -> OptionalDependencySpec:
-    """Return metadata for the future bitsandbytes dependency."""
-    return OptionalDependencySpec(
-        "bitsandbytes",
-        "bitsandbytes",
-        "future quantized QLoRA optimizer/runtime support",
-        ("qlora",),
-        "future only: install an explicit QLoRA plugin, not Grona core",
-        metadata={"heavy_dependency": True, "platform_sensitive": True},
-    )
-
-
-def optional_dependency_datasets() -> OptionalDependencySpec:
-    """Return metadata for the future datasets dependency."""
-    return OptionalDependencySpec(
-        "datasets",
-        "datasets",
-        "future large dataset adapter support",
-        ("lora", "qlora"),
-        "future only: install an explicit training plugin, not Grona core",
-        metadata={"heavy_dependency": True},
-    )
-
-
-def dedupe_dependency_specs(
-    dependencies: Sequence[OptionalDependencySpec] | object,
-) -> tuple[OptionalDependencySpec, ...]:
-    """Return dependency specs de-duplicated by package in first-seen order."""
-    seen: set[str] = set()
-    result: list[OptionalDependencySpec] = []
-    for dependency in dependencies:  # type: ignore[operator]
-        if dependency.package not in seen:
-            seen.add(dependency.package)
-            result.append(dependency)
-    return tuple(result)
-
-
-def markdown_or_none(values: Sequence[str]) -> list[str]:
-    """Return Markdown list lines with a none fallback."""
-    if not values:
-        return ["- none"]
-    return [f"- {value}" for value in values]
-
-
-def optional_training_required_artifacts() -> tuple[str, ...]:
-    """Return artifact paths future training stubs expect to inspect."""
-    return required_training_artifacts()
