@@ -163,7 +163,7 @@ def test_placeholder_execution_plan_is_created_but_not_executed() -> None:
 
     assert execution_plan.blocked is False
     assert execution_plan.readiness.ready is True
-    assert execution_plan.metadata["executes_commands"] is False
+    assert execution_plan.backend.metadata["executes_commands"] is False
     assert "--dry-run-placeholder-not-implemented" in execution_plan.command_preview
 
 
