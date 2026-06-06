@@ -16,6 +16,7 @@ from .experimental_lora_cli import main as experimental_lora_main
 from .inference_review_cli import main as inference_review_main
 from .jsonl_dataset_cli import main as jsonl_dataset_main
 from .local_llm_cli import main as local_llm_main
+from .model_build_readiness_cli import main as model_build_readiness_main
 from .prompt_trace_cli import main as prompt_trace_main
 from .reviewed_trace_training_cli import main as reviewed_trace_training_main
 from .training_artifact_cli import main as training_artifact_main
@@ -67,6 +68,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return experimental_lora_main(args)
     if "--training-pipeline-audit-demo" in args:
         return training_pipeline_audit_main(args)
+    if "--model-build-readiness-demo" in args:
+        return model_build_readiness_main(args)
     if "--jsonl-dataset-demo" in args:
         return jsonl_dataset_main(args)
     if "--dataset-review-demo" in args:
