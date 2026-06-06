@@ -212,6 +212,13 @@ from .prompting import (
     run_static_prompt_trace,
 )
 from .registry import ModuleRegistry
+from .reviewed_trace_training import (
+    ReviewedTraceBuildResult,
+    ReviewedTraceTrainingExampleBuilder,
+    build_training_examples_from_reviews,
+    skipped_reviewed_trace_results,
+    training_examples_from_build_results,
+)
 from .router import Router
 from .safety import (
     ExecutionPlan,
