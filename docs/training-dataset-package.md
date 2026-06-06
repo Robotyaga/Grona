@@ -52,6 +52,10 @@ print(package.native_jsonl_by_split()["train"])
 
 The helper reuses `TrainingDataExporter` so raw and rejected records stay out by default. Warnings note skipped raw or rejected records and small split limitations.
 
+## Training Plan Bridge
+
+Dataset packages can now feed the config-only [fine-tuning training plan scaffold](training-plan.md). That layer records a future base model spec, adapter spec, run config, validation result, dataset card draft, and model card draft without training or loading any model.
+
 ## CLI Demo
 
 ```bash
