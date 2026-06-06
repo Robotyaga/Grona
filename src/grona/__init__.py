@@ -253,6 +253,16 @@ from .training_package import (
     TrainingSplitConfig,
     build_training_dataset_package,
 )
+from .training_plan import (
+    AdapterTrainingSpec,
+    BaseModelSpec,
+    ModelCardDraft,
+    TrainingPlan,
+    TrainingRunConfig,
+    TrainingRunValidationResult,
+    TrainingRunValidator,
+    build_demo_training_plan,
+)
 from .workspace import (
     WorkspaceConfig,
     WorkspaceProfile,
