@@ -23,6 +23,7 @@ from .training_cli import main as training_main
 from .training_dry_run_cli import main as training_dry_run_main
 from .training_package_cli import main as training_package_main
 from .training_plan_cli import main as training_plan_main
+from .training_plugin_cli import main as training_plugin_main
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -58,6 +59,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return training_dry_run_main(args)
     if "--training-backend-demo" in args:
         return training_backend_main(args)
+    if "--optional-training-backend-demo" in args:
+        return training_plugin_main(args)
     if "--jsonl-dataset-demo" in args:
         return jsonl_dataset_main(args)
     if "--dataset-review-demo" in args:
