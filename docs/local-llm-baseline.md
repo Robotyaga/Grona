@@ -32,14 +32,29 @@ This distinction matters:
 - `LMStudioCompletionAdapter`: optional OpenAI-compatible local completion adapter for explicit LM Studio-style experiments.
 - `LocalLLMBaselineRunner`: runs a baseline request and returns a structured result.
 
+## Prompt Trace Layer
+
+`PromptTemplate`, `PromptBuilder`, and `InferenceTrace` sit before and after adapter calls. They make prompt construction and response provenance explicit:
+
+```text
+RoutingDecision + ContextItem -> PromptBuilder -> RenderedPrompt
+RenderedPrompt + LocalLLMAdapter -> LocalLLMResponse -> InferenceTrace
+```
+
+The prompt trace layer does not call a model by itself. It records what would be sent to an adapter and what the adapter returned. This prepares future local LLM experiments without making prompt/output data opaque.
+
+See [Prompting and inference traces](prompting.md).
+
 ## Running The Static Demo
 
 ```bash
 python -m grona --local-llm-static-demo
 python examples/local_llm_baseline_demo.py
+python -m grona --prompt-trace-demo
+python examples/prompt_trace_demo.py
 ```
 
-Both commands use `StaticLocalLLMAdapter` only. They are deterministic and offline.
+All four commands use deterministic static adapters only. They are deterministic and offline.
 
 ## Experiment Mode
 
@@ -57,10 +72,11 @@ A caller must explicitly construct the adapter with a local base URL and then pa
 
 - no streaming
 - no tool calls
-- no prompt templates beyond the request text
+- no automatic prompt optimization
 - no quality judging
 - no answer superiority claims
 - no persisted baseline result store
+- no automatic conversion of inference traces into training examples
 - no default LM Studio call
 - no external API integration by default
 
