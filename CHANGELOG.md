@@ -4,6 +4,11 @@
 
 ### Added
 
+- DryRunTrainer interface foundation for validating future training readiness without training or executing commands.
+- TrainerBackendSpec, DryRunTrainerConfig, TrainingReadinessReport, and TrainingExecutionPlan records.
+- Deterministic dry-run, LoRA placeholder, and QLoRA placeholder backend spec helpers.
+- CLI `--training-dry-run-demo` support through `python -m grona` using reviewed demo examples only.
+- `examples/training_dry_run_demo.py`, deterministic dry-run trainer tests, and dry-run trainer documentation.
 - ReviewedTraceTrainingExampleBuilder foundation for converting only eligible reviewed inference traces into `TrainingExample` candidates.
 - ReviewedTraceBuildResult for created/skipped trace-to-training build outcomes with preserved reasons.
 - `build_training_examples_from_reviews()`, `training_examples_from_build_results()`, and `skipped_reviewed_trace_results()` helpers.
