@@ -9,6 +9,7 @@ It sits after the existing training preparation layers:
 3. `TrainingPlan` creates a config-only future adapter plan.
 4. `TrainingArtifactBuilder` creates an in-memory artifact bundle.
 5. `DryRunTrainer` validates readiness and returns a `TrainingExecutionPlan`.
+6. `TrainingBackendRegistry` can expose placeholder optional backend boundaries that reuse this dry-run planning layer.
 
 This layer is intentionally not a trainer. It does not execute commands, spawn subprocesses, call shells, load models, call LM Studio, call external APIs, download datasets, upload artifacts, or write files by default.
 
@@ -49,6 +50,12 @@ The foundation includes deterministic preset helpers:
 
 These are still specifications, not real backends. The LoRA and QLoRA presets list future package names such as `torch`, `transformers`, `peft`, or `bitsandbytes` only as descriptive requirements. Grona does not add or import those dependencies.
 
+## Optional Backend Boundary
+
+The [optional training backend boundary](training-backends.md) wraps these specs in explicit placeholder backends and a deterministic registry. That layer answers which future backend capabilities exist, which dependencies would be required, and whether a backend can build a dry-run plan.
+
+It still does not execute commands or train models. LoRA and QLoRA placeholder backends report missing optional dependencies by default instead of pretending real training is available.
+
 ## Command Preview
 
 The command preview is a placeholder argument list. Example:
@@ -78,10 +85,14 @@ Warnings remain visible but do not block unless the configured check requires th
 
 ```bash
 python -m grona --training-dry-run-demo
+python -m grona --training-backend-demo
 python examples/training_dry_run_demo.py
+python examples/training_backend_demo.py
 ```
 
-The demo creates deterministic reviewed examples, builds a dataset package, builds a training plan, builds an artifact bundle, creates a dry-run backend spec, runs `DryRunTrainer`, and prints readiness plus command preview.
+The dry-run demo creates deterministic reviewed examples, builds a dataset package, builds a training plan, builds an artifact bundle, creates a dry-run backend spec, runs `DryRunTrainer`, and prints readiness plus command preview.
+
+The backend demo creates a registry and shows placeholder backend capability/dependency reports before building a dry-run execution plan.
 
 ## Limitations
 
@@ -100,6 +111,7 @@ The demo creates deterministic reviewed examples, builds a dataset package, buil
 - no dataset or model uploads
 - no GPU or hardware detection
 - no environment probing by default
+- no plugin auto-discovery
 - no guarantee that the command preview is directly runnable
 - no production trainer yet
 
