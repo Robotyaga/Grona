@@ -18,6 +18,7 @@ from .local_llm_cli import main as local_llm_main
 from .prompt_trace_cli import main as prompt_trace_main
 from .reviewed_trace_training_cli import main as reviewed_trace_training_main
 from .training_artifact_cli import main as training_artifact_main
+from .training_backend_cli import main as training_backend_main
 from .training_cli import main as training_main
 from .training_dry_run_cli import main as training_dry_run_main
 from .training_package_cli import main as training_package_main
@@ -55,6 +56,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return training_artifact_main(args)
     if "--training-dry-run-demo" in args:
         return training_dry_run_main(args)
+    if "--training-backend-demo" in args:
+        return training_backend_main(args)
     if "--jsonl-dataset-demo" in args:
         return jsonl_dataset_main(args)
     if "--dataset-review-demo" in args:

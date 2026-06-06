@@ -66,14 +66,24 @@ The artifact bridge is still config-only. It does not train, load, download, upl
 
 A `TrainingPlan` plus `TrainingArtifactBundle` can now feed the [dry-run trainer interface](training-dry-run.md). `DryRunTrainer` validates artifact readiness and returns a deterministic `TrainingExecutionPlan` with a placeholder command preview. It does not execute the preview and does not train anything.
 
+## Optional Backend Boundary Bridge
+
+A `TrainingRunConfig` can also be checked by the [optional training backend boundary](training-backends.md). `TrainingBackendRegistry` can find placeholder backends by adapter type or capability, and `PlaceholderTrainingBackend.supports(config)` can refuse unsupported adapter or quantization settings before any real backend exists.
+
+This is still metadata and dry-run planning only. It does not install or import training packages.
+
 ## Demo
 
 ```bash
 python -m grona --training-plan-demo
+python -m grona --training-backend-demo
 python examples/training_plan_demo.py
+python examples/training_backend_demo.py
 ```
 
-The demo creates a deterministic tiny training dataset package, builds a QLoRA-like config scaffold, validates it, and prints a model card draft preview.
+The training plan demo creates a deterministic tiny training dataset package, builds a QLoRA-like config scaffold, validates it, and prints a model card draft preview.
+
+The backend demo shows how the same plan can be inspected by placeholder backend contracts.
 
 ## Example
 
@@ -114,6 +124,8 @@ This creates a reviewable bridge from dataset packages to future LoRA or QLoRA w
 - no artifact writing by default
 - no command execution
 - no subprocess execution
+- no real backend execution
+- no plugin auto-discovery
 - no real evaluation yet
 - no production model card
 - no guarantee that placeholder hyperparameters are good

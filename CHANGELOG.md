@@ -4,6 +4,11 @@
 
 ### Added
 
+- Optional TrainingBackend protocol and plugin-boundary foundation for future explicit trainer integrations.
+- TrainingBackendCapability, TrainingBackendRegistry, TrainingBackendDependencyReport, and TrainingBackendMetadata records.
+- Safe PlaceholderTrainingBackend implementations for dry-run, LoRA placeholder, and QLoRA placeholder backends.
+- CLI `--training-backend-demo` support through `python -m grona` with deterministic offline registry and readiness output.
+- `examples/training_backend_demo.py`, deterministic backend boundary tests, and optional backend documentation.
 - DryRunTrainer interface foundation for validating future training readiness without training or executing commands.
 - TrainerBackendSpec, DryRunTrainerConfig, TrainingReadinessReport, and TrainingExecutionPlan records.
 - Deterministic dry-run, LoRA placeholder, and QLoRA placeholder backend spec helpers.
