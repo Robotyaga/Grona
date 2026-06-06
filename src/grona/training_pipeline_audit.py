@@ -11,7 +11,7 @@ from .feedback import Metadata
 from .training import TrainingExample, json_metadata
 from .training_artifacts import TrainingArtifactBundle, TrainingArtifactBuilder
 from .training_backends import TrainingBackend, TrainingBackendDependencyReport
-from .training_dry_run import DRY_RUN_REQUIRED_ARTIFACTS, TrainingReadinessReport, dedupe_strings
+from .training_dry_run import DRY_RUN_REQUIRED_ARTIFACTS, dedupe_strings
 from .training_package import TrainingDatasetPackage, build_training_dataset_package
 from .training_plan import TrainingPlan, build_demo_training_plan, create_demo_training_plan_examples
 
