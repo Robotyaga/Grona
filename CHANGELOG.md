@@ -4,6 +4,13 @@
 
 ### Added
 
+- ReviewedTraceTrainingExampleBuilder foundation for converting only eligible reviewed inference traces into `TrainingExample` candidates.
+- ReviewedTraceBuildResult for created/skipped trace-to-training build outcomes with preserved reasons.
+- `build_training_examples_from_reviews()`, `training_examples_from_build_results()`, and `skipped_reviewed_trace_results()` helpers.
+- Deterministic output selection that uses original responses for accepted reviews and `corrected_response` for corrected reviews.
+- CLI `--reviewed-trace-training-demo` support through `python -m grona` using static traces and human review records only.
+- `examples/reviewed_trace_training_demo.py` and deterministic offline reviewed trace training tests.
+- Reviewed trace training documentation covering policy control, corrected responses, provenance, and training limits.
 - InferenceReview foundation for explicit human review of prompt/output traces.
 - InferenceReviewConfig, InferenceReviewDecision, and InferenceReviewPolicy for conservative deterministic eligibility decisions.
 - InMemoryInferenceReviewStore and JsonlInferenceReviewStore for explicit lightweight review persistence.
