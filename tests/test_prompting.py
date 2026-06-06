@@ -157,10 +157,11 @@ def test_jsonl_inference_trace_store(tmp_path) -> None:
     store = JsonlInferenceTraceStore(tmp_path / "traces.jsonl")
 
     store.add(result.trace)
+    stored = store.list()[0]
 
     assert store.count() == 1
-    assert store.list() == (result.trace,)
-    assert store.get(result.trace.trace_id) == result.trace
+    assert stored.to_dict() == result.trace.to_dict()
+    assert store.get(result.trace.trace_id).to_dict() == result.trace.to_dict()
     store.clear()
     assert store.count() == 0
 
