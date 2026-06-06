@@ -108,7 +108,6 @@ from .executor import (
 from .experiments import (
     EXPERIMENT_GATE_METRICS,
     EXPERIMENT_GATE_STATUSES,
-    EXPERIMENT_MODES,
     ExperimentComparisonReport,
     ExperimentConfig,
     ExperimentGateConfig,
@@ -251,6 +250,21 @@ from .training_artifacts import (
     TrainingArtifactWriteConfig,
     TrainingArtifactWriteReport,
     TrainingArtifactWriter,
+)
+from .training_backends import (
+    PlaceholderTrainingBackend,
+    TrainingBackend,
+    TrainingBackendCapability,
+    TrainingBackendDependencyReport,
+    TrainingBackendMetadata,
+    TrainingBackendRegistry,
+    all_training_backend_capabilities,
+    create_default_training_backend_registry,
+    create_dry_run_placeholder_backend,
+    create_lora_placeholder_backend,
+    create_placeholder_training_backend,
+    create_qlora_placeholder_backend,
+    required_training_artifacts,
 )
 from .training_dry_run import (
     DryRunTrainer,
