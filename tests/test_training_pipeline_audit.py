@@ -4,7 +4,6 @@ from grona import (
     ExperimentalLoRABackend,
     LoRATrainingSafetyConfig,
     TrainingArtifactBundle,
-    TrainingDatasetPackage,
     TrainingPipelineAuditor,
     TrainingPipelineContract,
     TrainingPipelineReadinessReport,
@@ -63,7 +62,7 @@ def test_training_pipeline_auditor_complete_demo_pipeline_is_blocked_only_by_fut
     assert report.ready is False
     assert report.stage("training_dataset_package").status == "passed"
     assert report.stage("training_artifacts").status == "passed"
-    assert report.stage("training_plan").status == "warning"
+    assert report.stage("training_plan").status == "passed"
     assert report.stage("execution").status == "passed"
     assert report.stage("backend").status == "blocked"
     assert any("backend readiness claims ready" in blocker for blocker in report.blockers)
