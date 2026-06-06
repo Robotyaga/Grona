@@ -26,7 +26,7 @@ def test_training_artifact_helpers_and_serialization() -> None:
 
     data = artifact.to_dict()
 
-    assert artifact.byte_count() == len("alpha\nbeta".encode("utf-8"))
+    assert artifact.byte_count() == len(b"alpha\nbeta")
     assert artifact.line_count() == 2
     assert data["path"] == "docs/example.md"
     assert data["metadata"] == {"kind": "unit"}
