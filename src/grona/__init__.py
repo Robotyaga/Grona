@@ -252,6 +252,16 @@ from .training_artifacts import (
     TrainingArtifactWriteReport,
     TrainingArtifactWriter,
 )
+from .training_dry_run import (
+    DryRunTrainer,
+    DryRunTrainerConfig,
+    TrainerBackendSpec,
+    TrainingExecutionPlan,
+    TrainingReadinessReport,
+    create_dry_run_backend_spec,
+    create_lora_cli_placeholder_backend_spec,
+    create_qlora_cli_placeholder_backend_spec,
+)
 from .training_package import (
     DatasetCardDraft,
     TrainingDatasetPackage,

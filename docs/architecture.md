@@ -10,6 +10,7 @@ This document describes the current deterministic prototype, not a production AI
 - [Growth Lab](growth-lab.md)
 - [Dataset ingestion](dataset-ingestion.md)
 - [Benchmarking](benchmarking.md)
+- [Dry-run trainer interface](training-dry-run.md)
 - [Workspace profiles](workspaces.md)
 - [Development notes](development.md)
 - [Research notes](research-notes.md)
@@ -74,6 +75,9 @@ flowchart TD
     F --> TD
     BS --> TD
     TD --> TE[TrainingExample / TrainingDataset]
+    TE --> TP[TrainingDatasetPackage / TrainingPlan]
+    TP --> TA[TrainingArtifactBundle]
+    TA --> DRY[DryRunTrainer / TrainingExecutionPlan]
 ```
 
 ## Current Request Lifecycle
@@ -95,6 +99,7 @@ flowchart TD
 15. `ExperimentRunner` can compare multiple deterministic configs and a monolith stub in one report.
 16. `ExperimentRegressionGate` can turn experiment deltas into a warning or strict threshold decision.
 17. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
+18. `TrainingDatasetPackage`, `TrainingPlan`, `TrainingArtifactBundle`, and `DryRunTrainer` can preview training readiness without training or executing commands.
 
 ## Main Layers
 
@@ -113,6 +118,7 @@ flowchart TD
 - Experiment runner: run multiple deterministic configs and compare them against a baseline config.
 - Experiment regression gate: classify comparison regressions with explicit thresholds.
 - Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
+- Training dry-run: validate training plan plus artifact bundle readiness and produce placeholder command previews without execution.
 
 ## Experiment Layer
 
@@ -173,6 +179,8 @@ The donor layer is not answer generation, autonomous learning, training, or a tr
 
 `TrainingDataExporter` builds examples from safe internal records such as validated `KnowledgeSeed` values, accepted review decisions, positive feedback records, and synthetic benchmark traces. It does not write files by default, train models, call LLMs, download datasets, or guarantee that exported examples are useful for real training.
 
+`TrainingDatasetPackage`, `TrainingPlan`, and `TrainingArtifactBundle` then make split, config, manifest, card, and artifact boundaries explicit. `DryRunTrainer` consumes those in-memory objects to produce a readiness report and placeholder `TrainingExecutionPlan`. It does not execute the preview, spawn subprocesses, call shells, or train models.
+
 ## Benchmark Layer
 
 `BenchmarkCase` defines a task with expected domains, modules, and keywords. `BenchmarkRunConfig` enables deterministic features such as demo memory, dataset seeds, grape clusters, GrowthEngine, and orchestration. `BenchmarkSuite` returns a `BenchmarkReport` containing per-case `BenchmarkResult` scores.
@@ -181,4 +189,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, experiment gate reports, training export, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, experiment gate reports, training export, training packaging, artifact bundling, dry-run training previews, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.

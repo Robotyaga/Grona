@@ -10,6 +10,7 @@ Grona should stay readable before adding heavier infrastructure. The roadmap is 
 - [Dataset ingestion](dataset-ingestion.md)
 - [Benchmarking](benchmarking.md)
 - [Prompting and inference traces](prompting.md)
+- [Dry-run trainer interface](training-dry-run.md)
 - [Workspace profiles](workspaces.md)
 - [Research notes](research-notes.md)
 - [v0.1.0 prototype release notes](release-notes-v0.1.0-prototype.md)
@@ -44,6 +45,7 @@ The repository already has the first deterministic foundation:
 - donor model proposal foundation with static offline proposals and optional LM Studio adapter scaffolding
 - local LLM baseline adapter foundation with deterministic static demo and optional explicit LM Studio-compatible adapter
 - conservative `TrainingDataExporter` foundation for in-memory reviewed example candidates
+- training dataset package, config-only training plan, artifact bundle, and dry-run trainer preview foundations
 - public README polish and project documentation
 - examples, tests, and CI
 
@@ -154,6 +156,14 @@ Current foundation includes `TrainingExample`, `TrainingDataset`, `TrainingExpor
 
 Boundaries: no model training, model calls, downloads, Parquet export, file writing by default, or claim that exported examples are high-quality real training data.
 
+## Training Package, Artifact, And Dry-run Foundation
+
+Goal: make future training inputs reviewable before any real trainer exists.
+
+Current foundation includes deterministic `TrainingDatasetPackage` splits, `TrainingPlan` config validation, `TrainingArtifactBundle` assembly, conservative artifact writing with dry-run defaults, `TrainerBackendSpec`, `DryRunTrainerConfig`, `TrainingReadinessReport`, `TrainingExecutionPlan`, placeholder backend presets, CLI `--training-dry-run-demo`, example, tests, and documentation.
+
+Boundaries: no actual training, subprocess execution, shell execution, environment probing, heavy training dependencies, model loading, downloads, uploads, GPU detection, or guarantee that command previews are runnable.
+
 ## DonorModelAdapter / LMStudioAdapter Foundation
 
 Goal: optionally use model outputs as untrusted proposal sources without making network calls part of the default prototype.
@@ -172,7 +182,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - dataset manifest, policy, source, sample provenance, and quality review decision
 - donor proposal source, type, validation status, and error status
 - benchmark case, run snapshot, regression report, experiment comparison, and gate decision summaries
-- training export candidate counts, validation statuses, and provenance
+- training export candidate counts, validation statuses, provenance, artifact readiness, and dry-run execution blockers
 - knowledge seed validation and review status
 - grape cluster assignment status
 - GrowthEngine decision status

@@ -2,11 +2,11 @@
 
 Grona explores sparse modular AI systems inspired by grape-cluster-like expert activation. These notes are conceptual and intentionally honest about what the project does not solve yet.
 
-For the longer direction, see [Project vision](project-vision.md). For implementation boundaries, see [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Dataset ingestion](dataset-ingestion.md), [Benchmarking](benchmarking.md), [Development notes](development.md), and [Roadmap](roadmap.md).
+For the longer direction, see [Project vision](project-vision.md). For implementation boundaries, see [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Dataset ingestion](dataset-ingestion.md), [Benchmarking](benchmarking.md), [Dry-run trainer interface](training-dry-run.md), [Development notes](development.md), and [Roadmap](roadmap.md).
 
 ## Working Hypothesis
 
-A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, experiment comparisons, experiment gate decisions, training export provenance, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
+A useful AI assistant does not need to activate every capability for every request. If modules have clear metadata, scoped memory, inspectable context boundaries, visible orchestration, typed execution contracts, backend adapters, tool boundaries, deterministic ingestion, workspace profiles, dataset manifest provenance, license policy, dataset quality review, raw knowledge validation, donor proposal provenance, seed review, candidate cluster grouping, growth recommendations, deterministic benchmarks, benchmark run snapshots, experiment comparisons, experiment gate decisions, training export provenance, artifact bundle readiness, dry-run training previews, and safety policy checks, a router can activate a small relevant subset and keep the rest dormant.
 
 ## Why This Differs From Monolithic Execution
 
@@ -27,6 +27,8 @@ A monolithic system often hides which capability, memory, prompt, or tool surfac
 - which experiment configs improved or regressed versus a baseline config
 - which experiment gate thresholds produced warnings or strict failures
 - which records were eligible or ineligible for future training export
+- which training artifacts would be present before any future trainer sees them
+- which dry-run training blockers must be fixed before any real backend can be considered
 - which safety policy decisions were made
 - which feedback might alter future routing
 
@@ -94,15 +96,17 @@ A regression report can then compare two snapshots with deterministic score delt
 
 ## Knowledge Before Weights
 
-Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, experiment-compared, threshold-reported, and exported with provenance before it ever becomes training data or expert behavior.
+Grona assumes that some knowledge should remain external, structured, source-aware, license-aware, reviewed, validated, clustered, benchmarked, snapshot-tested, experiment-compared, threshold-reported, packaged, artifact-bundled, dry-run-checked, and exported with provenance before it ever becomes training data or expert behavior.
 
-`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, `ExperimentRunner`, `ExperimentComparisonReport`, `ExperimentRegressionGate`, and `TrainingDataExporter` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, compare experiment configs, produce threshold reports, and export only conservative training example candidates.
+`DatasetManifest`, `DatasetLicensePolicy`, `DatasetQualityReviewer`, `DatasetSource`, `DatasetSample`, `DonorModelProposal`, `DonorProposalCollector`, `KnowledgeSeed`, `KnowledgeValidator`, `KnowledgeReviewPipeline`, `GrapeClusterer`, `GrowthEngine`, `BenchmarkSuite`, `BenchmarkRunRecord`, `BenchmarkRegressionReport`, `ExperimentRunner`, `ExperimentComparisonReport`, `ExperimentRegressionGate`, `TrainingDataExporter`, `TrainingDatasetPackage`, `TrainingPlan`, `TrainingArtifactBundle`, and `DryRunTrainer` now provide the first deterministic version of this idea: describe material with explicit provenance, normalize it into proposals or seeds, review obvious quality problems, score it, warn about weak signals, detect repeated claims, mark potential conflicts, organize promote candidates into candidate clusters, recommend a next step, measure whether the trace helped a small benchmark case, preserve benchmark run snapshots, compare regressions, compare experiment configs, produce threshold reports, export only conservative training example candidates, package them into visible splits, assemble artifact bundles, and block dry-run training previews when required material is missing.
 
 The dataset manifest and review layers are intentionally conservative. JSONL rows can be parsed and normalized, but a row is still only a candidate. Unknown or restricted licenses block unsafe use by default. Review decisions remain visible.
 
 The static donor adapter is intentionally offline and deterministic. The optional LM Studio adapter is only a standard-library integration point for explicitly configured local experiments. Donor output is not treated as trusted knowledge by default and raw donor proposals are not exported as training data by default.
 
 Training export is not training. It is an explicit serialization boundary that keeps instruction, input, output, source, domains, capabilities, provenance, license, validation status, and metadata visible for future review.
+
+Dry-run training is not training. It is a readiness and command-preview boundary that makes blockers visible before any real backend exists.
 
 This does not prove factual truth. It makes uncertainty explicit.
 
@@ -118,6 +122,7 @@ This does not prove factual truth. It makes uncertainty explicit.
 - Can deterministic grape clusters organize reviewed seeds without hiding provenance?
 - Can GrowthEngine proposals stay useful while preserving human review?
 - Can TrainingDataExporter preserve enough metadata for future specialized expert experiments?
+- Can dry-run training previews expose missing artifacts, invalid configs, or empty splits before real trainers exist?
 - Can benchmark snapshots expose routing, context, growth, donor, dataset, and export regressions?
 - Can experiment reports compare Grona configs and future monolith baselines without hiding judge assumptions?
 - Can warning-only experiment gates become useful CI reports before they become hard gates?
@@ -136,6 +141,8 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No benchmark file writes by default.
 - No default hard CI failure from experiment gate thresholds.
 - No persisted training dataset store yet.
+- No executable trainer backend yet.
+- No training command execution or subprocess execution.
 - No dataset downloads, Hugging Face integration, or `datasets` dependency yet.
 - No Parquet reader or large dataset artifact handling yet.
 - No large JSONL streaming design yet.
@@ -162,4 +169,4 @@ This does not prove factual truth. It makes uncertainty explicit.
 - No vector database, SQL database, web server, or external API.
 - No production orchestration.
 
-Before adding model-backed evaluation, donor-backed growth, or training workflows, Grona needs explicit designs for judge reliability, task outputs, human review, benchmark provenance, adapter comparison, score interpretation, failure analysis, donor proposal trust boundaries, license policy, dataset manifest persistence, dataset review calibration, experiment gate threshold calibration, and training export quality review.
+Before adding model-backed evaluation, donor-backed growth, or training workflows, Grona needs explicit designs for judge reliability, task outputs, human review, benchmark provenance, adapter comparison, score interpretation, failure analysis, donor proposal trust boundaries, license policy, dataset manifest persistence, dataset review calibration, experiment gate threshold calibration, training export quality review, artifact policy, dry-run readiness policy, and real trainer backend isolation.

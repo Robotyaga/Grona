@@ -8,6 +8,7 @@ This layer sits after `TrainingDatasetPackage` and `TrainingPlan`:
 2. `TrainingPlan` owns config-only future adapter settings, validation, and card drafts.
 3. `TrainingArtifactBuilder` turns both into a predictable `TrainingArtifactBundle`.
 4. `TrainingArtifactWriter` can dry-run or explicitly write that bundle to a caller-provided directory.
+5. `DryRunTrainer` can inspect a bundle and return a dry-run [training execution plan](training-dry-run.md) without executing anything.
 
 ## Public API
 
@@ -46,6 +47,10 @@ The writer is intentionally conservative:
 - artifact paths are normalized as safe relative POSIX-style paths
 
 A dry-run returns planned paths without touching the filesystem.
+
+## Dry-run Trainer Bridge
+
+`TrainingArtifactBundle` can feed `DryRunTrainer`, which checks artifact readiness and produces a `TrainingExecutionPlan` with a placeholder command preview. That preview is never executed and is not a claim that training is implemented.
 
 ## CLI Demo
 
