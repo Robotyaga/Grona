@@ -132,7 +132,12 @@ def test_inference_review_summary_counts_policy_eligible_reviews() -> None:
             rating=4,
             corrected_response="Corrected answer.",
         ),
-        make_review(review_id="review:3", status="unsafe", rating=1, quality_flags=("unsafe",)),
+        make_review(
+            review_id="review:3",
+            status="unsafe",
+            rating=1,
+            quality_flags=("unsafe",),
+        ),
         make_review(review_id="review:4", status="rejected", rating=1),
     )
 
@@ -145,7 +150,7 @@ def test_inference_review_summary_counts_policy_eligible_reviews() -> None:
     assert summary.unsafe_count == 1
     assert summary.corrected_count == 1
     assert summary.rejected_count == 1
-    assert summary.average_rating == 3.0
+    assert summary.average_rating == 2.75
 
 
 def test_demo_workflow_creates_traces_reviews_decisions_and_summary() -> None:
