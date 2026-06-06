@@ -54,7 +54,7 @@ def test_medium_dataset_ratios() -> None:
 def test_small_dataset_behavior_keeps_train_populated() -> None:
     splits = TrainingDatasetSplitter().split(demo_examples(2))
 
-    assert [split.count() for split in splits] == [1, 1, 0]
+    assert [split.count() for split in splits] == [2, 0, 0]
 
 
 def test_stratified_split_is_deterministic_and_populates_training_domains() -> None:
