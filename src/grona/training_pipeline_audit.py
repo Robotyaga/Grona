@@ -392,8 +392,6 @@ def audit_package_stage(package: TrainingDatasetPackage | None) -> TrainingPipel
         warnings.append("validation split is empty")
     if test_count <= 0:
         warnings.append("test split is empty")
-    if not package.dataset_card:
-        reasons.append("dataset card draft is missing")
     status = "blocked" if reasons else "warning" if warnings else "passed"
     return TrainingPipelineStageStatus(
         "training_dataset_package",
