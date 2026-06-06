@@ -2,7 +2,7 @@
 
 Grona is an early research prototype. Keep the code small, readable, deterministic, and honest about what it does.
 
-See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Dataset ingestion](dataset-ingestion.md), [Benchmarking](benchmarking.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
+See also [Contributing](../CONTRIBUTING.md), [Security](../SECURITY.md), [Architecture](architecture.md), [Growth Lab](growth-lab.md), [Dataset ingestion](dataset-ingestion.md), [Benchmarking](benchmarking.md), [Dry-run trainer interface](training-dry-run.md), [Project vision](project-vision.md), and [Roadmap](roadmap.md).
 
 ## Repository Structure
 
@@ -43,6 +43,9 @@ src/grona/
 |-- safety.py                   ToolAction, SafetyPolicy, ExecutionPlan, SafeExecutionAdapter
 |-- tools.py                    ToolSpec, ToolRequest, ToolResult, ToolRegistry, SafeToolRunner
 |-- training.py                 TrainingExample, TrainingDataset, TrainingDataExporter
+|-- training_artifacts.py       In-memory training artifact bundles and conservative writer
+|-- training_dry_run.py         Dry-run trainer specs, readiness reports, and execution previews
+|-- training_dry_run_cli.py     Offline dry-run trainer CLI demo
 |-- training_cli.py             Offline training export CLI demo
 `-- workspace.py                WorkspaceProfile, WorkspaceConfig, built-in profiles
 ```
@@ -166,6 +169,18 @@ Use `StaticDonorModelAdapter` when tests or examples need deterministic donor ou
 
 Use `TrainingDataExporter` only after records have enough validation or review metadata for a conservative export. It should prepare future training examples, not train a model. Default policy skips raw and rejected records.
 
+## Add Dry-run Training Previews
+
+Use `DryRunTrainer` after `TrainingDatasetPackage`, `TrainingPlan`, and `TrainingArtifactBundle` exist. It should validate readiness and build a `TrainingExecutionPlan` only. Do not execute command previews, spawn subprocesses, call shells, import training packages, probe hardware, write files, download models, or claim training support.
+
+Run the deterministic demo with:
+
+```bash
+python -m grona --training-dry-run-demo
+python examples/training_dry_run_demo.py
+pytest tests/test_training_dry_run.py
+```
+
 ## Run Demo Execution
 
 ```bash
@@ -184,6 +199,7 @@ python -m grona --benchmark-regression-demo
 python -m grona --experiment-demo
 python -m grona --experiment-gate-demo
 python -m grona --training-export-demo
+python -m grona --training-dry-run-demo
 python examples/jsonl_dataset_ingestion_demo.py
 python examples/dataset_review_demo.py
 python examples/donor_model_demo.py
@@ -192,6 +208,7 @@ python examples/benchmark_regression_demo.py
 python examples/experiment_comparison_demo.py
 python examples/experiment_gate_demo.py
 python examples/training_export_demo.py
+python examples/training_dry_run_demo.py
 ```
 
 ## Run Tests
@@ -215,7 +232,7 @@ Before opening a PR, check that the change:
 
 ## What Not to Add Yet
 
-Do not add these until the workspace, ingestion, review, growth, donor, execution, benchmarking, experiments, training export, and safety interfaces have stronger tests and real requirements:
+Do not add these until the workspace, ingestion, review, growth, donor, execution, benchmarking, experiments, training export, training dry-run, and safety interfaces have stronger tests and real requirements:
 
 - dataset downloads
 - Hugging Face `datasets` dependency
@@ -253,6 +270,7 @@ Do not add these until the workspace, ingestion, review, growth, donor, executio
 - automatic model training
 - model weights
 - file-writing training export CLI by default
+- executable training CLI by default
 - claims that exported examples are already high-quality training data
 
-The current workspace, ingestion, review, donor, growth, benchmarking, benchmark snapshots, experiments, experiment gates, training export, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
+The current workspace, ingestion, review, donor, growth, benchmarking, benchmark snapshots, experiments, experiment gates, training export, training dry-run, safety, and tool layers are deterministic planning foundations, not production execution, sandboxing, RAG, truth verification, training, evaluation, or config management.
