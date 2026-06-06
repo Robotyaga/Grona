@@ -4,6 +4,13 @@
 
 ### Added
 
+- PromptTemplate, PromptBuilder, RenderedPrompt, and InferenceTrace foundation for explicit prompt/output provenance.
+- Default prompt templates for general tasks, routing trace summaries, local baseline comparisons, knowledge seed proposals, and training example review.
+- In-memory and explicit JSONL inference trace stores without adding a database.
+- Deterministic static prompt trace runner using `StaticLocalLLMAdapter` only.
+- CLI `--prompt-trace-demo` support through `python -m grona`.
+- `examples/prompt_trace_demo.py` and deterministic offline prompt trace tests.
+- Prompt trace documentation covering provenance, local LLM experiment preparation, and training-data boundaries.
 - Local LLM baseline adapter foundation for explicit, opt-in experiment comparisons.
 - `LocalLLMAdapter`, `StaticLocalLLMAdapter`, `LMStudioCompletionAdapter`, `LocalLLMBaselineRunner`, and related request/response/result records.
 - `local_llm_baseline` experiment mode that compares a direct local-LLM-style answer path against existing deterministic experiment configs.

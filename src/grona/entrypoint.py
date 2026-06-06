@@ -14,6 +14,7 @@ from .experiment_cli import main as experiment_main
 from .experiment_gate_cli import main as experiment_gate_main
 from .jsonl_dataset_cli import main as jsonl_dataset_main
 from .local_llm_cli import main as local_llm_main
+from .prompt_trace_cli import main as prompt_trace_main
 from .training_cli import main as training_main
 
 
@@ -30,6 +31,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return experiment_gate_main(args)
     if "--local-llm-static-demo" in args:
         return local_llm_main(args)
+    if "--prompt-trace-demo" in args:
+        return prompt_trace_main(args)
     if "--donor-demo" in args:
         return donor_main(args)
     if "--training-export-demo" in args:
