@@ -4,7 +4,11 @@ This example does not train a model, load a model, import heavy ML libraries,
 write files, call external APIs, or execute subprocesses.
 """
 
-from grona import ExperimentalLoRABackend, LoRATrainingSafetyConfig, build_demo_lora_training_inputs
+from grona.experimental_training import (
+    ExperimentalLoRABackend,
+    LoRATrainingSafetyConfig,
+    build_demo_lora_training_inputs,
+)
 
 
 def main() -> None:
