@@ -60,6 +60,10 @@ Dataset packages can now feed the config-only [fine-tuning training plan scaffol
 
 Dataset packages and training plans can now feed the [training artifact bundle foundation](training-artifacts.md). The artifact bundle contains stable JSONL split files, config JSON, manifests, cards, safety notes, and a README in memory. Writing remains opt-in through `TrainingArtifactWriter`.
 
+## Dry-run Trainer Bridge
+
+Dataset split counts and manifests also feed the [dry-run trainer interface](training-dry-run.md). `DryRunTrainer` can block a preview when the train split is empty, when validation failed, or when required artifact manifests are missing. This still does not train anything.
+
 ## CLI Demo
 
 ```bash
