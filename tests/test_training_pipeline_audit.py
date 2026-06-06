@@ -153,8 +153,8 @@ def test_validate_training_backend_contract_works_for_experimental_lora_backend_
 
     assert status.stage == "backend"
     assert status.status == "blocked"
-    assert status.metadata["supports_training_plan"] is True
-    assert any("missing optional LoRA dependency" in reason for reason in status.reasons)
+    assert status.metadata["supports_training_plan"] is False
+    assert any("rejects the training plan adapter config" in reason for reason in status.reasons)
 
 
 def test_training_lifecycle_markdown_is_deterministic() -> None:
