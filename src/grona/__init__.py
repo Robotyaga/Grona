@@ -119,6 +119,15 @@ from .experiments import (
     best_experiment_result,
     create_demo_experiment_configs,
 )
+from .experimental_training import (
+    EXPERIMENTAL_LORA_CONFIRMATION_TOKEN,
+    ExperimentalLoRABackend,
+    LoRATrainingJob,
+    LoRATrainingReadinessReport,
+    LoRATrainingSafetyConfig,
+    build_demo_lora_training_inputs,
+    detect_lora_dependency_availability,
+)
 from .feedback import (
     FeedbackRecord,
     FeedbackStore,
@@ -285,6 +294,15 @@ from .training_package import (
     TrainingSplitConfig,
     build_training_dataset_package,
 )
+from .training_pipeline_audit import (
+    TrainingPipelineAuditor,
+    TrainingPipelineContract,
+    TrainingPipelineReadinessReport,
+    TrainingPipelineStageStatus,
+    build_demo_training_pipeline_audit_inputs,
+    training_lifecycle_markdown,
+    validate_training_backend_contract,
+)
 from .training_plan import (
     AdapterTrainingSpec,
     BaseModelSpec,
@@ -294,6 +312,7 @@ from .training_plan import (
     TrainingRunValidationResult,
     TrainingRunValidator,
     build_demo_training_plan,
+    create_demo_training_plan_examples,
 )
 from .training_plugins import (
     FutureLoRABackendStub,
