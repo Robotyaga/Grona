@@ -188,6 +188,20 @@ from .memory import (
 )
 from .module import ExpertModule
 from .orchestrator import OrchestrationResult, Orchestrator
+from .prompting import (
+    InferenceTrace,
+    InferenceTraceStore,
+    InMemoryInferenceTraceStore,
+    JsonlInferenceTraceStore,
+    PromptBuilder,
+    PromptTemplate,
+    PromptTraceResult,
+    RenderedPrompt,
+    default_prompt_templates,
+    get_default_prompt_template,
+    run_prompt_trace,
+    run_static_prompt_trace,
+)
 from .registry import ModuleRegistry
 from .router import Router
 from .safety import (
