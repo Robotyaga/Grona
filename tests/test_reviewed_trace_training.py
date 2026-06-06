@@ -12,7 +12,10 @@ from grona import (
 )
 
 
-def make_trace(trace_id: str = "trace:1", response_text: str = "Original answer.") -> InferenceTrace:
+def make_trace(
+    trace_id: str = "trace:1",
+    response_text: str = "Original answer.",
+) -> InferenceTrace:
     prompt = RenderedPrompt(
         template_name="training_example_review",
         system_prompt="Review conservatively.",
