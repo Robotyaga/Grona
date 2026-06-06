@@ -11,6 +11,7 @@ This document describes the current deterministic prototype, not a production AI
 - [Dataset ingestion](dataset-ingestion.md)
 - [Benchmarking](benchmarking.md)
 - [Dry-run trainer interface](training-dry-run.md)
+- [Optional training backend boundary](training-backends.md)
 - [Workspace profiles](workspaces.md)
 - [Development notes](development.md)
 - [Research notes](research-notes.md)
@@ -78,6 +79,7 @@ flowchart TD
     TE --> TP[TrainingDatasetPackage / TrainingPlan]
     TP --> TA[TrainingArtifactBundle]
     TA --> DRY[DryRunTrainer / TrainingExecutionPlan]
+    DRY --> TB[TrainingBackendRegistry / PlaceholderTrainingBackend]
 ```
 
 ## Current Request Lifecycle
@@ -100,6 +102,7 @@ flowchart TD
 16. `ExperimentRegressionGate` can turn experiment deltas into a warning or strict threshold decision.
 17. `TrainingDataExporter` can prepare reviewed or validated traces as explicit in-memory training example candidates.
 18. `TrainingDatasetPackage`, `TrainingPlan`, `TrainingArtifactBundle`, and `DryRunTrainer` can preview training readiness without training or executing commands.
+19. `TrainingBackendRegistry` and `PlaceholderTrainingBackend` can declare future optional backend capabilities, static dependency blockers, and dry-run plan boundaries.
 
 ## Main Layers
 
@@ -119,6 +122,7 @@ flowchart TD
 - Experiment regression gate: classify comparison regressions with explicit thresholds.
 - Training export: prepare conservative training example candidates while preserving provenance and validation metadata.
 - Training dry-run: validate training plan plus artifact bundle readiness and produce placeholder command previews without execution.
+- Training backend boundary: register optional placeholder backends, expose capability lookup, and report static dependency blockers without execution.
 
 ## Experiment Layer
 
@@ -157,7 +161,7 @@ BenchmarkReport -> BenchmarkRunRecord -> BenchmarkRunStore -> BenchmarkRegressio
 
 `DatasetManifest` describes where a dataset source came from, its format, license, allowed uses, domains, capabilities, review policy, and metadata. `DatasetLicensePolicy` answers whether the manifest can be used for knowledge seed candidates or training export candidates and explains why.
 
-`JsonlDatasetRecord` preserves parsed JSONL row data with line numbers. `DatasetIngestor` applies policy, normalizes Alpaca-like, ShareGPT-like, or generic text rows, and returns `DatasetIngestionReport` counts and rejection reasons.
+`JsonlDatasetRecord` preserves parsed JSONL row data with line numbers. `DatasetIngestor` applies policy, normalizes Alpaca-like, ShareGPT-like, or generic text rows, and returns a `DatasetIngestionReport` counts and rejection reasons.
 
 `DatasetQualityReviewer` then applies deterministic quality checks to normalized samples. It can reject empty samples, too-short samples, duplicates, license-blocked samples, unsupported samples, missing answers, and suspicious prompt-marker rows. It can also mark borderline samples as `needs_human_review` instead of accepting them.
 
@@ -181,6 +185,8 @@ The donor layer is not answer generation, autonomous learning, training, or a tr
 
 `TrainingDatasetPackage`, `TrainingPlan`, and `TrainingArtifactBundle` then make split, config, manifest, card, and artifact boundaries explicit. `DryRunTrainer` consumes those in-memory objects to produce a readiness report and placeholder `TrainingExecutionPlan`. It does not execute the preview, spawn subprocesses, call shells, or train models.
 
+`TrainingBackendRegistry` and `PlaceholderTrainingBackend` add an optional backend boundary after dry-run planning. They declare capabilities, supported adapter types, required artifacts, and static dependency blockers without plugin auto-discovery, package imports, shell commands, or training execution.
+
 ## Benchmark Layer
 
 `BenchmarkCase` defines a task with expected domains, modules, and keywords. `BenchmarkRunConfig` enables deterministic features such as demo memory, dataset seeds, grape clusters, GrowthEngine, and orchestration. `BenchmarkSuite` returns a `BenchmarkReport` containing per-case `BenchmarkResult` scores.
@@ -189,4 +195,4 @@ This layer measures trace quality, not model intelligence. It does not call LLMs
 
 ## Prototype Boundaries
 
-The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, experiment gate reports, training export, training packaging, artifact bundling, dry-run training previews, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
+The current prototype provides inspectable contracts for routing, dataset manifest ingestion, dataset quality review, donor proposals, memory, seed validation, seed review, grape cluster candidates, GrowthEngine recommendations, benchmarking, benchmark snapshots, experiment comparisons, experiment gate reports, training export, training packaging, artifact bundling, dry-run training previews, optional training backend boundaries, orchestration, execution adapters, mock tools, workspaces, and safety policy. It does not provide default LLM calls, real LLM generation, real dataset downloads, real tool execution, sandboxing, persistent knowledge stores, semantic search, web fact-checking, model training, automatic truth resolution, automatic expert growth, or production configuration management.
