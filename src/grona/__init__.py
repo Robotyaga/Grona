@@ -244,6 +244,15 @@ from .training import (
     TrainingExample,
     TrainingExportConfig,
 )
+from .training_package import (
+    DatasetCardDraft,
+    TrainingDatasetPackage,
+    TrainingDatasetSplit,
+    TrainingDatasetSplitter,
+    TrainingExportManifest,
+    TrainingSplitConfig,
+    build_training_dataset_package,
+)
 from .workspace import (
     WorkspaceConfig,
     WorkspaceProfile,
