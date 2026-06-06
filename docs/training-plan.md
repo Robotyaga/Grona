@@ -62,6 +62,10 @@ A validated `TrainingPlan` can now be paired with a `TrainingDatasetPackage` and
 
 The artifact bridge is still config-only. It does not train, load, download, upload, call APIs, or write files unless `TrainingArtifactWriter` is explicitly called with `dry_run=False`.
 
+## Dry-run Trainer Bridge
+
+A `TrainingPlan` plus `TrainingArtifactBundle` can now feed the [dry-run trainer interface](training-dry-run.md). `DryRunTrainer` validates artifact readiness and returns a deterministic `TrainingExecutionPlan` with a placeholder command preview. It does not execute the preview and does not train anything.
+
 ## Demo
 
 ```bash
@@ -108,6 +112,8 @@ This creates a reviewable bridge from dataset packages to future LoRA or QLoRA w
 - no model downloads
 - no dataset uploads
 - no artifact writing by default
+- no command execution
+- no subprocess execution
 - no real evaluation yet
 - no production model card
 - no guarantee that placeholder hyperparameters are good
