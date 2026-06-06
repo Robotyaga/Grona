@@ -1,6 +1,6 @@
 # Roadmap
 
-Grona should stay readable before adding heavier infrastructure. The roadmap is intentionally staged so public polish, tests, safety boundaries, benchmarks, experiments, prompt provenance, and research questions stay ahead of larger integrations.
+Grona should stay readable before adding heavier infrastructure. The roadmap is intentionally staged so public polish, tests, safety boundaries, benchmarks, experiments, prompt provenance, training readiness, local handoff, and research questions stay ahead of larger integrations.
 
 ## Documentation Map
 
@@ -11,6 +11,9 @@ Grona should stay readable before adding heavier infrastructure. The roadmap is 
 - [Benchmarking](benchmarking.md)
 - [Prompting and inference traces](prompting.md)
 - [Dry-run trainer interface](training-dry-run.md)
+- [Training pipeline readiness audit](training-pipeline-audit.md)
+- [Model build readiness](model-build-readiness.md)
+- [Local training handoff](local-training-handoff.md)
 - [Workspace profiles](workspaces.md)
 - [Research notes](research-notes.md)
 - [v0.1.0 prototype release notes](release-notes-v0.1.0-prototype.md)
@@ -46,6 +49,8 @@ The repository already has the first deterministic foundation:
 - local LLM baseline adapter foundation with deterministic static demo and optional explicit LM Studio-compatible adapter
 - conservative `TrainingDataExporter` foundation for in-memory reviewed example candidates
 - training dataset package, config-only training plan, artifact bundle, and dry-run trainer preview foundations
+- optional training backend boundaries and experimental LoRA backend skeleton
+- training pipeline readiness audit and model-build readiness/local handoff report
 - public README polish and project documentation
 - examples, tests, and CI
 
@@ -156,13 +161,15 @@ Current foundation includes `TrainingExample`, `TrainingDataset`, `TrainingExpor
 
 Boundaries: no model training, model calls, downloads, Parquet export, file writing by default, or claim that exported examples are high-quality real training data.
 
-## Training Package, Artifact, And Dry-run Foundation
+## Training Package, Artifact, Dry-run, And Model-build Readiness
 
-Goal: make future training inputs reviewable before any real trainer exists.
+Goal: make future training inputs and local environment assumptions reviewable before any real trainer exists.
 
-Current foundation includes deterministic `TrainingDatasetPackage` splits, `TrainingPlan` config validation, `TrainingArtifactBundle` assembly, conservative artifact writing with dry-run defaults, `TrainerBackendSpec`, `DryRunTrainerConfig`, `TrainingReadinessReport`, `TrainingExecutionPlan`, placeholder backend presets, CLI `--training-dry-run-demo`, example, tests, and documentation.
+Current foundation includes deterministic `TrainingDatasetPackage` splits, `TrainingPlan` config validation, `TrainingArtifactBundle` assembly, conservative artifact writing with dry-run defaults, `TrainerBackendSpec`, `DryRunTrainerConfig`, `TrainingReadinessReport`, `TrainingExecutionPlan`, placeholder backend presets, `TrainingPipelineAuditor`, `TrainingEnvironmentAuditor`, `ModelBuildReadinessAuditor`, local handoff manifests, CLI demos, examples, tests, and documentation.
 
-Boundaries: no actual training, subprocess execution, shell execution, environment probing, heavy training dependencies, model loading, downloads, uploads, GPU detection, or guarantee that command previews are runnable.
+Boundaries: no actual training, subprocess execution, shell execution, hidden environment probing, heavy training dependencies, model loading, downloads, uploads, GPU detection, or guarantee that command previews are runnable.
+
+The repository is ready for local development handoff, not production training. The next step should be local-only trainer design behind explicit safety gates and dependency isolation.
 
 ## DonorModelAdapter / LMStudioAdapter Foundation
 
@@ -182,7 +189,7 @@ UI/API layers should come after the architecture contracts are stable enough to 
 - dataset manifest, policy, source, sample provenance, and quality review decision
 - donor proposal source, type, validation status, and error status
 - benchmark case, run snapshot, regression report, experiment comparison, and gate decision summaries
-- training export candidate counts, validation statuses, provenance, artifact readiness, and dry-run execution blockers
+- training export candidate counts, validation statuses, provenance, artifact readiness, model-build readiness, environment blockers, and local handoff status
 - knowledge seed validation and review status
 - grape cluster assignment status
 - GrowthEngine decision status

@@ -4,6 +4,8 @@ The training pipeline readiness audit hardens Grona's training-preparation contr
 
 It does not train models, load models, execute commands, spawn subprocesses, call shells, call external APIs, download models, download datasets, upload artifacts, write files by default, probe GPUs, or import heavy ML packages.
 
+For the final local-development handoff layer that combines this audit with explicit environment readiness, backend readiness, artifact summaries, and a local IDE checklist, see [Model build readiness](model-build-readiness.md) and [Local training handoff](local-training-handoff.md).
+
 ## Why This Exists
 
 Grona now has training examples, dataset packages, training plans, artifact bundles, dry-run trainer previews, backend boundaries, optional plugin stubs, and an experimental LoRA backend skeleton. Before real training is attempted, those pieces need an explicit readiness audit that can answer:
@@ -104,16 +106,26 @@ A backend that claims full readiness without explicit execution safety confirmat
 reviewed traces -> examples -> dataset package -> artifact bundle -> training plan -> dry-run -> backend readiness -> future real training
 ```
 
+The broader handoff lifecycle adds explicit environment readiness and local handoff:
+
+```text
+reviewed traces -> training examples -> dataset package -> artifacts -> training plan -> dry-run -> backend boundary -> environment readiness -> local handoff -> future real training
+```
+
 ## Demo
 
 ```bash
 python -m grona --training-pipeline-audit-demo
+python -m grona --model-build-readiness-demo
 python examples/training_pipeline_audit_demo.py
+python examples/model_build_readiness_demo.py
 ```
 
-The demo builds deterministic examples, a dataset package, training plan, artifact bundle, experimental LoRA backend, safety config, pipeline audit report, backend contract validation, and contract summary.
+The training pipeline demo builds deterministic examples, a dataset package, training plan, artifact bundle, experimental LoRA backend, safety config, pipeline audit report, backend contract validation, and contract summary.
 
-It does not write files or execute training.
+The model-build readiness demo adds environment readiness, artifact summary, backend readiness, blockers, warnings, and a local handoff checklist.
+
+Neither demo writes files or executes training.
 
 ## Limitations
 
