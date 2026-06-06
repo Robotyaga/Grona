@@ -119,6 +119,15 @@ from .experiments import (
     best_experiment_result,
     create_demo_experiment_configs,
 )
+from .experimental_training import (
+    EXPERIMENTAL_LORA_CONFIRMATION_TOKEN,
+    ExperimentalLoRABackend,
+    LoRATrainingJob,
+    LoRATrainingReadinessReport,
+    LoRATrainingSafetyConfig,
+    build_demo_lora_training_inputs,
+    detect_lora_dependency_availability,
+)
 from .feedback import (
     FeedbackRecord,
     FeedbackStore,
