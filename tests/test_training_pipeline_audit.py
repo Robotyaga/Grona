@@ -135,7 +135,7 @@ def test_auditor_checks_provenance_and_license_metadata_presence() -> None:
 
 
 def test_validate_training_backend_contract_works_for_placeholder_backend() -> None:
-    _package, plan, bundle = build_demo_training_pipeline_audit_inputs()
+    _examples, _package, plan, bundle = build_demo_training_pipeline_audit_inputs()
     backend = create_default_training_backend_registry().get("lora-cli-placeholder")
 
     status = validate_training_backend_contract(backend, plan, bundle)
@@ -146,7 +146,7 @@ def test_validate_training_backend_contract_works_for_placeholder_backend() -> N
 
 
 def test_validate_training_backend_contract_works_for_experimental_lora_backend_default_path() -> None:
-    _package, plan, bundle = build_demo_training_pipeline_audit_inputs()
+    _examples, _package, plan, bundle = build_demo_training_pipeline_audit_inputs()
     backend = ExperimentalLoRABackend(dependency_finder=lambda _package: None)
 
     status = validate_training_backend_contract(backend, plan, bundle)
