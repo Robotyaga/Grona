@@ -9,7 +9,6 @@ from json import dumps
 from .feedback import Metadata
 from .training import TrainingExample, json_metadata
 from .training_package import (
-    DEFAULT_PACKAGE_CREATED_AT,
     DatasetCardDraft,
     TrainingDatasetPackage,
     TrainingExportManifest,
