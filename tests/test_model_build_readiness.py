@@ -8,7 +8,6 @@ from grona import (
     ModelBuildReadinessReport,
     TrainingDependencyProfile,
     TrainingEnvironmentAuditor,
-    TrainingEnvironmentProfile,
     TrainingEnvironmentReadinessReport,
     TrainingHardwareProfile,
     TrainingHardwareRequirement,
