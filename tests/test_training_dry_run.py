@@ -21,7 +21,6 @@ from grona.training_dry_run import (
     build_training_command_preview,
     command_preview_text,
 )
-from grona.training_plan import create_demo_training_plan_examples
 
 
 def test_trainer_backend_spec_creation() -> None:
