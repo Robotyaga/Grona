@@ -10,6 +10,7 @@ This layer sits after `TrainingDatasetPackage` and `TrainingPlan`:
 4. `TrainingArtifactWriter` can dry-run or explicitly write that bundle to a caller-provided directory.
 5. `DryRunTrainer` can inspect a bundle and return a dry-run [training execution plan](training-dry-run.md) without executing anything.
 6. `TrainingBackendRegistry` can expose placeholder optional backends that declare required artifacts and dependency blockers.
+7. `ExperimentalLoRABackend` can inspect the same bundle and build a guarded [LoRA job preview](experimental-lora-backend.md) without writing files or training.
 
 ## Public API
 
@@ -59,16 +60,25 @@ A dry-run returns planned paths without touching the filesystem.
 
 This keeps artifact packaging separate from future trainer execution. The boundary does not execute commands or import training packages.
 
+## Experimental LoRA Bridge
+
+`ExperimentalLoRABackend.prepare_training_job()` can inspect a `TrainingArtifactBundle` and produce a `LoRATrainingJob` preview. The preview maps expected train, validation, test, and config paths under an explicit output directory, but it does not write those paths and does not execute training.
+
+This bridge uses the existing artifact bundle surface instead of creating a second parallel artifact format.
+
 ## CLI Demo
 
 ```bash
 python -m grona --training-artifact-demo
 python -m grona --training-backend-demo
+python -m grona --experimental-lora-backend-demo
 ```
 
 The artifact demo builds a tiny package and plan in memory, prints the artifact summary, shows README and training config previews, and does not write files.
 
 The backend demo registers placeholder backends and previews readiness/dependency status for the same kind of artifact bundle.
+
+The experimental LoRA demo builds a job preview from an in-memory artifact bundle and shows why execution remains blocked.
 
 To plan output paths without writing:
 
@@ -86,4 +96,4 @@ Use `--artifact-overwrite` only when replacing existing artifact files is intent
 
 ## Limitations
 
-This is an export foundation, not a training system. It does not include executable training backends, model weights, tokenizer handling, dataset downloads, upload flows, LM Studio integration, external APIs, plugin auto-discovery, or production training claims.
+This is an export foundation, not a training system. It does not include executable training backends, model weights, tokenizer handling, dataset downloads, upload flows, LM Studio integration, external APIs, plugin auto-discovery, production training claims, or real LoRA training loops.
