@@ -45,6 +45,12 @@ The prompt trace layer does not call a model by itself. It records what would be
 
 See [Prompting and inference traces](prompting.md).
 
+## Inference Review Layer
+
+`InferenceReview` can attach human status, rating, flags, notes, and corrected response text to an `InferenceTrace`. `InferenceReviewPolicy` then makes deterministic eligibility decisions for future candidate use.
+
+This keeps baseline traces from becoming training data, benchmark references, or knowledge seed candidates by accident. It is not an LLM judge and does not claim that a baseline answer is correct. See [Inference review foundation](inference-review.md).
+
 ## Running The Static Demo
 
 ```bash
@@ -52,9 +58,11 @@ python -m grona --local-llm-static-demo
 python examples/local_llm_baseline_demo.py
 python -m grona --prompt-trace-demo
 python examples/prompt_trace_demo.py
+python -m grona --inference-review-demo
+python examples/inference_review_demo.py
 ```
 
-All four commands use deterministic static adapters only. They are deterministic and offline.
+All commands use deterministic static adapters or static traces only. They are deterministic and offline.
 
 ## Experiment Mode
 
@@ -77,6 +85,7 @@ A caller must explicitly construct the adapter with a local base URL and then pa
 - no answer superiority claims
 - no persisted baseline result store
 - no automatic conversion of inference traces into training examples
+- no automatic conversion of inference reviews into training examples
 - no default LM Studio call
 - no external API integration by default
 
