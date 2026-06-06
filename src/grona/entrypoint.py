@@ -18,6 +18,7 @@ from .local_llm_cli import main as local_llm_main
 from .prompt_trace_cli import main as prompt_trace_main
 from .reviewed_trace_training_cli import main as reviewed_trace_training_main
 from .training_cli import main as training_main
+from .training_package_cli import main as training_package_main
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -43,6 +44,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return donor_main(args)
     if "--training-export-demo" in args:
         return training_main(args)
+    if "--training-package-demo" in args:
+        return training_package_main(args)
     if "--jsonl-dataset-demo" in args:
         return jsonl_dataset_main(args)
     if "--dataset-review-demo" in args:
