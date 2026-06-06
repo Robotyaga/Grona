@@ -295,6 +295,17 @@ from .training_plan import (
     TrainingRunValidator,
     build_demo_training_plan,
 )
+from .training_plugins import (
+    FutureLoRABackendStub,
+    FutureQLoRABackendStub,
+    OptionalDependencySpec,
+    OptionalTrainingDependencyReport,
+    TrainingBackendDesignReport,
+    build_optional_training_backend_design_report,
+    create_optional_training_backend_registry,
+    optional_training_dependency_specs,
+    optional_training_required_artifacts,
+)
 from .workspace import (
     WorkspaceConfig,
     WorkspaceProfile,

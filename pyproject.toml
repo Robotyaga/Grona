@@ -30,6 +30,7 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.5",
 ]
+training = []
 
 [project.scripts]
 grona-demo = "grona.entrypoint:main"
@@ -49,6 +50,7 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "examples/inference_review_demo.py" = ["I001"]
+"examples/optional_training_backend_demo.py" = ["E501", "I001"]
 "examples/training_artifact_demo.py" = ["E501", "I001"]
 "examples/training_backend_demo.py" = ["E501", "I001"]
 "examples/training_dry_run_demo.py" = ["E501", "I001"]
@@ -70,8 +72,11 @@ select = ["E", "F", "I", "UP", "B"]
 "src/grona/training_package_cli.py" = ["E501"]
 "src/grona/training_plan.py" = ["E501"]
 "src/grona/training_plan_cli.py" = ["E501"]
+"src/grona/training_plugin_cli.py" = ["E501"]
+"src/grona/training_plugins.py" = ["E501", "I001"]
 "tests/test_training_artifacts.py" = ["E501", "I001"]
 "tests/test_training_backends.py" = ["E501", "I001"]
 "tests/test_training_dry_run.py" = ["E501", "I001"]
 "tests/test_training_package.py" = ["E501", "I001"]
 "tests/test_training_plan.py" = ["E501", "I001"]
+"tests/test_training_plugins.py" = ["E501", "I001"]

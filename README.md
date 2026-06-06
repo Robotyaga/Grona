@@ -44,6 +44,7 @@ What it does today:
 - evaluates experiment comparisons with warning-only threshold gate reports by default
 - exports conservative in-memory training example candidates with `TrainingDataExporter`
 - packages training examples into deterministic dataset splits, config-only plans, artifact bundles, and dry-run execution previews
+- declares optional training backend and future plugin boundaries without training, heavy dependencies, or execution
 - orchestrates selected modules into structured handoffs
 - runs deterministic demo expert executors, execution adapters, and mock tools
 - supports built-in workspace profiles
@@ -98,6 +99,8 @@ python -m grona --training-package-demo
 python -m grona --training-plan-demo
 python -m grona --training-artifact-demo
 python -m grona --training-dry-run-demo
+python -m grona --training-backend-demo
+python -m grona --optional-training-backend-demo
 ```
 
 Build context and run deterministic adapters or mock tools:
@@ -144,6 +147,8 @@ python examples/training_package_demo.py
 python examples/training_plan_demo.py
 python examples/training_artifact_demo.py
 python examples/training_dry_run_demo.py
+python examples/training_backend_demo.py
+python examples/optional_training_backend_demo.py
 ```
 
 ## Benchmark And Experiment Foundation
@@ -225,9 +230,11 @@ The default export policy is conservative:
 
 The exporter can produce deterministic Grona-native JSONL strings with metadata preserved and Alpaca-like JSONL strings containing `instruction`, `input`, and `output`. It does not write files by default and does not train a model.
 
-## Training Dry-run Foundation
+## Training Dry-run And Backend Boundaries
 
 `DryRunTrainer` validates a `TrainingPlan` plus `TrainingArtifactBundle` and produces a `TrainingExecutionPlan` with readiness details and a placeholder command preview. It does not execute the preview, spawn subprocesses, call shells, load models, add training dependencies, or train anything. See [Dry-run trainer interface](docs/training-dry-run.md).
+
+`TrainingBackendRegistry` and `PlaceholderTrainingBackend` define optional backend capability and dependency boundaries without executing trainers. `FutureLoRABackendStub` and `FutureQLoRABackendStub` add a metadata-only scaffold for future real training plugins. They do not import heavy dependencies or implement training. See [Optional training backend boundary](docs/training-backends.md) and [Optional real-training plugin scaffold](docs/optional-training-plugins.md).
 
 ## Documentation
 
@@ -243,6 +250,8 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - [Training plan scaffold](docs/training-plan.md)
 - [Training artifact bundle](docs/training-artifacts.md)
 - [Dry-run trainer interface](docs/training-dry-run.md)
+- [Optional training backend boundary](docs/training-backends.md)
+- [Optional real-training plugin scaffold](docs/optional-training-plugins.md)
 - [Development notes](docs/development.md)
 - [Workspace profiles](docs/workspaces.md)
 - [Research notes](docs/research-notes.md)
@@ -256,7 +265,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, prompt building, inference traces, inference reviews, reviewed trace training candidate building, dataset ingestion, dataset review, clustering, growth, donor proposals, local LLM baseline comparisons, benchmarking, benchmark snapshots, experiments, experiment gates, training export, training packaging, artifact bundling, and dry-run training previews are deterministic or explicitly configured prototype layers.
+- Routing, memory retrieval, prompt building, inference traces, inference reviews, reviewed trace training candidate building, dataset ingestion, dataset review, clustering, growth, donor proposals, local LLM baseline comparisons, benchmarking, benchmark snapshots, experiments, experiment gates, training export, training packaging, artifact bundling, dry-run training previews, backend boundaries, and optional training plugin stubs are deterministic or explicitly configured prototype layers.
 - Dataset rows are candidates only; they are not automatically trusted, promoted, or training-safe.
 - Dataset quality review is deterministic only; it is not semantic deduplication, LLM judging, legal review, or a guarantee of real training quality.
 - Prompt traces are provenance records only; they are not automatic training examples.
@@ -274,6 +283,8 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - The current monolith baseline is a stub, not a real LLM.
 - TrainingDataExporter produces candidate records only; it does not train models or prove example quality.
 - Training execution plans are dry-run previews only; command previews are placeholders and are never executed.
+- Optional real-training plugin stubs are not installed, not implemented, and blocked by default.
+- No `torch`, `transformers`, `peft`, `bitsandbytes`, `datasets`, `accelerate`, `pandas`, or `pyarrow` dependency.
 - No trusted donor model workflow, external judge model, or automatic answer generation yet.
 - No embeddings, semantic clustering, vector database, SQL database, or web server.
 - No autonomous self-training, model weights, or automatic expert creation yet.

@@ -4,6 +4,11 @@
 
 ### Added
 
+- Optional real-training plugin scaffold for future LoRA/QLoRA backend plugins without training execution.
+- OptionalDependencySpec, OptionalTrainingDependencyReport, FutureLoRABackendStub, FutureQLoRABackendStub, and TrainingBackendDesignReport records.
+- Metadata-only optional dependency descriptions for future `torch`, `transformers`, `peft`, `accelerate`, `bitsandbytes`, and `datasets` use without adding dependencies.
+- CLI `--optional-training-backend-demo` support through `python -m grona` with blocked dry-run plans and design reports.
+- `examples/optional_training_backend_demo.py`, deterministic optional plugin scaffold tests, and optional training plugin documentation.
 - Optional TrainingBackend protocol and plugin-boundary foundation for future explicit trainer integrations.
 - TrainingBackendCapability, TrainingBackendRegistry, TrainingBackendDependencyReport, and TrainingBackendMetadata records.
 - Safe PlaceholderTrainingBackend implementations for dry-run, LoRA placeholder, and QLoRA placeholder backends.
