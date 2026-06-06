@@ -103,7 +103,10 @@ def format_reviewed_trace_training_demo() -> str:
     skipped = skipped_reviewed_trace_results(results)
     lines = [
         "Reviewed trace training demo",
-        "Execution: deterministic offline trace review only; no LLM calls, APIs, downloads, files, or training.",
+        (
+            "Execution: deterministic offline trace review only; no LLM calls, "
+            "APIs, downloads, files, or training."
+        ),
         "",
         f"Created examples: {len(created)}",
         f"Skipped traces/reviews: {len(skipped)}",
