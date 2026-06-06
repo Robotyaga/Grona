@@ -23,6 +23,7 @@ from .training_backend_cli import main as training_backend_main
 from .training_cli import main as training_main
 from .training_dry_run_cli import main as training_dry_run_main
 from .training_package_cli import main as training_package_main
+from .training_pipeline_audit_cli import main as training_pipeline_audit_main
 from .training_plan_cli import main as training_plan_main
 from .training_plugin_cli import main as training_plugin_main
 
@@ -64,6 +65,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return training_plugin_main(args)
     if "--experimental-lora-backend-demo" in args:
         return experimental_lora_main(args)
+    if "--training-pipeline-audit-demo" in args:
+        return training_pipeline_audit_main(args)
     if "--jsonl-dataset-demo" in args:
         return jsonl_dataset_main(args)
     if "--dataset-review-demo" in args:
