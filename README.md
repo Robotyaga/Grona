@@ -6,7 +6,7 @@
 
 Grona is a lightweight research prototype for explainable sparse AI routing. Instead of activating every capability for every task, it routes work through a small cluster of relevant expert modules and keeps the route trace visible.
 
-The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, experiment comparisons, experiment gate reports, local LLM baseline traces, prompt traces, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
+The metaphor is a grape cluster. A workspace is the vineyard, expert modules are active grapes, dataset manifests, dataset samples, deterministic dataset reviews, donor proposals, feedback traces, benchmark traces, benchmark run snapshots, experiment comparisons, experiment gate reports, local LLM baseline traces, prompt traces, inference reviews, and memory sources are nutrients, routing rules decide which grapes wake up, GrowthEngine recommends future growth actions, BenchmarkSuite measures deterministic traces, TrainingDataExporter prepares reviewed records for future experiments, and safety policy is the protective layer around future tool use.
 
 ## Current Status
 
@@ -20,6 +20,8 @@ What it does today:
 - builds route-scoped context from deterministic memory modules
 - builds deterministic prompt templates and rendered prompts from visible traces
 - records explicit `InferenceTrace` values for prompt/adapter response provenance
+- reviews inference traces with explicit human statuses, ratings, flags, notes, and corrected responses
+- evaluates inference reviews with a deterministic conservative eligibility policy
 - ingests in-memory demo documents into memory records
 - describes small dataset sources with `DatasetManifest`
 - parses tiny explicit JSONL text or files into line-aware records
@@ -69,7 +71,7 @@ python -m grona "Plan MotionCam RAW workflow" --workspace media
 python -m grona "Find document indexing notes" --workspace documents
 ```
 
-Run deterministic Growth Lab, dataset, benchmark, experiment, donor, prompt trace, local LLM baseline, and training export demos:
+Run deterministic Growth Lab, dataset, benchmark, experiment, donor, prompt trace, inference review, local LLM baseline, and training export demos:
 
 ```bash
 python -m grona --growth-demo
@@ -87,6 +89,7 @@ python -m grona --experiment-gate-demo
 python -m grona --experiment-gate-strict-demo
 python -m grona --local-llm-static-demo
 python -m grona --prompt-trace-demo
+python -m grona --inference-review-demo
 python -m grona --training-export-demo
 ```
 
@@ -127,6 +130,7 @@ python examples/experiment_comparison_demo.py
 python examples/experiment_gate_demo.py
 python examples/local_llm_baseline_demo.py
 python examples/prompt_trace_demo.py
+python examples/inference_review_demo.py
 python examples/training_export_demo.py
 ```
 
@@ -157,6 +161,16 @@ The monolith baseline is only a deterministic stub. It is not a real monolithic 
 `InferenceTrace` records the rendered prompt, adapter/model label, response text, error state, selected modules, context sources, and metadata. `InMemoryInferenceTraceStore` and `JsonlInferenceTraceStore` keep trace storage explicit and lightweight.
 
 This layer prepares future local LLM experiments and reviewed training-data workflows without calling real models by default. It does not judge answer quality, optimize prompts, train models, or automatically turn traces into training examples. See [Prompting and inference traces](docs/prompting.md).
+
+## Inference Review Foundation
+
+`InferenceReview` attaches explicit human review metadata to an `InferenceTrace`: status, rating, quality flags, notes, optional corrected response, reviewer label, and metadata.
+
+`InferenceReviewPolicy` produces an `InferenceReviewDecision` with candidate eligibility flags for training, knowledge seed, and benchmark reference use. The default policy is conservative: unsafe, rejected, unreviewed, or still-needing-correction traces are blocked; high-rated accepted traces may be eligible; corrected traces require a corrected response and explicit config permission.
+
+`InMemoryInferenceReviewStore` and `JsonlInferenceReviewStore` keep review persistence lightweight and explicit. `InferenceReviewSummary` reports status counts, ratings, unsafe/corrected/rejected counts, and policy-eligible counts.
+
+This layer is a human-review gate, not an automatic quality claim. It does not call an LLM judge, train a model, promote knowledge, or automatically convert traces into training data. See [Inference review foundation](docs/inference-review.md).
 
 ## Dataset Manifest, JSONL, And Quality Review
 
@@ -203,6 +217,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - [Benchmarking](docs/benchmarking.md)
 - [Local LLM baseline](docs/local-llm-baseline.md)
 - [Prompting and inference traces](docs/prompting.md)
+- [Inference review foundation](docs/inference-review.md)
 - [Development notes](docs/development.md)
 - [Workspace profiles](docs/workspaces.md)
 - [Research notes](docs/research-notes.md)
@@ -216,10 +231,11 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 ## Current Limitations
 
 - This is a prototype, not a production assistant.
-- Routing, memory retrieval, prompt building, inference traces, dataset ingestion, dataset review, clustering, growth, donor proposals, local LLM baseline comparisons, benchmarking, benchmark snapshots, experiments, experiment gates, and training export are deterministic or explicitly configured prototype layers.
+- Routing, memory retrieval, prompt building, inference traces, inference reviews, dataset ingestion, dataset review, clustering, growth, donor proposals, local LLM baseline comparisons, benchmarking, benchmark snapshots, experiments, experiment gates, and training export are deterministic or explicitly configured prototype layers.
 - Dataset rows are candidates only; they are not automatically trusted, promoted, or training-safe.
 - Dataset quality review is deterministic only; it is not semantic deduplication, LLM judging, legal review, or a guarantee of real training quality.
 - Prompt traces are provenance records only; they are not automatic training examples.
+- Inference reviews are human-review metadata and deterministic eligibility decisions only; they are not automatic quality proof, LLM judging, training, or knowledge promotion.
 - No dataset downloads, Hugging Face integration, `datasets` dependency, Parquet support, or large dataset streaming yet.
 - Donor model output is untrusted proposal material, not validated truth.
 - Raw donor proposals are not exported as training data by default.
