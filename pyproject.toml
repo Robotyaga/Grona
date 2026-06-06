@@ -30,7 +30,16 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.5",
 ]
-training = []
+training = [
+    "torch",
+    "transformers",
+    "peft",
+    "accelerate",
+    "datasets",
+]
+qlora = [
+    "bitsandbytes",
+]
 
 [project.scripts]
 grona-demo = "grona.entrypoint:main"
@@ -49,6 +58,7 @@ src = ["src", "tests", "examples"]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
+"examples/experimental_lora_backend_demo.py" = ["E501", "I001"]
 "examples/inference_review_demo.py" = ["I001"]
 "examples/optional_training_backend_demo.py" = ["E501", "I001"]
 "examples/training_artifact_demo.py" = ["E501", "I001"]
@@ -60,6 +70,8 @@ select = ["E", "F", "I", "UP", "B"]
 "src/grona/benchmark_cli.py" = ["E501", "I001"]
 "src/grona/benchmarks.py" = ["E501", "F401"]
 "src/grona/entrypoint.py" = ["I001"]
+"src/grona/experimental_lora_cli.py" = ["E501"]
+"src/grona/experimental_training/lora_backend.py" = ["E501", "I001"]
 "src/grona/inference_review.py" = ["E501"]
 "src/grona/inference_review_cli.py" = ["E501"]
 "src/grona/training_artifact_cli.py" = ["E501"]
@@ -74,6 +86,7 @@ select = ["E", "F", "I", "UP", "B"]
 "src/grona/training_plan_cli.py" = ["E501"]
 "src/grona/training_plugin_cli.py" = ["E501"]
 "src/grona/training_plugins.py" = ["E501", "I001"]
+"tests/test_experimental_lora_backend.py" = ["E501", "I001"]
 "tests/test_training_artifacts.py" = ["E501", "I001"]
 "tests/test_training_backends.py" = ["E501", "I001"]
 "tests/test_training_dry_run.py" = ["E501", "I001"]
