@@ -30,7 +30,7 @@ TrainingSplitConfig(
 )
 ```
 
-For small datasets, the splitter keeps behavior practical and explicit. One example goes to `train`; two examples go to `train` and `validation`; `test` can be empty. The manifest warnings make underfilled splits visible.
+For small datasets, the splitter keeps behavior practical and explicit. One or two examples stay in `train`; `validation` and `test` can be empty. The manifest warnings make underfilled splits visible instead of pretending that a tiny holdout is meaningful.
 
 ## Conservative Package Helper
 
