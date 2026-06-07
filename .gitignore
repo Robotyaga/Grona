@@ -60,3 +60,7 @@ grona.local.json
 
 # Local training outputs
 outputs/
+
+# Local training environments and outputs
+.venv-train/
+outputs/
