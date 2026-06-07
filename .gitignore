@@ -51,3 +51,9 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Local launcher / AI tooling
+.venv/
+.venv-aider/
+.aider*
+grona.local.json
