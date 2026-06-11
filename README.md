@@ -101,6 +101,9 @@ python -m grona --training-artifact-demo
 python -m grona --training-dry-run-demo
 python -m grona --training-backend-demo
 python -m grona --optional-training-backend-demo
+python -m grona --experimental-lora-smoke-test-demo
+python -m grona --experimental-lora-run-smoke-test
+python -m grona --experimental-lora-reload-smoke-test
 ```
 
 Build context and run deterministic adapters or mock tools:
@@ -236,6 +239,10 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 
 `TrainingBackendRegistry` and `PlaceholderTrainingBackend` define optional backend capability and dependency boundaries without executing trainers. `FutureLoRABackendStub` and `FutureQLoRABackendStub` add a metadata-only scaffold for future real training plugins. They do not import heavy dependencies or implement training. See [Optional training backend boundary](docs/training-backends.md) and [Optional real-training plugin scaffold](docs/optional-training-plugins.md).
 
+`ExperimentalLoRABackend` and the local LoRA smoke-test scaffold add guarded config/report previews for future LoRA experiments. The explicit local smoke trainer and adapter reload smoke test refuse by default, use `importlib.util.find_spec()` before lazy heavy imports, require separate confirmation tokens, enforce tiny hard limits, and are not production training or serving paths. See [Experimental LoRA backend skeleton](docs/experimental-lora-backend.md).
+
+Portable local training commands in `grona.ps1` prepare the `F:\Grona\hf-cache` Hugging Face cache, build an ultimate local dataset, run explicit LoRA training from `.venv-train`, chat with saved adapters, and run heuristic evals. See [Local training workflow](docs/local-training-workflow.md).
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -252,6 +259,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - [Dry-run trainer interface](docs/training-dry-run.md)
 - [Optional training backend boundary](docs/training-backends.md)
 - [Optional real-training plugin scaffold](docs/optional-training-plugins.md)
+- [Local training workflow](docs/local-training-workflow.md)
 - [Development notes](docs/development.md)
 - [Workspace profiles](docs/workspaces.md)
 - [Research notes](docs/research-notes.md)
@@ -284,6 +292,7 @@ The exporter can produce deterministic Grona-native JSONL strings with metadata 
 - TrainingDataExporter produces candidate records only; it does not train models or prove example quality.
 - Training execution plans are dry-run previews only; command previews are placeholders and are never executed.
 - Optional real-training plugin stubs are not installed, not implemented, and blocked by default.
+- Experimental LoRA backend and smoke-test paths are not production training or serving paths and remain blocked by default.
 - No `torch`, `transformers`, `peft`, `bitsandbytes`, `datasets`, `accelerate`, `pandas`, or `pyarrow` dependency.
 - No trusted donor model workflow, external judge model, or automatic answer generation yet.
 - No embeddings, semantic clustering, vector database, SQL database, or web server.

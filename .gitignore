@@ -64,3 +64,14 @@ outputs/
 # Local training environments and outputs
 .venv-train/
 outputs/
+data/
+logs/
+hf-cache/
+
+# Local model/checkpoint artifacts
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+*.ckpt

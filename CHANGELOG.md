@@ -4,6 +4,9 @@
 
 ### Added
 
+- Windows-first local training workflow tooling for `.venv-train`, `F:\Grona\hf-cache`, ultimate dataset builds, explicit LoRA training, adapter chat, and heuristic eval commands.
+- Explicit-only local LoRA smoke trainer guarded by `allow_training_execution=True`, a local-training confirmation token, explicit model/output settings, tiny hard limits, lazy ML imports, and default CLI refusal.
+- Explicit-only local LoRA adapter reload smoke test that loads a base model, saved adapter, and tokenizer for one tiny generation behind a reload confirmation token and structured blockers.
 - Optional real-training plugin scaffold for future LoRA/QLoRA backend plugins without training execution.
 - OptionalDependencySpec, OptionalTrainingDependencyReport, FutureLoRABackendStub, FutureQLoRABackendStub, and TrainingBackendDesignReport records.
 - Metadata-only optional dependency descriptions for future `torch`, `transformers`, `peft`, `accelerate`, `bitsandbytes`, and `datasets` use without adding dependencies.
